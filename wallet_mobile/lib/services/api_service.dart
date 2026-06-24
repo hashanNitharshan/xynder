@@ -9,8 +9,8 @@ import 'package:file_picker/file_picker.dart';
 
 class ApiService {
   static String get host {
-    if (kIsWeb) return "http://127.0.0.1:8000";
-    return "http://10.0.2.2:8000";
+    if (kIsWeb) return "https://wallet.bitxnow.com";
+    return "https://wallet.bitxnow.com";
   }
 
   static String get baseUrl => "$host/api";
