@@ -132,7 +132,7 @@
         <a href="{{ route('home') }}" class="brand"><span>∞</span> Xynder Wallet</a>
 
         <h1>Log In</h1>
-        <div class="hint">Login as admin, client or merchant. Your correct dashboard will open automatically.</div>
+        
 
         @if ($errors->any())
             <div class="error">{{ $errors->first() }}</div>
@@ -157,7 +157,7 @@
 
      <a class="back" href="{{ route('register') }}">Create new account</a>
 <br>
-<a class="back" href="{{ route('home') }}">← Back to Home</a>
+
     </div>
 </div>
 </body>
