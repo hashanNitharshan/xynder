@@ -1,0 +1,1 @@
+@include('shared.chats_index', ['title' => 'Merchant Chats'])

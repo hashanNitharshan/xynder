@@ -1,0 +1,639 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\User;
+use App\Models\WalletRequest;
+use App\Models\SystemConfig;
+use App\Models\WalletTransfer;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+
+class AuthController extends Controller
+{
+    private function ensureVerified(User $user)
+    {
+        if (! $user->is_verified) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your account is not verified yet. Transactions are disabled until admin verification.',
+            ], 403);
+        }
+
+        return null;
+    }
+
+    public function login(Request $request)
+    {
+        $data = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
+
+        $user = User::where('email', $data['email'])->first();
+
+        if (! $user || ! Hash::check($data['password'], $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid email or password',
+            ], 401);
+        }
+
+        if ($user->status !== 'active' || ! $user->is_active) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your account has been blocked. Please contact admin.',
+            ], 403);
+        }
+
+        $user->update([
+            'is_online' => true,
+            'last_seen_at' => now(),
+        ]);
+
+        $token = $user->createToken('mobile-token')->plainTextToken;
+
+        return response()->json([
+            'success' => true,
+            'token' => $token,
+            'user' => $user->fresh(),
+        ]);
+    }
+
+    public function profile(Request $request)
+    {
+        return response()->json([
+            'success' => true,
+            'user' => $request->user()->fresh(),
+        ]);
+    }
+
+    public function ping(Request $request)
+    {
+        $request->user()->update([
+            'is_online' => true,
+            'last_seen_at' => now(),
+        ]);
+
+        return response()->json(['success' => true]);
+    }
+
+    public function logout(Request $request)
+    {
+        $request->user()->update([
+            'is_online' => false,
+            'last_seen_at' => now(),
+        ]);
+
+        $request->user()->currentAccessToken()?->delete();
+
+        return response()->json(['success' => true]);
+    }
+
+    public function merchants(Request $request)
+    {
+        $merchants = User::where('role', 'merchant')
+            ->where('status', 'active')
+            ->where('is_active', true)
+            ->where('is_verified', true)
+            ->where('is_online', true)
+            ->select([
+                'id',
+                'name',
+                'email',
+                'phone',
+                'is_online',
+                'last_seen_at',
+                'bank_name',
+                'branch',
+                'account_number',
+                'account_type',
+                'ifsc',
+                'upi_name',
+                'upi_id',
+                'upi_qr',
+            ])
+            ->latest()
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'merchants' => $merchants,
+        ]);
+    }
+
+    public function createRequest(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user->role !== 'client') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only clients can create wallet requests.',
+            ], 403);
+        }
+
+        if (! $user->is_active || $user->status !== 'active') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your account has been blocked.',
+            ], 403);
+        }
+
+        if ($response = $this->ensureVerified($user)) {
+            return $response;
+        }
+
+        $data = $request->validate([
+            'type' => 'required|in:deposit,withdrawal',
+            'amount' => 'required|numeric|min:1',
+            'merchant_id' => 'required|exists:users,id',
+            'note' => 'nullable|string|max:500',
+        ]);
+
+        $merchant = User::where('id', $data['merchant_id'])
+            ->where('role', 'merchant')
+            ->where('status', 'active')
+            ->where('is_active', true)
+            ->where('is_verified', true)
+            ->where('is_online', true)
+            ->first();
+
+        if (! $merchant) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Selected merchant is offline or not available.',
+            ], 422);
+        }
+
+        $amount = round((float) $data['amount'], 2);
+
+        if ($data['type'] === 'withdrawal' && (float) $user->balance < $amount) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Insufficient USD balance.',
+            ], 422);
+        }
+
+        $config = SystemConfig::current();
+
+        $convertedAmount = round($amount * (float) $config->inr_rate, 2);
+        $fee = round((float) $config->xynder_fee + (float) $config->network_fee, 2);
+        $totalAmount = round($convertedAmount + $fee, 2);
+
+        $walletRequest = WalletRequest::create([
+            'user_id' => $user->id,
+            'merchant_id' => $merchant->id,
+            'type' => $data['type'],
+            'amount' => $amount,
+            'usd_rate' => $config->usd_rate,
+            'inr_rate' => $config->inr_rate,
+            'xynder_fee' => $config->xynder_fee,
+            'network_fee' => $config->network_fee,
+            'converted_amount' => $convertedAmount,
+            'fee' => $fee,
+            'total_amount' => $totalAmount,
+            'note' => $data['note'] ?? null,
+            'payment_slip' => null,
+            'status' => 'pending',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => $data['type'] === 'withdrawal'
+                ? 'Sell request submitted successfully.'
+                : 'Buy request submitted successfully.',
+            'request' => $walletRequest->fresh(['merchant']),
+            'merchant' => $merchant,
+            'request_id' => $walletRequest->id,
+        ]);
+    }
+
+    public function walletLookup(Request $request)
+    {
+        $currentUser = $request->user();
+
+        if ($response = $this->ensureVerified($currentUser)) {
+            return $response;
+        }
+
+        $data = $request->validate([
+            'wallet_id' => 'required|string|max:50',
+        ]);
+
+        $user = User::where('wallet_id', $data['wallet_id'])
+            ->where('status', 'active')
+            ->where('is_active', true)
+            ->where('is_verified', true)
+            ->select('id', 'name', 'email', 'wallet_id')
+            ->first();
+
+        if (! $user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Wallet address not found or user is not verified.',
+            ], 404);
+        }
+
+        if ($user->id === $currentUser->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You cannot transfer to your own wallet.',
+            ], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'user' => $user,
+        ]);
+    }
+
+    public function walletTransfer(Request $request)
+    {
+        $data = $request->validate([
+            'receiver_wallet_id' => 'required|string|max:50',
+            'amount' => 'required|numeric|min:1',
+            'note' => 'nullable|string|max:500',
+        ]);
+
+        $sender = $request->user();
+
+        if (! $sender->is_active || $sender->status !== 'active') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your account has been blocked.',
+            ], 403);
+        }
+
+        if ($response = $this->ensureVerified($sender)) {
+            return $response;
+        }
+
+        $amount = round((float) $data['amount'], 2);
+
+        try {
+            $transfer = DB::transaction(function () use ($sender, $data, $amount) {
+                $lockedSender = User::where('id', $sender->id)->lockForUpdate()->first();
+
+                $receiver = User::where('wallet_id', $data['receiver_wallet_id'])
+                    ->where('status', 'active')
+                    ->where('is_active', true)
+                    ->where('is_verified', true)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (! $receiver) {
+                    abort(404, 'Receiver wallet address not found or receiver is not verified.');
+                }
+
+                if ($receiver->id === $lockedSender->id) {
+                    abort(422, 'You cannot transfer to your own wallet.');
+                }
+
+                if ((float) $lockedSender->balance < $amount) {
+                    abort(422, 'Insufficient wallet balance.');
+                }
+
+                $lockedSender->balance = round((float) $lockedSender->balance - $amount, 2);
+                $receiver->balance = round((float) $receiver->balance + $amount, 2);
+
+                $lockedSender->save();
+                $receiver->save();
+
+                return WalletTransfer::create([
+                    'sender_id' => $lockedSender->id,
+                    'receiver_id' => $receiver->id,
+                    'receiver_wallet_id' => $receiver->wallet_id,
+                    'amount' => $amount,
+                    'note' => $data['note'] ?? null,
+                ]);
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Wallet transfer completed successfully.',
+                'transfer' => $transfer->fresh(['receiver']),
+                'user' => $request->user()->fresh(),
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage() ?: 'Transfer failed.',
+            ], 422);
+        }
+    }
+
+    public function walletTransfers(Request $request)
+    {
+        $userId = $request->user()->id;
+
+        $transfers = WalletTransfer::with([
+                'sender:id,name,email,wallet_id',
+                'receiver:id,name,email,wallet_id',
+            ])
+            ->where(function ($query) use ($userId) {
+                $query->where('sender_id', $userId)
+                    ->orWhere('receiver_id', $userId);
+            })
+            ->latest()
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'transfers' => $transfers,
+        ]);
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+
+        if (! $user->is_active || $user->status !== 'active') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your account has been blocked.',
+            ], 403);
+        }
+
+        $data = $this->validateProfile($request, $user->id, true);
+
+        if ($request->hasFile('photo')) {
+            $data['photo'] = $request->file('photo')->store('users/photos', 'public');
+        }
+
+        if ($request->hasFile('aadhaar_photo')) {
+            $data['aadhaar_photo'] = $request->file('aadhaar_photo')->store('users/aadhaar', 'public');
+        }
+
+        if ($request->hasFile('upi_qr')) {
+            $data['upi_qr'] = $request->file('upi_qr')->store('users/upi_qr', 'public');
+        }
+
+        $user->update($data);
+
+        return response()->json([
+            'success' => true,
+            'user' => $user->fresh(),
+        ]);
+    }
+
+    public function changePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required',
+            'password' => 'required|min:6|confirmed',
+        ]);
+
+        $user = $request->user();
+
+        if (! Hash::check($request->current_password, $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Current password is incorrect.',
+            ], 422);
+        }
+
+        $user->update([
+            'password' => Hash::make($request->password),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password changed successfully.',
+        ]);
+    }
+
+    private function generateWalletId(): string
+    {
+        do {
+            $walletId = 'XYW' . strtoupper(Str::random(20));
+        } while (User::where('wallet_id', $walletId)->exists());
+
+        return $walletId;
+    }
+
+    public function register(Request $request)
+    {
+        $data = $this->validateProfile($request);
+
+        $data['role'] = 'client';
+        $data['wallet_id'] = $this->generateWalletId();
+        $data['password'] = Hash::make($request->password);
+        $data['balance'] = 0;
+        $data['status'] = 'active';
+        $data['is_active'] = true;
+        $data['is_verified'] = false;
+        $data['is_online'] = true;
+        $data['last_seen_at'] = now();
+
+        if ($request->hasFile('photo')) {
+            $data['photo'] = $request->file('photo')->store('users/photos', 'public');
+        }
+
+        if ($request->hasFile('aadhaar_photo')) {
+            $data['aadhaar_photo'] = $request->file('aadhaar_photo')->store('users/aadhaar', 'public');
+        }
+
+        if ($request->hasFile('upi_qr')) {
+            $data['upi_qr'] = $request->file('upi_qr')->store('users/upi_qr', 'public');
+        }
+
+        $user = User::create($data);
+        $token = $user->createToken('mobile-token')->plainTextToken;
+
+        return response()->json([
+            'success' => true,
+            'token' => $token,
+            'user' => $user->fresh(),
+        ]);
+    }
+
+    private function validateProfile(Request $request, ?int $userId = null, bool $update = false): array
+    {
+        return $request->validate([
+            'name' => [$update ? 'sometimes' : 'required', 'string', 'max:255'],
+            'original_name' => 'nullable|string|max:255',
+
+            'email' => [
+                $update ? 'sometimes' : 'required',
+                'email',
+                Rule::unique('users', 'email')->ignore($userId),
+            ],
+
+            'phone' => [
+                'nullable',
+                'string',
+                'max:30',
+                Rule::unique('users', 'phone')->ignore($userId),
+            ],
+
+            'address' => 'nullable|string|max:255',
+            'country' => 'nullable|string|max:100',
+            'state' => 'nullable|string|max:100',
+
+            'aadhaar' => 'nullable|string|max:50',
+            'aadhaar_photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:10240',
+
+            'bank_name' => 'nullable|string|max:100',
+            'branch' => 'nullable|string|max:100',
+            'account_number' => 'nullable|string|max:100',
+            'account_type' => 'nullable|string|max:100',
+            'ifsc' => 'nullable|string|max:100',
+
+            'upi_name' => 'nullable|string|max:100',
+            'upi_id' => 'nullable|string|max:100',
+
+            'photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:10240',
+            'upi_qr' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:10240',
+
+            'password' => $update ? 'nullable|min:6' : 'required|min:6',
+        ]);
+    }
+
+    public function myRequests(Request $request)
+    {
+        $user = $request->user();
+
+        $query = WalletRequest::with(['user', 'merchant']);
+
+        if ($user->role === 'merchant') {
+            $query->where('merchant_id', $user->id);
+        } else {
+            $query->where('user_id', $user->id);
+        }
+
+        return response()->json([
+            'success' => true,
+            'requests' => $query->latest()->get(),
+        ]);
+    }
+
+    public function merchantApproveRequest(Request $request, WalletRequest $walletRequest)
+    {
+        $merchantUser = $request->user();
+
+        if ($merchantUser->role !== 'merchant') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only merchant can approve this request.',
+            ], 403);
+        }
+
+        if ($walletRequest->merchant_id != $merchantUser->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized request.',
+            ], 403);
+        }
+
+        if ($walletRequest->status !== 'pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This request is already processed.',
+            ], 422);
+        }
+
+        try {
+            DB::transaction(function () use ($walletRequest, $merchantUser) {
+                $lockedRequest = WalletRequest::where('id', $walletRequest->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                if ($lockedRequest->status !== 'pending') {
+                    abort(422, 'This request is already processed.');
+                }
+
+                $client = User::where('id', $lockedRequest->user_id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                $merchant = User::where('id', $merchantUser->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                $amount = round((float) $lockedRequest->amount, 2);
+
+                if ($lockedRequest->type === 'deposit') {
+                    if ((float) $merchant->balance < $amount) {
+                        abort(422, 'Merchant has insufficient USD balance.');
+                    }
+
+                    $client->balance = round((float) $client->balance + $amount, 2);
+                    $merchant->balance = round((float) $merchant->balance - $amount, 2);
+                } elseif ($lockedRequest->type === 'withdrawal') {
+                    if ((float) $client->balance < $amount) {
+                        abort(422, 'Client has insufficient USD balance.');
+                    }
+
+                    $client->balance = round((float) $client->balance - $amount, 2);
+                    $merchant->balance = round((float) $merchant->balance + $amount, 2);
+                } else {
+                    abort(422, 'Invalid request type.');
+                }
+
+                $client->save();
+                $merchant->save();
+
+                $lockedRequest->update([
+                    'status' => 'approved',
+                    'approved_by' => $merchant->id,
+                    'approved_at' => now(),
+                ]);
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Request approved successfully.',
+                'request' => $walletRequest->fresh(['user', 'merchant']),
+                'user' => $request->user()->fresh(),
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage() ?: 'Request approval failed.',
+            ], 422);
+        }
+    }
+
+    public function merchantRejectRequest(Request $request, WalletRequest $walletRequest)
+    {
+        $merchant = $request->user();
+
+        if ($merchant->role !== 'merchant') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only merchant can reject this request.',
+            ], 403);
+        }
+
+        if ($walletRequest->merchant_id != $merchant->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized request.',
+            ], 403);
+        }
+
+        if ($walletRequest->status !== 'pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This request is already processed.',
+            ], 422);
+        }
+
+        $walletRequest->update([
+            'status' => 'rejected',
+            'approved_by' => $merchant->id,
+            'approved_at' => now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Request rejected successfully.',
+            'request' => $walletRequest->fresh(['user', 'merchant']),
+        ]);
+    }
+}

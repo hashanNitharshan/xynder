@@ -1,0 +1,1 @@
+@include('shared.chat_show', ['title' => 'Client Chat'])

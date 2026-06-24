@@ -1,0 +1,32 @@
+name: wallet_mobile
+description: "Xynder wallet mobile app."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  http: ^1.2.2
+  shared_preferences: ^2.3.2
+  image_picker: ^1.1.2
+  file_picker: ^10.3.3
+  url_launcher: ^6.3.2
+  webview_flutter: ^4.13.1
+  webview_flutter_android: ^4.12.0
+  webview_flutter_wkwebview: ^3.25.1
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
