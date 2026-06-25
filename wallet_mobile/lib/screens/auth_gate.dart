@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-
 import '../services/api_service.dart';
-import '../services/update_service.dart';
 import 'login_screen.dart';
 import 'client_dashboard.dart';
 import 'merchant_dashboard.dart';
@@ -19,17 +17,11 @@ class _AuthGateState extends State<AuthGate> {
   void initState() {
     super.initState();
     checkLogin();
-    // ✅ Check for update on every app open
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      UpdateService.checkForUpdate(context);
-    });
   }
 
   Future<void> checkLogin() async {
     await Future.delayed(const Duration(seconds: 2));
-
     final savedToken = await ApiService.token();
-
     if (!mounted) return;
 
     if (savedToken == null || savedToken.isEmpty) {
@@ -41,7 +33,6 @@ class _AuthGateState extends State<AuthGate> {
     }
 
     final data = await ApiService.profile();
-
     if (!mounted) return;
 
     if (data["success"] == true) {
@@ -81,7 +72,7 @@ class _AuthGateState extends State<AuthGate> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            XynderLogo(size: 120),
+            _XynderSplashLogo(size: 120),
             SizedBox(height: 18),
             Text(
               "XYNDER",
@@ -104,19 +95,17 @@ class _AuthGateState extends State<AuthGate> {
   }
 }
 
-class XynderLogo extends StatelessWidget {
+// ✅ Renamed to avoid conflict with login_screen.dart XynderLogo
+class _XynderSplashLogo extends StatelessWidget {
   final double size;
-
-  const XynderLogo({super.key, required this.size});
+  const _XynderSplashLogo({required this.size});
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: size,
       height: size,
-      child: CustomPaint(
-        painter: _XynderLogoPainter(),
-      ),
+      child: CustomPaint(painter: _XynderLogoPainter()),
     );
   }
 }
@@ -135,7 +124,6 @@ class _XynderLogoPainter extends CustomPainter {
       Offset(size.width * 0.80, size.height * 0.80),
       paint,
     );
-
     canvas.drawLine(
       Offset(size.width * 0.80, size.height * 0.20),
       Offset(size.width * 0.20, size.height * 0.80),

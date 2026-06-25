@@ -6,19 +6,15 @@ import 'register_screen.dart';
 import 'client_dashboard.dart';
 import 'merchant_dashboard.dart';
 import 'admin_dashboard.dart';
-import 'auth_gate.dart';
 
 class _C {
   static const bg = Color(0xff0a0a0a);
   static const surface = Color(0xff141414);
-  static const surfaceAlt = Color(0xff1c1c1e);
   static const border = Color(0xff2a2a2a);
-
   static const orange = Color(0xffFF4500);
   static const amber = Color(0xffFFB800);
   static const gold = Color(0xffFFD700);
   static const red = Color(0xffef4444);
-
   static const textSecondary = Color(0xff8E8E93);
 
   static const gradientAccent = LinearGradient(
@@ -26,13 +22,11 @@ class _C {
     end: Alignment.centerRight,
     colors: [orange, amber, gold],
   );
-
   static const gradientCard = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [Color(0xff1a0a00), Color(0xff2d1200), Color(0xff1a0800)],
   );
-
   static const gradientGlow = RadialGradient(
     center: Alignment(-0.2, -0.6),
     radius: 1.2,
@@ -67,7 +61,6 @@ class _LoginScreenState extends State<LoginScreen>
       vsync: this,
       duration: const Duration(milliseconds: 650),
     );
-
     fade = CurvedAnimation(parent: anim, curve: Curves.easeOut);
     slide = Tween<Offset>(
       begin: const Offset(0, 0.06),
@@ -76,12 +69,10 @@ class _LoginScreenState extends State<LoginScreen>
 
     anim.forward();
 
-    // ✅ Check for update AFTER login screen is fully visible
+    // ✅ Check for update on login screen
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(seconds: 1), () {
-        if (mounted) {
-          UpdateService.checkForUpdate(context);
-        }
+        if (mounted) UpdateService.checkForUpdate(context);
       });
     });
   }
@@ -99,36 +90,25 @@ class _LoginScreenState extends State<LoginScreen>
       showMessage("Please enter email and password");
       return;
     }
-
     setState(() => loading = true);
-
     try {
       final data = await ApiService.login(
         emailCtrl.text.trim(),
         passwordCtrl.text.trim(),
       );
-
       if (!mounted) return;
-
       if (data["success"] == true) {
         final user = data["user"];
         final role = user["role"]?.toString().toLowerCase();
-
         if (role == "admin") {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const AdminDashboard()),
-          );
+          Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (_) => const AdminDashboard()));
         } else if (role == "merchant") {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => MerchantDashboard(user: user)),
-          );
+          Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (_) => MerchantDashboard(user: user)));
         } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => ClientDashboard(user: user)),
-          );
+          Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (_) => ClientDashboard(user: user)));
         }
       } else {
         showMessage(data["message"]?.toString() ?? "Login failed");
@@ -141,17 +121,12 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   void showMessage(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: _C.red,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        content: Text(
-          msg,
-          style: const TextStyle(fontWeight: FontWeight.w700),
-        ),
-      ),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      backgroundColor: _C.red,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      content: Text(msg, style: const TextStyle(fontWeight: FontWeight.w700)),
+    ));
   }
 
   InputDecoration inputBox({
@@ -225,9 +200,7 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                       ],
                     ),
-                    child: const Center(
-                      child: XynderLogo(size: 82),
-                    ),
+                    child: Center(child: XynderLogo(size: 82)),
                   ),
                   const SizedBox(height: 18),
                   ShaderMask(
@@ -247,42 +220,34 @@ class _LoginScreenState extends State<LoginScreen>
                     "Welcome Back",
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                    ),
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900),
                   ),
                   const SizedBox(height: 6),
                   const Text(
                     "Login to continue your dashboard",
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: _C.textSecondary,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                    ),
+                        color: _C.textSecondary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500),
                   ),
                   const SizedBox(height: 34),
                   TextField(
                     controller: emailCtrl,
                     keyboardType: TextInputType.emailAddress,
                     style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    decoration: inputBox(
-                      label: "Email Address",
-                      icon: Icons.email_rounded,
-                    ),
+                        color: Colors.white, fontWeight: FontWeight.w600),
+                    decoration:
+                        inputBox(label: "Email Address", icon: Icons.email_rounded),
                   ),
                   const SizedBox(height: 16),
                   TextField(
                     controller: passwordCtrl,
                     obscureText: hidePassword,
                     style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
+                        color: Colors.white, fontWeight: FontWeight.w600),
                     decoration: inputBox(
                       label: "Password",
                       icon: Icons.lock_rounded,
@@ -293,9 +258,8 @@ class _LoginScreenState extends State<LoginScreen>
                               : Icons.visibility_rounded,
                           color: Colors.white54,
                         ),
-                        onPressed: () {
-                          setState(() => hidePassword = !hidePassword);
-                        },
+                        onPressed: () =>
+                            setState(() => hidePassword = !hidePassword),
                       ),
                     ),
                   ),
@@ -322,27 +286,18 @@ class _LoginScreenState extends State<LoginScreen>
                                 width: 22,
                                 height: 22,
                                 child: CircularProgressIndicator(
-                                  strokeWidth: 2.5,
-                                  color: Colors.black,
-                                ),
-                              )
+                                    strokeWidth: 2.5, color: Colors.black))
                             : const Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(
-                                    Icons.login_rounded,
-                                    color: Colors.black,
-                                    size: 20,
-                                  ),
+                                  Icon(Icons.login_rounded,
+                                      color: Colors.black, size: 20),
                                   SizedBox(width: 9),
-                                  Text(
-                                    "Login",
-                                    style: TextStyle(
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 16,
-                                    ),
-                                  ),
+                                  Text("Login",
+                                      style: TextStyle(
+                                          color: Colors.black,
+                                          fontWeight: FontWeight.w900,
+                                          fontSize: 16)),
                                 ],
                               ),
                       ),
@@ -355,47 +310,33 @@ class _LoginScreenState extends State<LoginScreen>
                     decoration: BoxDecoration(
                       color: _C.surface.withOpacity(0.7),
                       borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
-                          color: Colors.white.withOpacity(0.08)),
+                      border:
+                          Border.all(color: Colors.white.withOpacity(0.08)),
                     ),
                     child: Row(
                       children: [
-                        const Icon(
-                          Icons.person_add_alt_1_rounded,
-                          color: _C.amber,
-                          size: 19,
-                        ),
+                        const Icon(Icons.person_add_alt_1_rounded,
+                            color: _C.amber, size: 19),
                         const SizedBox(width: 10),
                         const Expanded(
-                          child: Text(
-                            "New to Xynder?",
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 13,
-                            ),
-                          ),
+                          child: Text("New to Xynder?",
+                              style: TextStyle(
+                                  color: Colors.white70,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13)),
                         ),
                         GestureDetector(
                           onTap: loading
                               ? null
-                              : () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) =>
-                                          const RegisterScreen(),
-                                    ),
-                                  );
-                                },
-                          child: const Text(
-                            "Create Account",
-                            style: TextStyle(
-                              color: _C.amber,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 13,
-                            ),
-                          ),
+                              : () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (_) => const RegisterScreen())),
+                          child: const Text("Create Account",
+                              style: TextStyle(
+                                  color: _C.amber,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 13)),
                         ),
                       ],
                     ),
@@ -423,52 +364,38 @@ class _LoginScreenState extends State<LoginScreen>
         children: [
           ShaderMask(
             shaderCallback: (b) => _C.gradientAccent.createShader(b),
-            child: const Text(
-              "XYNDER WALLET",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1.5,
-              ),
-            ),
+            child: const Text("XYNDER WALLET",
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.5)),
           ),
           const SizedBox(height: 24),
-          const Text(
-            "Manage your\nXynder account\nin one place.",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 34,
-              height: 1.15,
-              fontWeight: FontWeight.w900,
-              letterSpacing: -0.6,
-            ),
-          ),
+          const Text("Manage your\nXynder account\nin one place.",
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 34,
+                  height: 1.15,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.6)),
           const SizedBox(height: 14),
           const Text(
-            "Access your dashboard, profile, requests, transfers, history and transaction chats.",
-            style: TextStyle(
-              color: _C.textSecondary,
-              fontSize: 14,
-              height: 1.5,
-            ),
-          ),
+              "Access your dashboard, profile, requests, transfers, history and transaction chats.",
+              style: TextStyle(
+                  color: _C.textSecondary, fontSize: 14, height: 1.5)),
           const SizedBox(height: 26),
-          Row(
-            children: [
-              smallBox(title: "Admin", icon: Icons.admin_panel_settings_rounded),
-              const SizedBox(width: 12),
-              smallBox(title: "Client", icon: Icons.person_rounded),
-            ],
-          ),
+          Row(children: [
+            smallBox(title: "Admin", icon: Icons.admin_panel_settings_rounded),
+            const SizedBox(width: 12),
+            smallBox(title: "Client", icon: Icons.person_rounded),
+          ]),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              smallBox(title: "Merchant", icon: Icons.storefront_rounded),
-              const SizedBox(width: 12),
-              smallBox(title: "Dashboard", icon: Icons.dashboard_rounded),
-            ],
-          ),
+          Row(children: [
+            smallBox(title: "Merchant", icon: Icons.storefront_rounded),
+            const SizedBox(width: 12),
+            smallBox(title: "Dashboard", icon: Icons.dashboard_rounded),
+          ]),
         ],
       ),
     );
@@ -488,14 +415,11 @@ class _LoginScreenState extends State<LoginScreen>
           children: [
             Icon(icon, color: _C.amber, size: 20),
             const SizedBox(height: 12),
-            Text(
-              title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
+            Text(title,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900)),
           ],
         ),
       ),
@@ -516,7 +440,6 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   Widget build(BuildContext context) {
     final isWide = MediaQuery.of(context).size.width >= 950;
-
     return Scaffold(
       backgroundColor: _C.bg,
       body: Stack(
@@ -548,4 +471,44 @@ class _LoginScreenState extends State<LoginScreen>
       ),
     );
   }
+}
+
+// ✅ OUTSIDE _LoginScreenState — top level classes
+class XynderLogo extends StatelessWidget {
+  final double size;
+  const XynderLogo({super.key, required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(painter: _LoginXynderLogoPainter()),
+    );
+  }
+}
+
+class _LoginXynderLogoPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xffFFB800)
+      ..strokeWidth = size.width * 0.14
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    canvas.drawLine(
+      Offset(size.width * 0.20, size.height * 0.20),
+      Offset(size.width * 0.80, size.height * 0.80),
+      paint,
+    );
+    canvas.drawLine(
+      Offset(size.width * 0.80, size.height * 0.20),
+      Offset(size.width * 0.20, size.height * 0.80),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
