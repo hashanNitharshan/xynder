@@ -20,6 +20,13 @@ dependencies:
   webview_flutter_android: ^4.12.0
   webview_flutter_wkwebview: ^3.25.1
 
+  # ✅ Auto-update packages
+  package_info_plus: ^8.0.0
+  dio: ^5.4.0
+  open_file: ^3.3.2
+  permission_handler: ^11.3.0
+  path_provider: ^2.1.0
+
 dev_dependencies:
   flutter_lints: ^6.0.0
   flutter_test:

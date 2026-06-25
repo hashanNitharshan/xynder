@@ -7,10 +7,20 @@ use App\Http\Controllers\Api\ConfigController;
 use App\Http\Controllers\Api\SupportTicketController;
 use App\Http\Controllers\Api\ChatController;
 
-// ✅ Handle OPTIONS preflight for ALL api routes (required for browsers)
+// ✅ Handle OPTIONS preflight
 Route::options('{any}', function () {
     return response()->json([], 204);
 })->where('any', '.*');
+
+// ✅ Version check endpoint — no auth needed
+Route::get('/version', function () {
+    return response()->json([
+        'success'      => true,
+        'version'      => '1.0.0',   // ← change this number for each update
+        'apk_url'      => 'https://wallet.bitxnow.com/apk/wallet-mobile.apk',
+        'force_update' => false,      // ← set true to force users to update
+    ]);
+});
 
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);

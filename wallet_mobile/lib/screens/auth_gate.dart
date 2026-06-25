@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
+import '../services/update_service.dart';
 import 'login_screen.dart';
 import 'client_dashboard.dart';
 import 'merchant_dashboard.dart';
@@ -18,6 +19,10 @@ class _AuthGateState extends State<AuthGate> {
   void initState() {
     super.initState();
     checkLogin();
+    // ✅ Check for update on every app open
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      UpdateService.checkForUpdate(context);
+    });
   }
 
   Future<void> checkLogin() async {
@@ -115,6 +120,7 @@ class XynderLogo extends StatelessWidget {
     );
   }
 }
+
 class _XynderLogoPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
@@ -123,8 +129,6 @@ class _XynderLogoPainter extends CustomPainter {
       ..strokeWidth = size.width * 0.14
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
-
-    // X logo
 
     canvas.drawLine(
       Offset(size.width * 0.20, size.height * 0.20),
