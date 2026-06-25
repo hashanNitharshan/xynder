@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 
 import '../services/api_service.dart';
 import 'client_dashboard.dart';
@@ -48,26 +47,13 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen>
     with SingleTickerProviderStateMixin {
   final nameCtrl = TextEditingController();
-  final originalNameCtrl = TextEditingController();
   final emailCtrl = TextEditingController();
-  final phoneCtrl = TextEditingController();
-  final countryCtrl = TextEditingController();
-  final stateCtrl = TextEditingController();
-  final addressCtrl = TextEditingController();
-  final bankNameCtrl = TextEditingController();
-  final branchCtrl = TextEditingController();
-  final accountCtrl = TextEditingController();
-  final accountTypeCtrl = TextEditingController();
-  final ifscCtrl = TextEditingController();
-  final upiNameCtrl = TextEditingController();
-  final upiIdCtrl = TextEditingController();
   final passwordCtrl = TextEditingController();
+  final confirmPasswordCtrl = TextEditingController();
 
   bool loading = false;
-
-  XFile? photo;
-  XFile? aadhaarPhoto;
-  XFile? upiQr;
+  bool _obscurePassword = true;
+  bool _obscureConfirm = true;
 
   late AnimationController _anim;
   late Animation<double> _fade;
@@ -76,18 +62,15 @@ class _RegisterScreenState extends State<RegisterScreen>
   @override
   void initState() {
     super.initState();
-
     _anim = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 650),
     );
-
     _fade = CurvedAnimation(parent: _anim, curve: Curves.easeOut);
     _slide = Tween<Offset>(
       begin: const Offset(0, 0.05),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _anim, curve: Curves.easeOut));
-
     _anim.forward();
   }
 
@@ -95,45 +78,10 @@ class _RegisterScreenState extends State<RegisterScreen>
   void dispose() {
     _anim.dispose();
     nameCtrl.dispose();
-    originalNameCtrl.dispose();
     emailCtrl.dispose();
-    phoneCtrl.dispose();
-    countryCtrl.dispose();
-    stateCtrl.dispose();
-    addressCtrl.dispose();
-    bankNameCtrl.dispose();
-    branchCtrl.dispose();
-    accountCtrl.dispose();
-    accountTypeCtrl.dispose();
-    ifscCtrl.dispose();
-    upiNameCtrl.dispose();
-    upiIdCtrl.dispose();
     passwordCtrl.dispose();
+    confirmPasswordCtrl.dispose();
     super.dispose();
-  }
-
-  Future<void> pickPhoto() async {
-    final img = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 70,
-    );
-    if (img != null) setState(() => photo = img);
-  }
-
-  Future<void> pickAadhaarPhoto() async {
-    final img = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 70,
-    );
-    if (img != null) setState(() => aadhaarPhoto = img);
-  }
-
-  Future<void> pickQr() async {
-    final img = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 70,
-    );
-    if (img != null) setState(() => upiQr = img);
   }
 
   void snack(String msg, {bool ok = false}) {
@@ -156,6 +104,24 @@ class _RegisterScreenState extends State<RegisterScreen>
   Future<void> register() async {
     if (loading) return;
 
+    // Basic validation
+    if (nameCtrl.text.trim().isEmpty) {
+      snack("Please enter your full name");
+      return;
+    }
+    if (emailCtrl.text.trim().isEmpty) {
+      snack("Please enter your email");
+      return;
+    }
+    if (passwordCtrl.text.isEmpty) {
+      snack("Please enter a password");
+      return;
+    }
+    if (passwordCtrl.text != confirmPasswordCtrl.text) {
+      snack("Passwords do not match");
+      return;
+    }
+
     FocusScope.of(context).unfocus();
     setState(() => loading = true);
 
@@ -163,28 +129,10 @@ class _RegisterScreenState extends State<RegisterScreen>
       final data = await ApiService.registerMultipart(
         fields: {
           "name": nameCtrl.text.trim(),
-          "original_name": originalNameCtrl.text.trim(),
           "email": emailCtrl.text.trim(),
-          "phone": phoneCtrl.text.trim(),
-          "country": countryCtrl.text.trim(),
-          "state": stateCtrl.text.trim(),
-          "address": addressCtrl.text.trim(),
-
-          // Aadhaar card number removed
-          // Do not send "aadhaar"
-
-          "bank_name": bankNameCtrl.text.trim(),
-          "branch": branchCtrl.text.trim(),
-          "account_number": accountCtrl.text.trim(),
-          "account_type": accountTypeCtrl.text.trim(),
-          "ifsc": ifscCtrl.text.trim(),
-          "upi_name": upiNameCtrl.text.trim(),
-          "upi_id": upiIdCtrl.text.trim(),
           "password": passwordCtrl.text.trim(),
+          "password_confirmation": confirmPasswordCtrl.text.trim(),
         },
-        photo: photo,
-        aadhaarPhoto: aadhaarPhoto,
-        upiQr: upiQr,
       );
 
       if (!mounted) return;
@@ -257,10 +205,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                 SizedBox(height: 2),
                 Text(
                   "Join Xynder Wallet",
-                  style: TextStyle(
-                    color: _C.textSecondary,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: _C.textSecondary, fontSize: 12),
                 ),
               ],
             ),
@@ -277,7 +222,7 @@ class _RegisterScreenState extends State<RegisterScreen>
         position: _slide,
         child: Container(
           margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 24),
           decoration: BoxDecoration(
             gradient: _C.gradientCard,
             borderRadius: BorderRadius.circular(28),
@@ -307,53 +252,10 @@ class _RegisterScreenState extends State<RegisterScreen>
                       ),
                     ),
                   ),
-                  const SizedBox(height: 22),
-                  GestureDetector(
-                    onTap: loading ? null : pickPhoto,
-                    child: Stack(
-                      alignment: Alignment.bottomRight,
-                      children: [
-                        Container(
-                          width: 116,
-                          height: 116,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withOpacity(0.05),
-                            border: Border.all(color: _C.amber, width: 2),
-                          ),
-                          child: CircleAvatar(
-                            radius: 56,
-                            backgroundColor: _C.surfaceAlt,
-                            child: Icon(
-                              photo == null
-                                  ? Icons.camera_alt_rounded
-                                  : Icons.check_circle_rounded,
-                              color: _C.amber,
-                              size: 48,
-                            ),
-                          ),
-                        ),
-                        Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            gradient: _C.gradientAccent,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: _C.bg, width: 3),
-                          ),
-                          child: const Icon(
-                            Icons.add_a_photo_rounded,
-                            color: Colors.black,
-                            size: 17,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    photo == null ? "Tap to add profile photo" : "Photo selected",
-                    style: const TextStyle(
+                  const SizedBox(height: 10),
+                  const Text(
+                    "Create your account in seconds",
+                    style: TextStyle(
                       color: _C.textSecondary,
                       fontSize: 12,
                     ),
@@ -367,13 +269,14 @@ class _RegisterScreenState extends State<RegisterScreen>
     );
   }
 
-  Widget input(
+  Widget _input(
     String label,
     TextEditingController ctrl, {
     bool obscure = false,
     TextInputType keyboardType = TextInputType.text,
     IconData icon = Icons.edit_rounded,
-    int maxLines = 1,
+    VoidCallback? onToggleObscure,
+    bool? isObscured,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
@@ -381,13 +284,24 @@ class _RegisterScreenState extends State<RegisterScreen>
         controller: ctrl,
         obscureText: obscure,
         keyboardType: keyboardType,
-        maxLines: maxLines,
         style: const TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.w600,
         ),
         decoration: InputDecoration(
           prefixIcon: Icon(icon, color: _C.amber, size: 20),
+          suffixIcon: onToggleObscure != null
+              ? GestureDetector(
+                  onTap: onToggleObscure,
+                  child: Icon(
+                    isObscured == true
+                        ? Icons.visibility_off_rounded
+                        : Icons.visibility_rounded,
+                    color: _C.textSecondary,
+                    size: 20,
+                  ),
+                )
+              : null,
           labelText: label,
           labelStyle: const TextStyle(color: _C.textSecondary),
           filled: true,
@@ -451,51 +365,6 @@ class _RegisterScreenState extends State<RegisterScreen>
     );
   }
 
-  Widget _uploadButton({
-    required String title,
-    required IconData icon,
-    required VoidCallback onTap,
-    required bool selected,
-  }) {
-    final color = selected ? _C.amber : _C.orange;
-
-    return GestureDetector(
-      onTap: loading ? null : onTap,
-      child: Container(
-        width: double.infinity,
-        height: 52,
-        margin: const EdgeInsets.only(bottom: 14),
-        decoration: BoxDecoration(
-          color: _C.bg,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color, width: 1.3),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              selected ? Icons.check_circle_rounded : icon,
-              color: color,
-              size: 20,
-            ),
-            const SizedBox(width: 9),
-            Flexible(
-              child: Text(
-                title,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 13,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _registerButton() {
     return GestureDetector(
       onTap: loading ? null : register,
@@ -516,11 +385,7 @@ class _RegisterScreenState extends State<RegisterScreen>
         ),
         child: Center(
           child: loading
-              ? const PinwheelLoader(
-                  size: 22,
-                  stroke: 3,
-                  color: Colors.black,
-                )
+              ? const PinwheelLoader(size: 22, stroke: 3, color: Colors.black)
               : const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -561,65 +426,16 @@ class _RegisterScreenState extends State<RegisterScreen>
                     title: "Personal Details",
                     icon: Icons.person_rounded,
                     children: [
-                      input("Full Name", nameCtrl,
-                          icon: Icons.person_outline_rounded),
-                      input("Original / Legal Name", originalNameCtrl,
-                          icon: Icons.badge_outlined),
-                      input("Email", emailCtrl,
-                          keyboardType: TextInputType.emailAddress,
-                          icon: Icons.email_outlined),
-                      input("Phone Number", phoneCtrl,
-                          keyboardType: TextInputType.phone,
-                          icon: Icons.phone_rounded),
-                      input("Country", countryCtrl,
-                          icon: Icons.public_rounded),
-                      input("State", stateCtrl,
-                          icon: Icons.location_city_rounded),
-                      input("Address", addressCtrl,
-                          icon: Icons.location_on_rounded,
-                          maxLines: 3),
-                      _uploadButton(
-                        title: aadhaarPhoto == null
-                            ? "Upload Aadhaar Card Photo"
-                            : "Aadhaar Photo Selected",
-                        icon: Icons.credit_card_rounded,
-                        onTap: pickAadhaarPhoto,
-                        selected: aadhaarPhoto != null,
+                      _input(
+                        "Full Name",
+                        nameCtrl,
+                        icon: Icons.person_outline_rounded,
                       ),
-                    ],
-                  ),
-
-                  _sectionCard(
-                    title: "Bank Details",
-                    icon: Icons.account_balance_rounded,
-                    children: [
-                      input("Bank Name", bankNameCtrl,
-                          icon: Icons.account_balance_rounded),
-                      input("Branch", branchCtrl,
-                          icon: Icons.location_city_rounded),
-                      input("Account Number", accountCtrl,
-                          icon: Icons.credit_card_rounded),
-                      input("Account Type", accountTypeCtrl,
-                          icon: Icons.category_rounded),
-                      input("IFSC", ifscCtrl, icon: Icons.code_rounded),
-                    ],
-                  ),
-
-                  _sectionCard(
-                    title: "UPI Details",
-                    icon: Icons.qr_code_rounded,
-                    children: [
-                      input("UPI Account Name", upiNameCtrl,
-                          icon: Icons.account_circle_rounded),
-                      input("UPI ID", upiIdCtrl,
-                          icon: Icons.link_rounded),
-                      _uploadButton(
-                        title: upiQr == null
-                            ? "Upload UPI QR"
-                            : "UPI QR Selected",
-                        icon: Icons.qr_code_2_rounded,
-                        onTap: pickQr,
-                        selected: upiQr != null,
+                      _input(
+                        "Email",
+                        emailCtrl,
+                        keyboardType: TextInputType.emailAddress,
+                        icon: Icons.email_outlined,
                       ),
                     ],
                   ),
@@ -628,11 +444,23 @@ class _RegisterScreenState extends State<RegisterScreen>
                     title: "Security",
                     icon: Icons.lock_rounded,
                     children: [
-                      input(
+                      _input(
                         "Password",
                         passwordCtrl,
-                        obscure: true,
+                        obscure: _obscurePassword,
                         icon: Icons.lock_outline_rounded,
+                        onToggleObscure: () => setState(
+                            () => _obscurePassword = !_obscurePassword),
+                        isObscured: _obscurePassword,
+                      ),
+                      _input(
+                        "Confirm Password",
+                        confirmPasswordCtrl,
+                        obscure: _obscureConfirm,
+                        icon: Icons.lock_rounded,
+                        onToggleObscure: () =>
+                            setState(() => _obscureConfirm = !_obscureConfirm),
+                        isObscured: _obscureConfirm,
                       ),
                     ],
                   ),
