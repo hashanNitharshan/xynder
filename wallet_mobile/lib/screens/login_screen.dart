@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
+import '../services/update_service.dart';
 import 'register_screen.dart';
 import 'client_dashboard.dart';
 import 'merchant_dashboard.dart';
@@ -74,6 +75,15 @@ class _LoginScreenState extends State<LoginScreen>
     ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOut));
 
     anim.forward();
+
+    // ✅ Check for update AFTER login screen is fully visible
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(seconds: 1), () {
+        if (mounted) {
+          UpdateService.checkForUpdate(context);
+        }
+      });
+    });
   }
 
   @override
@@ -83,51 +93,52 @@ class _LoginScreenState extends State<LoginScreen>
     passwordCtrl.dispose();
     super.dispose();
   }
-Future<void> login() async {
-  if (emailCtrl.text.trim().isEmpty || passwordCtrl.text.trim().isEmpty) {
-    showMessage("Please enter email and password");
-    return;
-  }
 
-  setState(() => loading = true);
-
-  try {
-    final data = await ApiService.login(
-      emailCtrl.text.trim(),
-      passwordCtrl.text.trim(),
-    );
-
-    if (!mounted) return;
-
-    if (data["success"] == true) {
-      final user = data["user"];
-      final role = user["role"]?.toString().toLowerCase();
-
-      if (role == "admin") {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const AdminDashboard()),
-        );
-      } else if (role == "merchant") {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => MerchantDashboard(user: user)),
-        );
-      } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => ClientDashboard(user: user)),
-        );
-      }
-    } else {
-      showMessage(data["message"]?.toString() ?? "Login failed");
+  Future<void> login() async {
+    if (emailCtrl.text.trim().isEmpty || passwordCtrl.text.trim().isEmpty) {
+      showMessage("Please enter email and password");
+      return;
     }
-  } catch (e) {
-    if (mounted) showMessage("Login error: $e");
-  } finally {
-    if (mounted) setState(() => loading = false);
+
+    setState(() => loading = true);
+
+    try {
+      final data = await ApiService.login(
+        emailCtrl.text.trim(),
+        passwordCtrl.text.trim(),
+      );
+
+      if (!mounted) return;
+
+      if (data["success"] == true) {
+        final user = data["user"];
+        final role = user["role"]?.toString().toLowerCase();
+
+        if (role == "admin") {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const AdminDashboard()),
+          );
+        } else if (role == "merchant") {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => MerchantDashboard(user: user)),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => ClientDashboard(user: user)),
+          );
+        }
+      } else {
+        showMessage(data["message"]?.toString() ?? "Login failed");
+      }
+    } catch (e) {
+      if (mounted) showMessage("Login error: $e");
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
   }
-}
 
   void showMessage(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -218,9 +229,7 @@ Future<void> login() async {
                       child: XynderLogo(size: 82),
                     ),
                   ),
-
                   const SizedBox(height: 18),
-
                   ShaderMask(
                     shaderCallback: (b) => _C.gradientAccent.createShader(b),
                     child: const Text(
@@ -233,9 +242,7 @@ Future<void> login() async {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 8),
-
                   const Text(
                     "Welcome Back",
                     textAlign: TextAlign.center,
@@ -245,9 +252,7 @@ Future<void> login() async {
                       fontWeight: FontWeight.w900,
                     ),
                   ),
-
                   const SizedBox(height: 6),
-
                   const Text(
                     "Login to continue your dashboard",
                     textAlign: TextAlign.center,
@@ -257,9 +262,7 @@ Future<void> login() async {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-
                   const SizedBox(height: 34),
-
                   TextField(
                     controller: emailCtrl,
                     keyboardType: TextInputType.emailAddress,
@@ -272,9 +275,7 @@ Future<void> login() async {
                       icon: Icons.email_rounded,
                     ),
                   ),
-
                   const SizedBox(height: 16),
-
                   TextField(
                     controller: passwordCtrl,
                     obscureText: hidePassword,
@@ -298,9 +299,7 @@ Future<void> login() async {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 28),
-
                   GestureDetector(
                     onTap: loading ? null : login,
                     child: Container(
@@ -349,16 +348,15 @@ Future<void> login() async {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 20),
-
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       color: _C.surface.withOpacity(0.7),
                       borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: Colors.white.withOpacity(0.08)),
+                      border: Border.all(
+                          color: Colors.white.withOpacity(0.08)),
                     ),
                     child: Row(
                       children: [
@@ -385,7 +383,8 @@ Future<void> login() async {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => const RegisterScreen(),
+                                      builder: (_) =>
+                                          const RegisterScreen(),
                                     ),
                                   );
                                 },
@@ -434,9 +433,7 @@ Future<void> login() async {
               ),
             ),
           ),
-
           const SizedBox(height: 24),
-
           const Text(
             "Manage your\nXynder account\nin one place.",
             style: TextStyle(
@@ -447,9 +444,7 @@ Future<void> login() async {
               letterSpacing: -0.6,
             ),
           ),
-
           const SizedBox(height: 14),
-
           const Text(
             "Access your dashboard, profile, requests, transfers, history and transaction chats.",
             style: TextStyle(
@@ -458,36 +453,20 @@ Future<void> login() async {
               height: 1.5,
             ),
           ),
-
           const SizedBox(height: 26),
-
           Row(
             children: [
-              smallBox(
-                title: "Admin",
-                icon: Icons.admin_panel_settings_rounded,
-              ),
+              smallBox(title: "Admin", icon: Icons.admin_panel_settings_rounded),
               const SizedBox(width: 12),
-              smallBox(
-                title: "Client",
-                icon: Icons.person_rounded,
-              ),
+              smallBox(title: "Client", icon: Icons.person_rounded),
             ],
           ),
-
           const SizedBox(height: 12),
-
           Row(
             children: [
-              smallBox(
-                title: "Merchant",
-                icon: Icons.storefront_rounded,
-              ),
+              smallBox(title: "Merchant", icon: Icons.storefront_rounded),
               const SizedBox(width: 12),
-              smallBox(
-                title: "Dashboard",
-                icon: Icons.dashboard_rounded,
-              ),
+              smallBox(title: "Dashboard", icon: Icons.dashboard_rounded),
             ],
           ),
         ],
@@ -495,10 +474,7 @@ Future<void> login() async {
     );
   }
 
-  Widget smallBox({
-    required String title,
-    required IconData icon,
-  }) {
+  Widget smallBox({required String title, required IconData icon}) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(14),
@@ -526,10 +502,7 @@ Future<void> login() async {
     );
   }
 
-  Widget glowCircle({
-    required double size,
-    required double opacity,
-  }) {
+  Widget glowCircle({required double size, required double opacity}) {
     return Container(
       width: size,
       height: size,
@@ -548,21 +521,12 @@ Future<void> login() async {
       backgroundColor: _C.bg,
       body: Stack(
         children: [
-          Positioned(
-            top: -120,
-            left: -90,
-            child: glowCircle(size: 280, opacity: 0.09),
-          ),
-          Positioned(
-            bottom: -140,
-            right: -90,
-            child: glowCircle(size: 320, opacity: 0.075),
-          ),
-          Positioned(
-            top: 130,
-            right: 80,
-            child: glowCircle(size: 90, opacity: 0.05),
-          ),
+          Positioned(top: -120, left: -90,
+              child: glowCircle(size: 280, opacity: 0.09)),
+          Positioned(bottom: -140, right: -90,
+              child: glowCircle(size: 320, opacity: 0.075)),
+          Positioned(top: 130, right: 80,
+              child: glowCircle(size: 90, opacity: 0.05)),
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
