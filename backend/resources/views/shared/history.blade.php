@@ -1,351 +1,395 @@
 @extends('layouts.admin', ['title' => 'Transaction History'])
 
 @push('styles')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
+
 <style>
-.xyn-history-page{
-    display:flex;
-    flex-direction:column;
-    gap:22px;
+:root{
+    --dark:#101518;
+    --hero:#2b2f32;
+    --box:#2b2f32;
+    --panel:#24292d;
+    --input:#1f2428;
+    --line:#3b4248;
+    --red:#e8192c;
+    --red2:#c91022;
+    --green:#0ecb81;
+    --gold:#ffc933;
+    --text:#fff;
+    --muted:#aeb4ba;
+    --muted2:#747b82;
 }
 
-.xyn-history-hero{
-    background:#0e1220;
-    border:1px solid rgba(255,255,255,.07);
-    border-radius:28px;
-    padding:26px;
+*{box-sizing:border-box}
+
+.hist-page{
+    margin:-24px;
+    min-height:100vh;
+    background:var(--dark);
+    color:var(--text);
+    font-family:Inter,Arial,sans-serif;
+    padding-bottom:60px;
+}
+
+.hist-hero{
     position:relative;
+    min-height:330px;
+    padding:65px 85px 120px;
+    background:var(--hero);
     overflow:hidden;
 }
 
-.xyn-history-hero::before{
-    content:'';
+.hist-hero::after{
+    content:"";
     position:absolute;
-    right:-90px;
-    top:-90px;
-    width:330px;
-    height:330px;
-    background:radial-gradient(circle,rgba(124,92,252,.22),transparent 70%);
+    inset:0;
+    opacity:.08;
+    background-image:linear-gradient(120deg,transparent 20%,rgba(255,255,255,.18) 21%,transparent 22%);
+    background-size:260px 260px;
 }
 
-.xyn-history-hero::after{
-    content:'';
-    position:absolute;
-    left:40%;
-    bottom:-90px;
-    width:240px;
-    height:240px;
-    background:radial-gradient(circle,rgba(6,182,212,.10),transparent 70%);
+.hist-hero-content{
+    position:relative;
+    z-index:2;
+    max-width:650px;
 }
 
-.xyn-history-title{
-    font-size:30px;
+.hist-eyebrow{
+    color:var(--red);
+    font-size:12px;
     font-weight:900;
-    margin-bottom:6px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    margin-bottom:14px;
+}
+
+.hist-title{
+    font-size:48px;
+    line-height:1.15;
+    font-weight:900;
+    margin:0 0 20px;
+}
+
+.hist-title span{color:var(--red)}
+
+.hist-sub{
+    color:#b8bdc2;
+    font-size:15px;
+    line-height:1.7;
+    font-weight:700;
+}
+
+.hist-kpis{
     position:relative;
-    z-index:1;
-}
-
-.xyn-history-title span{
-    background:linear-gradient(90deg,#7c5cfc,#06b6d4);
-    -webkit-background-clip:text;
-    -webkit-text-fill-color:transparent;
-    background-clip:text;
-}
-
-.xyn-history-sub{
-    color:#9ca3af;
-    font-size:14px;
-    position:relative;
-    z-index:1;
-}
-
-.xyn-kpi-grid{
+    z-index:5;
     display:grid;
     grid-template-columns:repeat(4,1fr);
-    gap:14px;
+    gap:18px;
+    margin:-65px 85px 0;
 }
 
-.xyn-kpi{
-    background:linear-gradient(145deg,#131929,#0e1220);
-    border:1px solid rgba(255,255,255,.07);
-    border-radius:22px;
-    padding:20px;
-    position:relative;
-    overflow:hidden;
+.hist-kpi{
+    background:var(--box);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:22px;
+    min-height:95px;
+    display:flex;
+    align-items:center;
+    gap:15px;
+    box-shadow:0 18px 40px rgba(0,0,0,.25);
 }
 
-.xyn-kpi::before{
-    content:'';
-    position:absolute;
-    right:-35px;
-    top:-35px;
-    width:110px;
-    height:110px;
+.hist-kpi-icon{
+    width:46px;
+    height:46px;
     border-radius:50%;
-    background:rgba(124,92,252,.13);
-}
-
-.xyn-kpi small{
-    display:block;
-    color:#9ca3af;
-    font-weight:900;
-    text-transform:uppercase;
-    font-size:11px;
-    letter-spacing:.08em;
-    margin-bottom:8px;
-}
-
-.xyn-kpi b{
-    display:block;
-    font-size:25px;
-    font-weight:900;
-}
-
-.xyn-history-list{
-    display:flex;
-    flex-direction:column;
-    gap:14px;
-}
-
-.xyn-history-card{
-    background:#0e1220;
-    border:1px solid rgba(255,255,255,.07);
-    border-radius:24px;
-    padding:20px;
-    position:relative;
-    overflow:hidden;
-    transition:.15s;
-}
-
-.xyn-history-card:hover{
-    transform:translateY(-2px);
-    border-color:rgba(124,92,252,.25);
-    background:#131929;
-}
-
-.xyn-history-card::before{
-    content:'';
-    position:absolute;
-    right:-60px;
-    top:-60px;
-    width:160px;
-    height:160px;
-    border-radius:50%;
-    background:rgba(124,92,252,.08);
-}
-
-.xyn-history-inner{
-    display:flex;
-    align-items:flex-start;
-    justify-content:space-between;
-    gap:20px;
-    position:relative;
-    z-index:1;
-}
-
-.xyn-left{
-    display:flex;
-    gap:14px;
-    min-width:0;
-}
-
-.xyn-icon{
-    width:52px;
-    height:52px;
-    border-radius:17px;
+    background:#3a1018;
+    color:var(--red);
     display:flex;
     align-items:center;
     justify-content:center;
     font-size:22px;
-    font-weight:900;
     flex-shrink:0;
 }
 
-.xyn-icon.transfer{
-    background:rgba(124,92,252,.16);
-    color:#a78bfa;
-}
-
-.xyn-icon.buy{
-    background:rgba(239,68,68,.14);
-    color:#f87171;
-}
-
-.xyn-icon.sell{
-    background:rgba(16,185,129,.14);
-    color:#34d399;
-}
-
-.xyn-info{
-    min-width:0;
-}
-
-.xyn-row-title{
-    display:flex;
-    align-items:center;
-    gap:9px;
-    flex-wrap:wrap;
+.hist-kpi small{
+    display:block;
+    color:#9fa5aa;
+    font-size:11px;
+    font-weight:900;
+    text-transform:uppercase;
+    letter-spacing:.08em;
     margin-bottom:5px;
 }
 
-.xyn-row-title h2{
-    font-size:18px;
+.hist-kpi b{
+    display:block;
+    font-size:22px;
     font-weight:900;
-    color:#fff;
-    margin:0;
 }
 
-.xyn-type-pill{
+.hist-list{
+    margin:34px 85px 0;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+}
+
+.hist-card{
+    background:var(--box);
+    border:1px solid var(--line);
+    border-radius:6px;
+    overflow:hidden;
+    transition:.15s;
+}
+
+.hist-card:hover{
+    border-color:var(--red);
+    background:#30363a;
+}
+
+.hist-card-inner{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:22px;
+    padding:22px;
+}
+
+.hist-left{
+    display:flex;
+    gap:15px;
+    min-width:0;
+}
+
+.hist-icon{
+    width:54px;
+    height:54px;
+    border-radius:50%;
+    flex:0 0 54px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:24px;
+    font-weight:900;
+}
+
+.hist-icon.transfer{
+    background:#3a1018;
+    color:#ff6b7b;
+}
+
+.hist-icon.buy{
+    background:#0d2b1e;
+    color:var(--green);
+}
+
+.hist-icon.sell{
+    background:#3a1018;
+    color:#ff6b7b;
+}
+
+.hist-info{min-width:0}
+
+.hist-row-title{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:6px;
+}
+
+.hist-row-title h2{
+    margin:0;
+    color:#fff;
+    font-size:19px;
+    font-weight:900;
+}
+
+.hist-pill{
+    padding:4px 9px;
+    border-radius:20px;
     font-size:10px;
     font-weight:900;
-    padding:4px 8px;
-    border-radius:999px;
-    letter-spacing:.06em;
+    letter-spacing:.05em;
 }
 
-.xyn-type-pill.transfer{
-    background:rgba(124,92,252,.16);
-    color:#a78bfa;
+.hist-pill.transfer{
+    background:#3a1018;
+    color:#ff6b7b;
 }
 
-.xyn-type-pill.request{
-    background:rgba(245,158,11,.14);
-    color:#fbbf24;
+.hist-pill.request{
+    background:#3b2a09;
+    color:var(--gold);
 }
 
-.xyn-date{
-    color:#6b7280;
+.hist-date{
+    color:#747b82;
     font-size:12px;
-    margin-bottom:13px;
+    font-weight:800;
+    margin-bottom:14px;
 }
 
-.xyn-detail-grid{
+.hist-grid{
     display:grid;
     grid-template-columns:repeat(2,minmax(0,1fr));
-    gap:8px 20px;
+    gap:9px 22px;
+}
+
+.hist-grid div{
+    color:#9fa5aa;
     font-size:13px;
-    color:#9ca3af;
-}
-
-.xyn-detail-grid span{
-    color:#6b7280;
     font-weight:800;
 }
 
-.xyn-detail-grid strong{
+.hist-grid span{
+    color:#747b82;
+    font-weight:900;
+}
+
+.hist-grid strong{
     color:#e5e7eb;
-    font-weight:800;
+    font-weight:900;
     word-break:break-word;
 }
 
-.xyn-note{
+.hist-note{
     grid-column:1 / -1;
-    padding-top:4px;
 }
 
-.xyn-right{
+.hist-right{
     text-align:right;
     flex-shrink:0;
 }
 
-.xyn-amount{
-    font-size:24px;
+.hist-amount{
+    font-size:26px;
     font-weight:900;
     color:#fff;
-    margin-bottom:9px;
+    margin-bottom:10px;
 }
 
-.xyn-status{
+.hist-status{
     display:inline-block;
-    padding:6px 11px;
-    border-radius:999px;
+    padding:6px 12px;
+    border-radius:20px;
     font-size:11px;
     font-weight:900;
-    border:1px solid transparent;
 }
 
-.xyn-status.approved,
-.xyn-status.completed{
-    background:rgba(16,185,129,.12);
-    color:#34d399;
-    border-color:rgba(16,185,129,.24);
+.hist-status.approved,
+.hist-status.completed{
+    background:#0d2b1e;
+    color:var(--green);
 }
 
-.xyn-status.rejected{
-    background:rgba(239,68,68,.12);
-    color:#f87171;
-    border-color:rgba(239,68,68,.24);
+.hist-status.rejected{
+    background:#3a1018;
+    color:#ff6b7b;
 }
 
-.xyn-status.pending{
-    background:rgba(245,158,11,.13);
-    color:#fbbf24;
-    border-color:rgba(245,158,11,.24);
+.hist-status.pending{
+    background:#3b2a09;
+    color:var(--gold);
 }
 
-.xyn-status.default{
-    background:rgba(107,114,128,.16);
-    color:#d1d5db;
-    border-color:rgba(107,114,128,.24);
+.hist-status.default{
+    background:#1f2428;
+    color:#c9ced3;
 }
 
-.xyn-empty{
-    background:#0e1220;
-    border:1px solid rgba(255,255,255,.07);
-    border-radius:28px;
-    padding:50px 20px;
+.hist-empty{
+    margin:34px 85px 0;
+    background:var(--box);
+    border:1px solid var(--line);
+    border-radius:6px;
     text-align:center;
-    color:#6b7280;
+    padding:55px 25px;
+    color:#9fa5aa;
+    font-weight:800;
 }
 
-.xyn-empty-icon{
-    width:70px;
-    height:70px;
-    margin:0 auto 14px;
-    border-radius:24px;
-    background:rgba(124,92,252,.12);
-    color:#a78bfa;
+.hist-empty-icon{
+    width:76px;
+    height:76px;
+    border-radius:50%;
+    margin:0 auto 16px;
+    background:#3a1018;
+    color:var(--red);
     display:flex;
     align-items:center;
     justify-content:center;
-    font-size:32px;
+    font-size:38px;
 }
 
-.xyn-pager{
-    margin-top:8px;
-    background:#0e1220;
-    border:1px solid rgba(255,255,255,.07);
-    border-radius:20px;
-    padding:14px;
+.hist-empty h2{
+    margin:0 0 8px;
+    color:#fff;
+    font-size:22px;
+    font-weight:900;
 }
 
-@media(max-width:1000px){
-    .xyn-kpi-grid{
+.hist-pager{
+    margin:22px 85px 0;
+    background:var(--box);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:16px 20px;
+}
+
+.hist-pager nav{
+    display:flex;
+    justify-content:center;
+}
+
+.hist-pager svg{
+    width:18px;
+    height:18px;
+}
+
+@media(max-width:1100px){
+    .hist-kpis{
         grid-template-columns:repeat(2,1fr);
     }
 
-    .xyn-detail-grid{
+    .hist-grid{
         grid-template-columns:1fr;
     }
 }
 
-@media(max-width:700px){
-    .xyn-kpi-grid{
+@media(max-width:760px){
+    .hist-page{margin:-16px}
+
+    .hist-hero{
+        padding:45px 24px 110px;
+    }
+
+    .hist-title{
+        font-size:36px;
+    }
+
+    .hist-kpis,
+    .hist-list,
+    .hist-empty,
+    .hist-pager{
+        margin-left:20px;
+        margin-right:20px;
+    }
+
+    .hist-kpis{
         grid-template-columns:1fr;
     }
 
-    .xyn-history-inner{
+    .hist-card-inner{
         flex-direction:column;
     }
 
-    .xyn-right{
+    .hist-right{
         width:100%;
         text-align:left;
-        padding-left:66px;
-    }
-
-    .xyn-history-title{
-        font-size:25px;
+        padding-left:69px;
     }
 }
 </style>
@@ -379,40 +423,76 @@
     })->count();
 @endphp
 
-<div class="xyn-history-page">
+<div class="hist-page">
 
-  
+    <section class="hist-hero">
+        <div class="hist-hero-content">
+            <div class="hist-eyebrow">Xynder Wallet</div>
 
-    <div class="xyn-kpi-grid">
-        <div class="xyn-kpi">
-            <small>Total Records</small>
-            <b>{{ $totalCount }}</b>
+            <h1 class="hist-title">
+                Transaction
+                <span>History</span>
+            </h1>
+
+            <div class="hist-sub">
+                View all wallet requests and wallet transfers in one clean timeline.
+                Track transaction status, sender, receiver, merchant details, and full USD volume.
+            </div>
+        </div>
+    </section>
+
+    <section class="hist-kpis">
+        <div class="hist-kpi">
+            <div class="hist-kpi-icon">
+                <i class="ti ti-list-details"></i>
+            </div>
+            <div>
+                <small>Total Records</small>
+                <b>{{ $totalCount }}</b>
+            </div>
         </div>
 
-        <div class="xyn-kpi">
-            <small>Requests</small>
-            <b style="color:#fbbf24;">{{ $requestCount }}</b>
+        <div class="hist-kpi">
+            <div class="hist-kpi-icon">
+                <i class="ti ti-receipt"></i>
+            </div>
+            <div>
+                <small>Requests</small>
+                <b style="color:var(--gold)">{{ $requestCount }}</b>
+            </div>
         </div>
 
-        <div class="xyn-kpi">
-            <small>Transfers</small>
-            <b style="color:#a78bfa;">{{ $transferCount }}</b>
+        <div class="hist-kpi">
+            <div class="hist-kpi-icon">
+                <i class="ti ti-arrows-transfer-up"></i>
+            </div>
+            <div>
+                <small>Transfers</small>
+                <b style="color:#ff6b7b">{{ $transferCount }}</b>
+            </div>
         </div>
 
-        <div class="xyn-kpi">
-            <small>Total USD Volume</small>
-            <b style="color:#34d399;">${{ number_format((float)$totalUsd, 2) }}</b>
+        <div class="hist-kpi">
+            <div class="hist-kpi-icon">
+                <i class="ti ti-currency-dollar"></i>
+            </div>
+            <div>
+                <small>Total USD Volume</small>
+                <b style="color:var(--green)">${{ number_format((float)$totalUsd, 2) }}</b>
+            </div>
         </div>
-    </div>
+    </section>
 
     @if($history->count() === 0)
-        <div class="xyn-empty">
-            <div class="xyn-empty-icon">◷</div>
-            <h2 style="font-size:20px;font-weight:900;color:#fff;margin-bottom:6px;">No History Found</h2>
+        <section class="hist-empty">
+            <div class="hist-empty-icon">
+                <i class="ti ti-history-off"></i>
+            </div>
+            <h2>No History Found</h2>
             <p>No wallet requests or wallet transfers available yet.</p>
-        </div>
+        </section>
     @else
-        <div class="xyn-history-list">
+        <section class="hist-list">
             @foreach($history as $row)
                 @php
                     $type = $row['source_type'];
@@ -441,30 +521,33 @@
                         : (($item->type ?? '') === 'withdrawal' ? 'sell' : 'buy');
 
                     $icon = $isTransfer
-                        ? '⇄'
-                        : (($item->type ?? '') === 'withdrawal' ? '↑' : '↓');
+                        ? 'ti-arrows-transfer-up'
+                        : (($item->type ?? '') === 'withdrawal' ? 'ti-trending-down' : 'ti-trending-up');
                 @endphp
 
-                <div class="xyn-history-card">
-                    <div class="xyn-history-inner">
-                        <div class="xyn-left">
-                            <div class="xyn-icon {{ $iconClass }}">
-                                {{ $icon }}
+                <div class="hist-card">
+                    <div class="hist-card-inner">
+
+                        <div class="hist-left">
+                            <div class="hist-icon {{ $iconClass }}">
+                                <i class="ti {{ $icon }}"></i>
                             </div>
 
-                            <div class="xyn-info">
-                                <div class="xyn-row-title">
+                            <div class="hist-info">
+                                <div class="hist-row-title">
                                     <h2>{{ $title }}</h2>
-                                    <span class="xyn-type-pill {{ $isTransfer ? 'transfer' : 'request' }}">
+
+                                    <span class="hist-pill {{ $isTransfer ? 'transfer' : 'request' }}">
                                         {{ $isTransfer ? 'TRANSFER' : 'REQUEST' }}
                                     </span>
                                 </div>
 
-                                <div class="xyn-date">
+                                <div class="hist-date">
+                                    <i class="ti ti-calendar"></i>
                                     {{ $item->created_at?->format('d M Y, h:i A') }}
                                 </div>
 
-                                <div class="xyn-detail-grid">
+                                <div class="hist-grid">
                                     <div>
                                         <span>Transaction No:</span>
                                         <strong>{{ $transactionNo }}</strong>
@@ -503,7 +586,7 @@
                                     @endif
 
                                     @if(!empty($item->note))
-                                        <div class="xyn-note">
+                                        <div class="hist-note">
                                             <span>Note:</span>
                                             <strong>{{ $item->note }}</strong>
                                         </div>
@@ -512,23 +595,26 @@
                             </div>
                         </div>
 
-                        <div class="xyn-right">
-                            <div class="xyn-amount">
+                        <div class="hist-right">
+                            <div class="hist-amount">
                                 ${{ $amount }}
                             </div>
 
-                            <span class="xyn-status {{ $statusClass }}">
+                            <span class="hist-status {{ $statusClass }}">
                                 {{ strtoupper($status) }}
                             </span>
                         </div>
+
                     </div>
                 </div>
             @endforeach
-        </div>
+        </section>
 
-        <div class="xyn-pager">
-            {{ $history->links() }}
-        </div>
+        @if($history->hasPages())
+            <section class="hist-pager">
+                {{ $history->links() }}
+            </section>
+        @endif
     @endif
 
 </div>

@@ -1,1097 +1,1444 @@
 @php
     $isMerchant = ($mode ?? 'client') === 'merchant';
-    $roleLabel   = $isMerchant ? 'Merchant' : 'Client';
-    $name        = $user->name ?? $roleLabel;
+    $roleLabel = $isMerchant ? 'Merchant' : 'Client';
+    $name = $user->name ?? $roleLabel;
 
-    $totalUsd    = $latestRequests->sum('amount');
-    $totalInr    = $latestRequests->sum('total_amount');
-    $approvedCount = $latestRequests->where('status','approved')->count();
-    $pendingCount  = $latestRequests->where('status','pending')->count();
-    $rejectedCount = $latestRequests->where('status','rejected')->count();
-    $totalCount    = $latestRequests->count();
+    $totalUsd = $latestRequests->sum('amount');
+    $totalInr = $latestRequests->sum('total_amount');
 
-    /* ── 6-month data for chart ── */
-    $monthlyIncome  = [];
+    $approvedCount = $latestRequests->where('status', 'approved')->count();
+    $pendingCount = $latestRequests->where('status', 'pending')->count();
+    $rejectedCount = $latestRequests->where('status', 'rejected')->count();
+    $totalCount = $latestRequests->count();
+
+    $monthlyIncome = [];
     $monthlyExpense = [];
-    $monthLabels    = [];
+    $monthLabels = [];
+
     for ($i = 5; $i >= 0; $i--) {
         $m = now()->subMonths($i);
-        $monthLabels[]    = $m->format('M Y');
-        $monthlyIncome[]  = round((float)$latestRequests->where('type','withdraw')
-            ->filter(fn($r) => $r->created_at && $r->created_at->month==$m->month && $r->created_at->year==$m->year)
+        $monthLabels[] = $m->format('M Y');
+
+        $monthlyIncome[] = round((float)$latestRequests->where('type', 'withdrawal')
+            ->filter(fn($r) => $r->created_at && $r->created_at->month == $m->month && $r->created_at->year == $m->year)
             ->sum('amount'), 2);
-        $monthlyExpense[] = round((float)$latestRequests->where('type','deposit')
-            ->filter(fn($r) => $r->created_at && $r->created_at->month==$m->month && $r->created_at->year==$m->year)
+
+        $monthlyExpense[] = round((float)$latestRequests->where('type', 'deposit')
+            ->filter(fn($r) => $r->created_at && $r->created_at->month == $m->month && $r->created_at->year == $m->year)
             ->sum('amount'), 2);
     }
 
-    /* ── 4-week data ── */
-    $weeklyIncome  = [];
+    $weeklyIncome = [];
     $weeklyExpense = [];
-    $weekLabels    = [];
+    $weekLabels = [];
+
     for ($i = 3; $i >= 0; $i--) {
         $start = now()->startOfWeek()->subWeeks($i);
-        $end   = (clone $start)->endOfWeek();
-        $weekLabels[]    = 'Wk '.($start->weekOfYear);
-        $weeklyIncome[]  = round((float)$latestRequests->where('type','withdraw')
-            ->filter(fn($r) => $r->created_at && $r->created_at->between($start,$end))->sum('amount'),2);
-        $weeklyExpense[] = round((float)$latestRequests->where('type','deposit')
-            ->filter(fn($r) => $r->created_at && $r->created_at->between($start,$end))->sum('amount'),2);
+        $end = (clone $start)->endOfWeek();
+
+        $weekLabels[] = 'Wk '.$start->weekOfYear;
+
+        $weeklyIncome[] = round((float)$latestRequests->where('type', 'withdrawal')
+            ->filter(fn($r) => $r->created_at && $r->created_at->between($start, $end))
+            ->sum('amount'), 2);
+
+        $weeklyExpense[] = round((float)$latestRequests->where('type', 'deposit')
+            ->filter(fn($r) => $r->created_at && $r->created_at->between($start, $end))
+            ->sum('amount'), 2);
     }
 
-    /* ── 7-day data ── */
-    $dailyIncome  = [];
+    $dailyIncome = [];
     $dailyExpense = [];
-    $dayLabels    = [];
+    $dayLabels = [];
+
     for ($i = 6; $i >= 0; $i--) {
         $d = now()->subDays($i);
-        $dayLabels[]    = $d->format('D');
-        $dailyIncome[]  = round((float)$latestRequests->where('type','withdraw')
-            ->filter(fn($r) => $r->created_at && $r->created_at->isToday($d))->sum('amount'),2);
-        $dailyExpense[] = round((float)$latestRequests->where('type','deposit')
-            ->filter(fn($r) => $r->created_at && $r->created_at->isToday($d))->sum('amount'),2);
+        $dayLabels[] = $d->format('D');
+
+        $dailyIncome[] = round((float)$latestRequests->where('type', 'withdrawal')
+            ->filter(fn($r) => $r->created_at && $r->created_at->isSameDay($d))
+            ->sum('amount'), 2);
+
+        $dailyExpense[] = round((float)$latestRequests->where('type', 'deposit')
+            ->filter(fn($r) => $r->created_at && $r->created_at->isSameDay($d))
+            ->sum('amount'), 2);
     }
 
-    /* ── Donut chart data ── */
-    $buyCount  = $latestRequests->where('type','deposit')->count();
-    $sellCount = $latestRequests->where('type','withdraw')->count();
-
-    /* ── Recent 5 for activity feed ── */
+    $buyCount = $latestRequests->where('type', 'deposit')->count();
+    $sellCount = $latestRequests->where('type', 'withdrawal')->count();
     $recent5 = $latestRequests->sortByDesc('created_at')->take(5);
+
+    $profileRoute = $isMerchant ? route('merchant.profile') : route('client.profile');
+    $requestRoute = $isMerchant ? route('merchant.requests') : route('client.requests');
+    $transferRoute = $isMerchant ? route('merchant.transfers') : route('client.transfers');
+    $chatRoute = $isMerchant ? route('merchant.chats') : route('client.chats');
+    $historyRoute = $isMerchant ? route('merchant.history') : route('client.history');
 @endphp
-<!-------------------------------------------------------------------
-  XYNDER – MASSIVE DARK FINTECH DASHBOARD
-  Drop into: resources/views/shared/dark_dashboard.blade.php
--------------------------------------------------------------------->
+
 <style>
-/* ═══════════════════════════════════════════════════════
-   RESET & TOKENS
-═══════════════════════════════════════════════════════ */
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{background:#080b12!important;color:#e8eaf0!important;font-family:'Inter',system-ui,sans-serif!important}
-.card,.kpi{background:transparent!important;box-shadow:none!important;border:0!important}
-
 :root{
-  --bg:#080b12;
-  --s1:#0e1220;   /* card surface */
-  --s2:#131929;   /* nested surface */
-  --s3:#1a2235;   /* hover state */
-  --bdr:rgba(255,255,255,0.07);
-  --bdr2:rgba(255,255,255,0.12);
-  --txt:#e8eaf0;
-  --muted:#6b7280;
-  --muted2:#9ca3af;
-
-  /* accent palette */
-  --violet:#7c5cfc;
-  --violet2:#5b3fd8;
-  --green:#10b981;
-  --green2:#059669;
-  --amber:#f59e0b;
-  --red:#ef4444;
-  --blue:#3b82f6;
-  --cyan:#06b6d4;
-  --pink:#ec4899;
-
-  --r-sm:12px;
-  --r-md:16px;
-  --r-lg:22px;
-  --r-xl:28px;
+    --dark:#101518;
+    --hero:#2b2f32;
+    --box:#2b2f32;
+    --panel:#24292d;
+    --input:#1f2428;
+    --line:#3b4248;
+    --red:#e8192c;
+    --red2:#c91022;
+    --green:#0ecb81;
+    --gold:#ffc933;
+    --text:#fff;
+    --muted:#aeb4ba;
+    --muted2:#747b82;
 }
 
-/* ═══════════════════════════════════════════════════════
-   LAYOUT GRID
-═══════════════════════════════════════════════════════ */
-.xyn-shell{
-  display:grid;
-  grid-template-columns:280px 1fr;
-  gap:20px;
-  padding:0 0 32px;
-  align-items:start;
+*{box-sizing:border-box}
+
+.dash-page{
+    margin:-24px;
+    min-height:100vh;
+    background:var(--dark);
+    color:var(--text);
+    font-family:Inter,Arial,sans-serif;
+    padding-bottom:60px;
 }
 
-/* ═══════════════════════════════════════════════════════
-   SIDEBAR
-═══════════════════════════════════════════════════════ */
-.xyn-sidebar{
-  display:flex;flex-direction:column;gap:16px;
-  position:sticky;top:20px;
+.dash-hero{
+    position:relative;
+    min-height:330px;
+    padding:65px 85px 120px;
+    background:var(--hero);
+    overflow:hidden;
 }
 
-/* Profile Card */
-.xyn-profile{
-  background:var(--s1);
-  border:1px solid var(--bdr);
-  border-radius:var(--r-xl);
-  padding:28px 22px;
-  text-align:center;
-  position:relative;
-  overflow:hidden;
-}
-.xyn-profile::before{
-  content:'';position:absolute;
-  top:-60px;left:50%;transform:translateX(-50%);
-  width:220px;height:220px;border-radius:50%;
-  background:radial-gradient(circle,rgba(124,92,252,0.18) 0%,transparent 70%);
-  pointer-events:none;
-}
-.xyn-av-ring{
-  width:72px;height:72px;border-radius:50%;
-  background:linear-gradient(135deg,var(--violet),var(--cyan));
-  padding:2px;margin:0 auto 14px;
-  position:relative;z-index:1;
-}
-.xyn-av-inner{
-  width:100%;height:100%;border-radius:50%;
-  background:var(--s1);
-  display:flex;align-items:center;justify-content:center;
-  font-size:26px;font-weight:900;color:var(--violet);
-}
-.xyn-profile h3{font-size:17px;font-weight:800;margin-bottom:4px;position:relative;z-index:1;}
-.xyn-profile .xyn-role{
-  font-size:11px;font-weight:700;
-  color:var(--muted2);letter-spacing:.07em;text-transform:uppercase;
-}
-.xyn-wallet-id{
-  margin:14px 0 0;padding:10px 14px;
-  background:var(--s2);border:1px solid var(--bdr);border-radius:var(--r-sm);
-  font-family:monospace;font-size:13px;
-  display:flex;align-items:center;justify-content:space-between;gap:8px;
-}
-.xyn-wallet-id small{color:var(--muted);font-size:10px;display:block;margin-bottom:2px;font-family:inherit;}
-.xyn-wallet-id span{color:var(--txt);}
-.xyn-copy-btn{
-  background:rgba(124,92,252,0.12);border:none;
-  color:var(--violet);border-radius:7px;
-  padding:5px 9px;cursor:pointer;font-size:13px;
-}
-.xyn-copy-btn:hover{background:rgba(124,92,252,0.25);}
-.xyn-vbadge{
-  display:inline-flex;align-items:center;gap:5px;
-  margin-top:12px;padding:6px 14px;border-radius:999px;
-  font-size:11px;font-weight:800;letter-spacing:.04em;
-}
-.xyn-vbadge.ok{background:rgba(16,185,129,0.12);color:#34d399;}
-.xyn-vbadge.pend{background:rgba(245,158,11,0.12);color:#fbbf24;}
-.xyn-vbadge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;}
-
-/* Balance Sheet Panel */
-.xyn-bs{
-  background:var(--s1);border:1px solid var(--bdr);
-  border-radius:var(--r-xl);padding:22px;
-}
-.xyn-panel-title{
-  font-size:11px;font-weight:800;color:var(--muted);
-  text-transform:uppercase;letter-spacing:.08em;margin-bottom:16px;
-  display:flex;align-items:center;justify-content:space-between;
-}
-.xyn-panel-title a{font-size:10px;color:var(--violet);text-decoration:none;}
-.xyn-bs-row{
-  display:flex;justify-content:space-between;align-items:center;
-  padding:11px 0;border-bottom:1px solid var(--bdr);
-}
-.xyn-bs-row:last-child{border-bottom:0;}
-.xyn-bs-lbl{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--muted2);}
-.xyn-bs-dot{width:9px;height:9px;border-radius:3px;flex-shrink:0;}
-.xyn-bs-val{font-size:14px;font-weight:800;color:var(--txt);}
-.xyn-bs-divider{height:1px;background:var(--bdr2);margin:12px 0;}
-.xyn-bs-total{display:flex;justify-content:space-between;align-items:baseline;}
-.xyn-bs-total-lbl{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
-.xyn-bs-total-val{font-size:24px;font-weight:900;
-  background:linear-gradient(90deg,var(--violet),var(--cyan));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+.dash-hero::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    opacity:.08;
+    background-image:linear-gradient(120deg,transparent 20%,rgba(255,255,255,.18) 21%,transparent 22%);
+    background-size:260px 260px;
 }
 
-/* Status Donut */
-.xyn-donut-panel{
-  background:var(--s1);border:1px solid var(--bdr);
-  border-radius:var(--r-xl);padding:22px;
-}
-.xyn-donut-wrap{
-  display:flex;align-items:center;gap:20px;margin-top:14px;
-}
-.xyn-donut-svg{flex-shrink:0;}
-.xyn-donut-legend{flex:1;display:flex;flex-direction:column;gap:10px;}
-.xyn-dl-row{display:flex;justify-content:space-between;align-items:center;}
-.xyn-dl-key{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted2);}
-.xyn-dl-key span{width:10px;height:10px;border-radius:3px;}
-.xyn-dl-val{font-size:14px;font-weight:800;}
-
-/* Activity Feed */
-.xyn-activity{
-  background:var(--s1);border:1px solid var(--bdr);
-  border-radius:var(--r-xl);padding:22px;
-}
-.xyn-act-list{display:flex;flex-direction:column;gap:0;}
-.xyn-act-item{
-  display:flex;align-items:center;gap:12px;
-  padding:12px 0;border-bottom:1px solid var(--bdr);
-}
-.xyn-act-item:last-child{border-bottom:0;}
-.xyn-act-icon{
-  width:36px;height:36px;border-radius:10px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:16px;flex-shrink:0;
-}
-.xyn-act-icon.buy{background:rgba(239,68,68,0.12);color:#f87171;}
-.xyn-act-icon.sell{background:rgba(16,185,129,0.12);color:#34d399;}
-.xyn-act-body{flex:1;min-width:0;}
-.xyn-act-body b{display:block;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.xyn-act-body small{color:var(--muted);font-size:11px;}
-.xyn-act-amt{font-size:13px;font-weight:800;text-align:right;white-space:nowrap;}
-
-/* ═══════════════════════════════════════════════════════
-   MAIN CONTENT
-═══════════════════════════════════════════════════════ */
-.xyn-main{display:flex;flex-direction:column;gap:20px;min-width:0;}
-
-/* ── Top hero strip ── */
-.xyn-hero{
-  background:var(--s1);border:1px solid var(--bdr);
-  border-radius:var(--r-xl);padding:26px 28px;
-  display:flex;justify-content:space-between;align-items:center;
-  position:relative;overflow:hidden;
-}
-.xyn-hero::before{
-  content:'';position:absolute;
-  right:-80px;top:-80px;
-  width:320px;height:320px;border-radius:50%;
-  background:radial-gradient(circle,rgba(124,92,252,0.12) 0%,transparent 65%);
-  pointer-events:none;
-}
-.xyn-hero::after{
-  content:'';position:absolute;
-  right:120px;bottom:-60px;
-  width:200px;height:200px;border-radius:50%;
-  background:radial-gradient(circle,rgba(6,182,212,0.08) 0%,transparent 65%);
-  pointer-events:none;
-}
-.xyn-hero-left h1{font-size:26px;font-weight:900;margin-bottom:5px;}
-.xyn-hero-left h1 span{
-  background:linear-gradient(90deg,var(--violet),var(--cyan));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-}
-.xyn-hero-left p{font-size:14px;color:var(--muted2);}
-.xyn-hero-right{
-  display:flex;align-items:center;gap:12px;
-  position:relative;z-index:1;
-}
-.xyn-hero-time{
-  text-align:right;
-}
-.xyn-hero-time .ht-date{font-size:14px;font-weight:700;color:var(--txt);}
-.xyn-hero-time .ht-greet{font-size:12px;color:var(--muted2);}
-
-/* ── KPI Row ── */
-.xyn-kpi-row{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:14px;
-}
-.xyn-kpi-card{
-  border-radius:var(--r-lg);
-  padding:20px;
-  border:1px solid transparent;
-  position:relative;overflow:hidden;
-  transition:transform .15s;
-}
-.xyn-kpi-card:hover{transform:translateY(-2px);}
-.xyn-kpi-card.k1{background:linear-gradient(140deg,#1a1060,#0e0a40);border-color:rgba(124,92,252,0.25);}
-.xyn-kpi-card.k2{background:linear-gradient(140deg,#062a1e,#031a12);border-color:rgba(16,185,129,0.2);}
-.xyn-kpi-card.k3{background:linear-gradient(140deg,#1c1106,#120b02);border-color:rgba(245,158,11,0.2);}
-.xyn-kpi-card.k4{background:linear-gradient(140deg,#0d1f38,#071228);border-color:rgba(59,130,246,0.2);}
-
-.xyn-kpi-card .kpi-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;}
-.xyn-kpi-card .kpi-badge{
-  width:42px;height:42px;border-radius:12px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:20px;
-}
-.k1 .kpi-badge{background:rgba(124,92,252,0.2);}
-.k2 .kpi-badge{background:rgba(16,185,129,0.15);}
-.k3 .kpi-badge{background:rgba(245,158,11,0.15);}
-.k4 .kpi-badge{background:rgba(59,130,246,0.15);}
-
-.xyn-kpi-card .kpi-trend{
-  font-size:11px;font-weight:800;padding:4px 9px;border-radius:999px;
-}
-.kpi-trend.up{background:rgba(16,185,129,0.12);color:#34d399;}
-.kpi-trend.down{background:rgba(239,68,68,0.12);color:#f87171;}
-.kpi-trend.neutral{background:rgba(107,114,128,0.15);color:#9ca3af;}
-
-.xyn-kpi-card .kpi-label{font-size:11px;font-weight:700;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
-.xyn-kpi-card .kpi-val{font-size:28px;font-weight:900;color:#fff;line-height:1;}
-.xyn-kpi-card .kpi-sub{font-size:12px;color:rgba(255,255,255,0.4);margin-top:6px;}
-.xyn-kpi-card .kpi-bar{
-  height:3px;border-radius:2px;margin-top:14px;
-  background:rgba(255,255,255,0.08);overflow:hidden;
-}
-.xyn-kpi-card .kpi-bar-fill{height:100%;border-radius:2px;transition:width 1s ease;}
-.k1 .kpi-bar-fill{background:linear-gradient(90deg,var(--violet),var(--cyan));}
-.k2 .kpi-bar-fill{background:linear-gradient(90deg,var(--green),#34d399);}
-.k3 .kpi-bar-fill{background:linear-gradient(90deg,var(--amber),#fcd34d);}
-.k4 .kpi-bar-fill{background:linear-gradient(90deg,var(--blue),var(--cyan));}
-
-/* ── Wallet Cards ── */
-.xyn-wallet-row{
-  display:grid;grid-template-columns:repeat(3,1fr);gap:14px;
-}
-.xyn-wcard{
-  border-radius:var(--r-lg);padding:22px;
-  position:relative;overflow:hidden;min-height:130px;
-  transition:transform .15s;
-}
-.xyn-wcard:hover{transform:translateY(-3px);}
-.xyn-wcard.wc1{background:linear-gradient(135deg,#4f35c8,#7c5cfc,#a78bfa);}
-.xyn-wcard.wc2{background:linear-gradient(135deg,#9d174d,#db2777,#f472b6);}
-.xyn-wcard.wc3{background:linear-gradient(135deg,#065f46,#059669,#34d399);}
-.xyn-wcard-shine{
-  position:absolute;top:-30%;right:-10%;
-  width:180px;height:180px;border-radius:50%;
-  background:rgba(255,255,255,0.06);pointer-events:none;
-}
-.xyn-wcard-shine2{
-  position:absolute;bottom:-40%;left:-10%;
-  width:130px;height:130px;border-radius:50%;
-  background:rgba(255,255,255,0.04);pointer-events:none;
-}
-.xyn-wcard .wc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
-.xyn-wcard .wc-type{font-size:11px;font-weight:800;color:rgba(255,255,255,0.65);text-transform:uppercase;letter-spacing:.08em;}
-.xyn-wcard .wc-status-pill{
-  background:rgba(255,255,255,0.18);
-  color:#fff;font-size:10px;font-weight:800;
-  padding:3px 10px;border-radius:999px;
-}
-.xyn-wcard .wc-val{font-size:24px;font-weight:900;color:#fff;margin-bottom:4px;}
-.xyn-wcard .wc-label{font-size:11px;color:rgba(255,255,255,0.55);}
-.xyn-wcard .wc-chip{
-  position:absolute;bottom:18px;right:18px;
-  background:rgba(255,255,255,0.12);border-radius:8px;
-  padding:5px 10px;font-size:12px;color:rgba(255,255,255,0.8);font-weight:700;
+.dash-hero-content{
+    position:relative;
+    z-index:2;
+    max-width:680px;
 }
 
-/* ── Chart Section ── */
-.xyn-chart-section{
-  background:var(--s1);border:1px solid var(--bdr);
-  border-radius:var(--r-xl);padding:24px;
-}
-.xyn-chart-head{
-  display:flex;justify-content:space-between;align-items:center;
-  margin-bottom:6px;
-}
-.xyn-chart-head h2{font-size:17px;font-weight:800;}
-.xyn-tab-group{display:flex;background:var(--s2);border-radius:var(--r-sm);padding:3px;gap:2px;}
-.xyn-tab{
-  padding:7px 16px;border-radius:9px;
-  background:transparent;border:none;
-  color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;
-  transition:all .15s;
-}
-.xyn-tab.active{background:var(--violet);color:#fff;}
-.xyn-tab:hover:not(.active){color:var(--txt);}
-
-.xyn-chart-meta{
-  display:flex;align-items:center;gap:24px;
-  margin-bottom:18px;padding:14px 16px;
-  background:var(--s2);border-radius:var(--r-md);
-}
-.xyn-chart-stat{flex:1;}
-.xyn-chart-stat .cs-lbl{font-size:11px;color:var(--muted);font-weight:600;margin-bottom:3px;}
-.xyn-chart-stat .cs-val{font-size:20px;font-weight:900;}
-.xyn-chart-stat .cs-val.income{color:#34d399;}
-.xyn-chart-stat .cs-val.expense{color:#f87171;}
-.xyn-chart-div{width:1px;height:36px;background:var(--bdr2);}
-
-.xyn-chart-legend{display:flex;gap:18px;margin-bottom:14px;}
-.xcl-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted2);}
-.xcl-line{width:24px;height:3px;border-radius:2px;}
-.xcl-line.dashed{background:repeating-linear-gradient(90deg,#f87171 0px,#f87171 5px,transparent 5px,transparent 9px);}
-
-.xyn-chart-container{position:relative;width:100%;height:240px;}
-
-/* ── Grid: table + donut ── */
-.xyn-bottom-grid{
-  display:grid;grid-template-columns:1fr 340px;gap:16px;
+.dash-eyebrow{
+    color:var(--red);
+    font-size:12px;
+    font-weight:900;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    margin-bottom:14px;
 }
 
-/* ── Transactions Table ── */
-.xyn-tx{
-  background:var(--s1);border:1px solid var(--bdr);
-  border-radius:var(--r-xl);padding:24px;
+.dash-title{
+    font-size:48px;
+    line-height:1.15;
+    font-weight:900;
+    margin:0 0 20px;
 }
-.xyn-tx-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
-.xyn-tx-head h2{font-size:17px;font-weight:800;}
-.xyn-tx-search{
-  display:flex;align-items:center;gap:8px;
-  background:var(--s2);border:1px solid var(--bdr);border-radius:var(--r-sm);
-  padding:8px 12px;font-size:12px;color:var(--muted);
-}
-.xyn-table-wrap{overflow-x:auto;}
-.xyn-tbl{
-  width:100%;border-collapse:separate;border-spacing:0 5px;
-  font-size:13px;
-}
-.xyn-tbl thead th{
-  color:var(--muted);font-size:10px;font-weight:700;
-  text-transform:uppercase;letter-spacing:.08em;
-  padding:0 12px 8px;text-align:left;
-}
-.xyn-tbl tbody tr{cursor:default;transition:opacity .1s;}
-.xyn-tbl tbody tr:hover td{background:var(--s3);}
-.xyn-tbl tbody td{
-  background:var(--s2);padding:13px 12px;
-  border-top:1px solid var(--bdr);
-  border-bottom:1px solid var(--bdr);
-}
-.xyn-tbl tbody td:first-child{border-left:1px solid var(--bdr);border-radius:13px 0 0 13px;}
-.xyn-tbl tbody td:last-child{border-right:1px solid var(--bdr);border-radius:0 13px 13px 0;}
-.xyn-tbl-badge{
-  padding:4px 11px;border-radius:999px;
-  font-size:10px;font-weight:800;letter-spacing:.04em;display:inline-block;
-}
-.xyn-tbl-badge.approved{background:rgba(16,185,129,0.12);color:#34d399;}
-.xyn-tbl-badge.pending{background:rgba(245,158,11,0.12);color:#fbbf24;}
-.xyn-tbl-badge.rejected{background:rgba(239,68,68,0.12);color:#f87171;}
 
-.xyn-tx-icon{
-  width:30px;height:30px;border-radius:9px;
-  display:inline-flex;align-items:center;justify-content:center;
-  font-size:12px;font-weight:900;vertical-align:middle;margin-right:7px;
-}
-.xyn-tx-icon.buy{background:rgba(239,68,68,0.12);color:#f87171;}
-.xyn-tx-icon.sell{background:rgba(16,185,129,0.12);color:#34d399;}
-.xyn-person-chip{display:flex;align-items:center;gap:8px;}
-.xyn-person-av{
-  width:28px;height:28px;border-radius:8px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:11px;font-weight:800;
-  background:rgba(124,92,252,0.15);color:#a78bfa;
-}
-.xyn-amt-up{color:#34d399;font-weight:800;}
-.xyn-amt-dn{color:#f87171;font-weight:800;}
-.xyn-mono{font-family:monospace;font-size:11px;color:var(--muted);}
+.dash-title span{color:var(--red)}
 
-/* ── Right column: donut + stats ── */
-.xyn-right-col{display:flex;flex-direction:column;gap:16px;}
+.dash-sub{
+    color:#b8bdc2;
+    font-size:15px;
+    line-height:1.7;
+    font-weight:700;
+}
 
-.xyn-donut-card{
-  background:var(--s1);border:1px solid var(--bdr);
-  border-radius:var(--r-xl);padding:22px;
+.dash-wrap{
+    position:relative;
+    z-index:5;
+    margin:-70px 85px 0;
+    display:grid;
+    grid-template-columns:300px 1fr;
+    gap:22px;
+    align-items:start;
 }
-.xyn-donut-center-wrap{
-  position:relative;display:flex;justify-content:center;margin:20px 0 16px;
-}
-.xyn-donut-center{
-  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  text-align:center;
-}
-.xyn-donut-center .dc-val{font-size:24px;font-weight:900;}
-.xyn-donut-center .dc-lbl{font-size:11px;color:var(--muted);font-weight:700;}
 
-.xyn-do-legend{display:flex;flex-direction:column;gap:10px;}
-.xyn-do-row{display:flex;justify-content:space-between;align-items:center;}
-.xyn-do-key{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted2);}
-.xyn-do-key span{width:10px;height:10px;border-radius:3px;}
-.xyn-do-pct{font-size:14px;font-weight:800;}
+.dash-side{
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+}
 
-/* Quick Actions */
-.xyn-quick{
-  background:var(--s1);border:1px solid var(--bdr);
-  border-radius:var(--r-xl);padding:22px;
+.dash-card{
+    background:var(--box);
+    border:1px solid var(--line);
+    border-radius:6px;
+    overflow:hidden;
 }
-.xyn-qa-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
-.xyn-qa-btn{
-  background:var(--s2);border:1px solid var(--bdr);
-  border-radius:var(--r-md);padding:14px 12px;
-  display:flex;flex-direction:column;align-items:center;gap:7px;
-  text-decoration:none;color:var(--txt);cursor:pointer;
-  transition:all .15s;text-align:center;
-}
-.xyn-qa-btn:hover{background:var(--s3);border-color:var(--bdr2);transform:translateY(-1px);}
-.xyn-qa-ico{
-  width:38px;height:38px;border-radius:11px;
-  display:flex;align-items:center;justify-content:center;font-size:18px;
-}
-.xyn-qa-btn:nth-child(1) .xyn-qa-ico{background:rgba(124,92,252,0.15);}
-.xyn-qa-btn:nth-child(2) .xyn-qa-ico{background:rgba(16,185,129,0.12);}
-.xyn-qa-btn:nth-child(3) .xyn-qa-ico{background:rgba(245,158,11,0.12);}
-.xyn-qa-btn:nth-child(4) .xyn-qa-ico{background:rgba(6,182,212,0.12);}
-.xyn-qa-btn span{font-size:12px;font-weight:700;color:var(--muted2);}
 
-/* Tooltip notice */
-.xyn-notice{
-  background:linear-gradient(90deg,rgba(124,92,252,0.12),rgba(6,182,212,0.08));
-  border:1px solid rgba(124,92,252,0.2);
-  border-radius:var(--r-md);padding:14px 18px;
-  display:flex;align-items:center;gap:12px;
-  font-size:13px;color:var(--muted2);
+.dash-profile{
+    border:1.5px solid var(--red);
+    box-shadow:0 18px 40px rgba(0,0,0,.28);
+    padding:26px 22px;
+    text-align:center;
 }
-.xyn-notice b{color:var(--txt);}
 
-/* ── Responsive ── */
+.dash-avatar{
+    width:82px;
+    height:82px;
+    margin:0 auto 14px;
+    border-radius:50%;
+    background:var(--red);
+    padding:4px;
+}
+
+.dash-avatar-inner{
+    width:100%;
+    height:100%;
+    border-radius:50%;
+    background:#1f2428;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:32px;
+    font-weight:900;
+    color:#fff;
+}
+
+.dash-profile h3{
+    font-size:20px;
+    font-weight:900;
+    margin:0 0 5px;
+}
+
+.dash-role{
+    color:#9fa5aa;
+    font-size:12px;
+    font-weight:900;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+}
+
+.dash-wallet{
+    margin-top:15px;
+    background:#1f2428;
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:12px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+}
+
+.dash-wallet small{
+    display:block;
+    color:#747b82;
+    font-size:10px;
+    font-weight:900;
+    text-transform:uppercase;
+    margin-bottom:3px;
+}
+
+.dash-wallet span{
+    font-family:monospace;
+    color:#fff;
+    font-size:13px;
+}
+
+.dash-copy{
+    border:0;
+    background:var(--red);
+    color:#fff;
+    border-radius:4px;
+    padding:7px 10px;
+    cursor:pointer;
+    font-weight:900;
+}
+
+.dash-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    margin-top:13px;
+    padding:6px 12px;
+    border-radius:20px;
+    font-size:11px;
+    font-weight:900;
+}
+
+.dash-badge.ok{background:#0d2b1e;color:var(--green)}
+.dash-badge.pending{background:#3b2a09;color:var(--gold)}
+
+.dash-section-title{
+    padding:18px 20px;
+    border-bottom:1px solid var(--line);
+    font-size:15px;
+    font-weight:900;
+    display:flex;
+    align-items:center;
+    gap:9px;
+}
+
+.dash-section-title i{color:var(--red)}
+
+.dash-bs{
+    padding:8px 20px 18px;
+}
+
+.dash-bs-row{
+    display:flex;
+    justify-content:space-between;
+    gap:14px;
+    padding:13px 0;
+    border-bottom:1px solid var(--line);
+}
+
+.dash-bs-row:last-child{border-bottom:0}
+
+.dash-bs-row span{
+    color:#9fa5aa;
+    font-size:13px;
+    font-weight:800;
+}
+
+.dash-bs-row strong{
+    color:#fff;
+    font-size:13px;
+    font-weight:900;
+    text-align:right;
+}
+
+.dash-main{
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    gap:22px;
+}
+
+.dash-kpis{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:16px;
+}
+
+.dash-kpi{
+    background:var(--box);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:20px;
+    transition:.15s;
+}
+
+.dash-kpi:hover{
+    border-color:var(--red);
+    background:#30363a;
+}
+
+.dash-kpi-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:15px;
+}
+
+.dash-kpi-icon{
+    width:44px;
+    height:44px;
+    border-radius:50%;
+    background:#3a1018;
+    color:var(--red);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:22px;
+}
+
+.dash-trend{
+    padding:5px 9px;
+    border-radius:20px;
+    font-size:11px;
+    font-weight:900;
+}
+
+.dash-trend.green{background:#0d2b1e;color:var(--green)}
+.dash-trend.gold{background:#3b2a09;color:var(--gold)}
+.dash-trend.gray{background:#1f2428;color:#9fa5aa}
+
+.dash-kpi small{
+    color:#9fa5aa;
+    font-size:11px;
+    font-weight:900;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+}
+
+.dash-kpi b{
+    display:block;
+    margin-top:7px;
+    font-size:27px;
+    font-weight:900;
+}
+
+.dash-kpi p{
+    margin-top:6px;
+    color:#747b82;
+    font-size:12px;
+    font-weight:700;
+}
+
+.dash-wallet-cards{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:16px;
+}
+
+.dash-wcard{
+    min-height:140px;
+    border-radius:6px;
+    padding:22px;
+    background:var(--box);
+    border:1px solid var(--line);
+    position:relative;
+    overflow:hidden;
+}
+
+.dash-wcard::after{
+    content:"";
+    position:absolute;
+    right:-50px;
+    top:-50px;
+    width:150px;
+    height:150px;
+    border-radius:50%;
+    background:rgba(232,25,44,.14);
+}
+
+.dash-wcard-top{
+    position:relative;
+    z-index:2;
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:18px;
+}
+
+.dash-wcard-type{
+    color:#9fa5aa;
+    font-size:11px;
+    font-weight:900;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+}
+
+.dash-wcard-pill{
+    background:#3a1018;
+    color:#ff6b7b;
+    border-radius:20px;
+    padding:4px 9px;
+    font-size:10px;
+    font-weight:900;
+}
+
+.dash-wcard-val{
+    position:relative;
+    z-index:2;
+    font-size:25px;
+    font-weight:900;
+    color:#fff;
+}
+
+.dash-wcard-label{
+    position:relative;
+    z-index:2;
+    color:#aeb4ba;
+    margin-top:5px;
+    font-size:12px;
+    font-weight:700;
+}
+
+.dash-chart{
+    background:var(--box);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:24px;
+}
+
+.dash-chart-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:15px;
+    margin-bottom:18px;
+}
+
+.dash-chart-head h2{
+    font-size:18px;
+    font-weight:900;
+    margin:0;
+}
+
+.dash-tabs{
+    display:flex;
+    background:#1f2428;
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:4px;
+}
+
+.dash-tab{
+    border:0;
+    background:transparent;
+    color:#9fa5aa;
+    padding:8px 15px;
+    border-radius:3px;
+    font-size:12px;
+    font-weight:900;
+    cursor:pointer;
+}
+
+.dash-tab.active{
+    background:var(--red);
+    color:#fff;
+}
+
+.dash-chart-stats{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;
+    margin-bottom:18px;
+}
+
+.dash-chart-stat{
+    background:#1f2428;
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:14px;
+}
+
+.dash-chart-stat small{
+    color:#9fa5aa;
+    font-size:11px;
+    font-weight:900;
+    text-transform:uppercase;
+}
+
+.dash-chart-stat b{
+    display:block;
+    margin-top:6px;
+    font-size:20px;
+    font-weight:900;
+}
+
+.dash-chart-box{
+    height:250px;
+    position:relative;
+}
+
+.dash-bottom{
+    display:grid;
+    grid-template-columns:1fr 330px;
+    gap:18px;
+}
+
+.dash-table-box{
+    background:var(--box);
+    border:1px solid var(--line);
+    border-radius:6px;
+    overflow:hidden;
+}
+
+.dash-table-head{
+    padding:18px 20px;
+    border-bottom:1px solid var(--line);
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    align-items:center;
+}
+
+.dash-table-head h2{
+    margin:0;
+    font-size:18px;
+    font-weight:900;
+}
+
+.dash-table-wrap{overflow-x:auto}
+
+.dash-table{
+    width:100%;
+    min-width:850px;
+    border-collapse:collapse;
+}
+
+.dash-table th{
+    background:#24292d;
+    color:#9fa5aa;
+    text-transform:uppercase;
+    font-size:11px;
+    text-align:left;
+    padding:14px 16px;
+}
+
+.dash-table td{
+    padding:15px 16px;
+    border-top:1px solid #3a4147;
+    color:#c9ced3;
+    font-size:13px;
+    font-weight:700;
+    white-space:nowrap;
+}
+
+.dash-table tr:hover td{background:#30363a}
+
+.dash-ref{
+    font-family:monospace;
+    color:#9fa5aa;
+}
+
+.dash-person{
+    display:flex;
+    align-items:center;
+    gap:9px;
+}
+
+.dash-person-av{
+    width:30px;
+    height:30px;
+    border-radius:50%;
+    background:var(--red);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#fff;
+    font-size:12px;
+    font-weight:900;
+}
+
+.dash-type{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    font-weight:900;
+}
+
+.dash-type.buy{color:var(--green)}
+.dash-type.sell{color:#ff6b7b}
+
+.dash-status{
+    display:inline-block;
+    padding:6px 10px;
+    border-radius:20px;
+    font-size:11px;
+    font-weight:900;
+}
+
+.dash-status.approved{background:#0d2b1e;color:var(--green)}
+.dash-status.pending{background:#3b2a09;color:var(--gold)}
+.dash-status.rejected{background:#3a1018;color:#ff6b7b}
+
+.dash-right-col{
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+}
+
+.dash-donut{
+    background:var(--box);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:22px;
+}
+
+.dash-donut-wrap{
+    position:relative;
+    display:flex;
+    justify-content:center;
+    margin:14px 0 18px;
+}
+
+.dash-donut-center{
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    text-align:center;
+}
+
+.dash-donut-center b{
+    font-size:24px;
+    font-weight:900;
+}
+
+.dash-donut-center small{
+    display:block;
+    color:#9fa5aa;
+    font-size:11px;
+    font-weight:900;
+}
+
+.dash-legend{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.dash-legend-row{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    color:#aeb4ba;
+    font-size:13px;
+    font-weight:800;
+}
+
+.dash-legend-key{
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+
+.dash-dot{
+    width:10px;
+    height:10px;
+    border-radius:50%;
+}
+
+.dash-quick{
+    background:var(--box);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:22px;
+}
+
+.dash-quick-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+}
+
+.dash-quick-btn{
+    background:#1f2428;
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:15px 10px;
+    color:#fff;
+    text-decoration:none;
+    text-align:center;
+    font-weight:900;
+    font-size:12px;
+}
+
+.dash-quick-btn i{
+    display:block;
+    color:var(--red);
+    font-size:24px;
+    margin-bottom:7px;
+}
+
+.dash-quick-btn:hover{
+    background:#30363a;
+    border-color:var(--red);
+}
+
+.dash-activity-list{
+    max-height:290px;
+    overflow-y:auto;
+    scrollbar-width:none;
+    -ms-overflow-style:none;
+}
+
+.dash-activity-list::-webkit-scrollbar{display:none}
+
+.dash-act{
+    display:flex;
+    align-items:center;
+    gap:11px;
+    padding:13px 20px;
+    border-bottom:1px solid var(--line);
+}
+
+.dash-act:last-child{border-bottom:0}
+
+.dash-act-icon{
+    width:36px;
+    height:36px;
+    border-radius:50%;
+    background:#3a1018;
+    color:#ff6b7b;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+}
+
+.dash-act-body{
+    flex:1;
+    min-width:0;
+}
+
+.dash-act-body b{
+    display:block;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    font-size:13px;
+}
+
+.dash-act-body small{
+    color:#9fa5aa;
+    font-size:11px;
+}
+
+.dash-act-amt{
+    font-size:13px;
+    font-weight:900;
+    white-space:nowrap;
+}
+
+.dash-notice{
+    background:#3b2a09;
+    border:1px solid rgba(255,201,51,.35);
+    border-radius:6px;
+    color:#ffe7a3;
+    padding:15px 18px;
+    font-weight:800;
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
 @media(max-width:1200px){
-  .xyn-kpi-row{grid-template-columns:repeat(2,1fr);}
-  .xyn-bottom-grid{grid-template-columns:1fr;}
-  .xyn-right-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    .dash-wrap{grid-template-columns:1fr}
+    .dash-side{display:grid;grid-template-columns:repeat(2,1fr)}
+    .dash-side .dash-card:last-child{grid-column:1/-1}
+    .dash-kpis{grid-template-columns:repeat(2,1fr)}
+    .dash-bottom{grid-template-columns:1fr}
+    .dash-right-col{display:grid;grid-template-columns:1fr 1fr}
 }
-@media(max-width:1050px){
-  .xyn-shell{grid-template-columns:1fr;}
-  .xyn-sidebar{position:static;}
-  .xyn-wallet-row{grid-template-columns:repeat(2,1fr);}
-}
-@media(max-width:680px){
-  .xyn-kpi-row{grid-template-columns:1fr;}
-  .xyn-wallet-row{grid-template-columns:1fr;}
-  .xyn-hero{flex-direction:column;gap:14px;align-items:flex-start;}
-  .xyn-right-col{grid-template-columns:1fr;}
+
+@media(max-width:800px){
+    .dash-page{margin:-16px}
+    .dash-hero{padding:45px 24px 110px}
+    .dash-title{font-size:36px}
+    .dash-wrap{margin-left:20px;margin-right:20px}
+    .dash-side{grid-template-columns:1fr}
+    .dash-kpis{grid-template-columns:1fr}
+    .dash-wallet-cards{grid-template-columns:1fr}
+    .dash-chart-head{flex-direction:column;align-items:flex-start}
+    .dash-chart-stats{grid-template-columns:1fr}
+    .dash-right-col{grid-template-columns:1fr}
 }
 </style>
 
-<div class="xyn-shell">
+<div class="dash-page">
 
-  {{-- ════════════════════════ SIDEBAR ════════════════════════ --}}
-  <aside class="xyn-sidebar">
+    <section class="dash-hero">
+        <div class="dash-hero-content">
+            <div class="dash-eyebrow">Xynder Wallet</div>
 
-    {{-- Profile --}}
-    <div class="xyn-profile">
-      <div class="xyn-av-ring">
-        <div class="xyn-av-inner">{{ strtoupper(substr($name,0,1)) }}</div>
-      </div>
-      <h3>{{ $name }}</h3>
-      <div class="xyn-role">{{ $roleLabel }} Account</div>
-      <div class="xyn-wallet-id">
-        <div>
-          <small>Wallet ID</small>
-          <span>{{ $user->wallet_id ?? 'WXXX-XXXX-XXXX' }}</span>
-        </div>
-        <button class="xyn-copy-btn" onclick="navigator.clipboard.writeText('{{ $user->wallet_id ?? '' }}');this.textContent='✓'">⎘</button>
-      </div>
-      @if($user->is_verified ?? false)
-        <div class="xyn-vbadge ok">Verified Account</div>
-      @else
-        <div class="xyn-vbadge pend">Verification Pending</div>
-      @endif
-    </div>
+            <h1 class="dash-title">
+                Welcome Back,
+                <span>{{ $name }}</span>
+            </h1>
 
-    {{-- Balance Sheet --}}
-    <div class="xyn-bs">
-      <div class="xyn-panel-title">Balance Sheet</div>
-      <div class="xyn-bs-row">
-        <div class="xyn-bs-lbl"><span class="xyn-bs-dot" style="background:#7c5cfc"></span>Wallet Balance</div>
-        <div class="xyn-bs-val">₹{{ number_format((float)($user->balance ?? 0),2) }}</div>
-      </div>
-      <div class="xyn-bs-row">
-        <div class="xyn-bs-lbl"><span class="xyn-bs-dot" style="background:#10b981"></span>USD Volume</div>
-        <div class="xyn-bs-val">${{ number_format((float)$totalUsd,2) }}</div>
-      </div>
-      <div class="xyn-bs-row">
-        <div class="xyn-bs-lbl"><span class="xyn-bs-dot" style="background:#f59e0b"></span>INR Volume</div>
-        <div class="xyn-bs-val">₹{{ number_format((float)$totalInr,2) }}</div>
-      </div>
-      <div class="xyn-bs-row">
-        <div class="xyn-bs-lbl"><span class="xyn-bs-dot" style="background:#3b82f6"></span>Approved</div>
-        <div class="xyn-bs-val" style="color:#34d399">{{ $approvedCount }} txns</div>
-      </div>
-      <div class="xyn-bs-row">
-        <div class="xyn-bs-lbl"><span class="xyn-bs-dot" style="background:#ef4444"></span>Pending</div>
-        <div class="xyn-bs-val" style="color:#fbbf24">{{ $pendingCount }} txns</div>
-      </div>
-      <div class="xyn-bs-divider"></div>
-      <div class="xyn-bs-total">
-        <span class="xyn-bs-total-lbl">Net Balance</span>
-        <span class="xyn-bs-total-val">₹{{ number_format((float)($user->balance ?? 0),2) }}</span>
-      </div>
-    </div>
-
-    {{-- Activity Feed --}}
-    <div class="xyn-activity">
-      <div class="xyn-panel-title">Recent Activity</div>
-      <div class="xyn-act-list">
-        @forelse($recent5 as $act)
-          @php $actPerson = $isMerchant ? ($act->user->name ?? 'Client') : ($act->merchant->name ?? 'Merchant'); @endphp
-          <div class="xyn-act-item">
-            <div class="xyn-act-icon {{ $act->type==='deposit' ? 'buy' : 'sell' }}">
-              {{ $act->type==='deposit' ? '↓' : '↑' }}
+            <div class="dash-sub">
+                Your {{ strtolower($roleLabel) }} dashboard overview with wallet balance, buy/sell requests,
+                recent activity, transaction breakdown, and quick actions.
             </div>
-            <div class="xyn-act-body">
-              <b>{{ $actPerson }}</b>
-              <small>{{ $act->type==='deposit' ? 'Buy USD' : 'Sell USD' }} · {{ $act->created_at?->diffForHumans() }}</small>
-            </div>
-            <div class="xyn-act-amt {{ $act->type==='deposit' ? 'xyn-amt-dn' : 'xyn-amt-up' }}">
-              {{ $act->type==='deposit' ? '-' : '+' }}${{ number_format((float)($act->amount??0),2) }}
-            </div>
-          </div>
-        @empty
-          <div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;">No recent activity</div>
-        @endforelse
-      </div>
-    </div>
-
-  </aside>
-
-  {{-- ════════════════════════ MAIN ════════════════════════ --}}
-  <main class="xyn-main">
-
-   
-
-    {{-- KPI Cards --}}
-    <div class="xyn-kpi-row">
-      <div class="xyn-kpi-card k1">
-        <div class="kpi-top">
-          <div class="kpi-badge">💰</div>
-          <div class="kpi-trend neutral">Wallet</div>
         </div>
-        <div class="kpi-label">Wallet Balance</div>
-        <div class="kpi-val">₹{{ number_format((float)($user->balance??0),0) }}</div>
-        <div class="kpi-sub">Available funds</div>
-        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:72%"></div></div>
-      </div>
+    </section>
 
-      <div class="xyn-kpi-card k2">
-        <div class="kpi-top">
-          <div class="kpi-badge">💵</div>
-          <div class="kpi-trend up">Active</div>
-        </div>
-        <div class="kpi-label">USD Volume</div>
-        <div class="kpi-val">${{ number_format((float)$totalUsd,2) }}</div>
-        <div class="kpi-sub">{{ $approvedCount }} approved</div>
-        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:{{ $totalCount > 0 ? round($approvedCount/$totalCount*100) : 0 }}%"></div></div>
-      </div>
+    <div class="dash-wrap">
 
-      <div class="xyn-kpi-card k3">
-        <div class="kpi-top">
-          <div class="kpi-badge">📈</div>
-          <div class="kpi-trend {{ $pendingCount > 0 ? 'down' : 'up' }}">{{ $pendingCount > 0 ? $pendingCount.' Pending' : 'Clear' }}</div>
-        </div>
-        <div class="kpi-label">INR Volume</div>
-        <div class="kpi-val">₹{{ number_format((float)$totalInr,0) }}</div>
-        <div class="kpi-sub">Total transacted</div>
-        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:65%"></div></div>
-      </div>
+        <aside class="dash-side">
 
-      <div class="xyn-kpi-card k4">
-        <div class="kpi-top">
-          <div class="kpi-badge">🎯</div>
-          <div class="kpi-trend neutral">All time</div>
-        </div>
-        <div class="kpi-label">Total Requests</div>
-        <div class="kpi-val">{{ $totalCount }}</div>
-        <div class="kpi-sub">{{ $rejectedCount }} rejected</div>
-        <div class="kpi-bar"><div class="kpi-bar-fill" style="width:{{ $totalCount > 0 ? round(($approvedCount+$pendingCount)/$totalCount*100) : 0 }}%"></div></div>
-      </div>
-    </div>
+            <div class="dash-card dash-profile">
+                <div class="dash-avatar">
+                    <div class="dash-avatar-inner">{{ strtoupper(substr($name, 0, 1)) }}</div>
+                </div>
 
-    {{-- Wallet Cards --}}
-    <div class="xyn-wallet-row">
-      <div class="xyn-wcard wc1">
-        <div class="xyn-wcard-shine"></div><div class="xyn-wcard-shine2"></div>
-        <div class="wc-top">
-          <div class="wc-type">Wallet Balance</div>
-          <div class="wc-status-pill">Active</div>
-        </div>
-        <div class="wc-val">₹{{ number_format((float)($user->balance??0),2) }}</div>
-        <div class="wc-label">Available balance</div>
-        <div class="wc-chip">XYNDER</div>
-      </div>
-      <div class="xyn-wcard wc2">
-        <div class="xyn-wcard-shine"></div><div class="xyn-wcard-shine2"></div>
-        <div class="wc-top">
-          <div class="wc-type">USD Account</div>
-          <div class="wc-status-pill">{{ $user->is_verified ? 'Verified' : 'Pending' }}</div>
-        </div>
-        <div class="wc-val">${{ number_format((float)$totalUsd,2) }}</div>
-        <div class="wc-label">Total USD transacted</div>
-        <div class="wc-chip">BUY / SELL</div>
-      </div>
-      <div class="xyn-wcard wc3">
-        <div class="xyn-wcard-shine"></div><div class="xyn-wcard-shine2"></div>
-        <div class="wc-top">
-          <div class="wc-type">INR Volume</div>
-          <div class="wc-status-pill">{{ $roleLabel }}</div>
-        </div>
-        <div class="wc-val">₹{{ number_format((float)$totalInr,2) }}</div>
-        <div class="wc-label">Total INR transacted</div>
-        <div class="wc-chip">{{ $approvedCount }} approved</div>
-      </div>
-    </div>
+                <h3>{{ $name }}</h3>
+                <div class="dash-role">{{ $roleLabel }} Account</div>
 
-    {{-- Funds Overview Chart --}}
-    <div class="xyn-chart-section">
-      <div class="xyn-chart-head">
-        <h2>Funds Overview</h2>
-        <div class="xyn-tab-group">
-          <button class="xyn-tab active" data-period="monthly">Monthly</button>
-          <button class="xyn-tab" data-period="weekly">Weekly</button>
-          <button class="xyn-tab" data-period="daily">Daily</button>
-        </div>
-      </div>
-
-      <div class="xyn-chart-meta">
-        <div class="xyn-chart-stat">
-          <div class="cs-lbl">Sell USD (Income)</div>
-          <div class="cs-val income" id="xyn-total-income">
-            ${{ number_format(array_sum($monthlyIncome),2) }}
-          </div>
-        </div>
-        <div class="xyn-chart-div"></div>
-        <div class="xyn-chart-stat">
-          <div class="cs-lbl">Buy USD (Expense)</div>
-          <div class="cs-val expense" id="xyn-total-expense">
-            ${{ number_format(array_sum($monthlyExpense),2) }}
-          </div>
-        </div>
-        <div class="xyn-chart-div"></div>
-        <div class="xyn-chart-stat">
-          <div class="cs-lbl">Net</div>
-          <div class="cs-val" id="xyn-total-net" style="color:#a78bfa">
-            ${{ number_format(array_sum($monthlyIncome)-array_sum($monthlyExpense),2) }}
-          </div>
-        </div>
-      </div>
-
-      <div class="xyn-chart-legend">
-        <div class="xcl-item"><div class="xcl-line" style="background:#7c5cfc"></div> Sell USD (Income)</div>
-        <div class="xcl-item"><div class="xcl-line dashed"></div> Buy USD (Expense)</div>
-      </div>
-
-      <div class="xyn-chart-container">
-        <canvas id="xynFundsChart" role="img" aria-label="Funds overview chart showing income and expense over time">Chart loading…</canvas>
-      </div>
-    </div>
-
-    {{-- Bottom Grid --}}
-    <div class="xyn-bottom-grid">
-
-      {{-- Transactions Table --}}
-      <div class="xyn-tx">
-        <div class="xyn-tx-head">
-          <h2>{{ $isMerchant ? 'Customer Requests' : 'Wallet Requests' }}</h2>
-          <div class="xyn-tx-search">🔍 Search transactions…</div>
-        </div>
-
-        <div class="xyn-table-wrap">
-          <table class="xyn-tbl">
-            <thead>
-              <tr>
-                <th>Ref</th>
-                <th>{{ $isMerchant ? 'Client' : 'Merchant' }}</th>
-                <th>Type</th>
-                <th>USD Amt</th>
-                <th>INR Total</th>
-                <th>Status</th>
-                <th>Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              @forelse($latestRequests as $req)
-                @php $pName = $isMerchant ? ($req->user->name??'Client') : ($req->merchant->name??'Merchant'); @endphp
-                <tr>
-                  <td class="xyn-mono">{{ $req->transaction_no ?? 'TNS'.str_pad($req->id,7,'0',STR_PAD_LEFT) }}</td>
-                  <td>
-                    <div class="xyn-person-chip">
-                      <div class="xyn-person-av">{{ strtoupper(substr($pName,0,1)) }}</div>
-                      <span style="font-size:13px;">{{ $pName }}</span>
+                <div class="dash-wallet">
+                    <div>
+                        <small>Wallet ID</small>
+                        <span>{{ $user->wallet_id ?? 'WXXX-XXXX-XXXX' }}</span>
                     </div>
-                  </td>
-                  <td>
-                    <div style="display:flex;align-items:center;gap:4px;">
-                      <span class="xyn-tx-icon {{ $req->type==='deposit'?'buy':'sell' }}">
-                        {{ $req->type==='deposit'?'B':'S' }}
-                      </span>
-                      <span style="font-size:12px;font-weight:700;">{{ $req->type==='deposit'?'BUY':'SELL' }}</span>
+
+                    <button class="dash-copy"
+                            type="button"
+                            onclick="navigator.clipboard.writeText('{{ $user->wallet_id ?? '' }}');this.innerHTML='✓'">
+                        <i class="ti ti-copy"></i>
+                    </button>
+                </div>
+
+                @if($user->is_verified ?? false)
+                    <div class="dash-badge ok">
+                        <i class="ti ti-circle-check"></i>
+                        Verified Account
                     </div>
-                  </td>
-                  <td class="{{ $req->type==='deposit'?'xyn-amt-dn':'xyn-amt-up' }}">
-                    ${{ number_format((float)($req->amount??0),2) }}
-                  </td>
-                  <td style="color:var(--muted2);font-weight:700;">₹{{ number_format((float)($req->total_amount??0),2) }}</td>
-                  <td><span class="xyn-tbl-badge {{ $req->status }}">{{ strtoupper($req->status??'-') }}</span></td>
-                  <td style="color:var(--muted);font-size:11px;">{{ $req->created_at?->format('d M, H:i') }}</td>
-                </tr>
-              @empty
-                <tr>
-                  <td colspan="7" style="text-align:center;padding:32px;color:var(--muted);">
-                    No transactions found
-                  </td>
-                </tr>
-              @endforelse
-            </tbody>
-          </table>
-        </div>
-      </div>
+                @else
+                    <div class="dash-badge pending">
+                        <i class="ti ti-alert-circle"></i>
+                        Verification Pending
+                    </div>
+                @endif
+            </div>
 
-      {{-- Right column --}}
-      <div class="xyn-right-col">
+            <div class="dash-card">
+                <div class="dash-section-title">
+                    <i class="ti ti-wallet"></i>
+                    Balance Sheet
+                </div>
 
-        {{-- Donut Chart --}}
-        <div class="xyn-donut-card">
-          <div class="xyn-panel-title">Request Breakdown</div>
-          <div class="xyn-donut-center-wrap">
-            <canvas id="xynDonut" width="160" height="160" role="img"
-              aria-label="Request breakdown donut chart">Donut chart</canvas>
-            <div class="xyn-donut-center">
-              <div class="dc-val">{{ $totalCount }}</div>
-              <div class="dc-lbl">Total</div>
-            </div>
-          </div>
-          <div class="xyn-do-legend">
-            <div class="xyn-do-row">
-              <div class="xyn-do-key"><span style="background:#34d399"></span>Approved</div>
-              <div class="xyn-do-pct" style="color:#34d399">{{ $approvedCount }}</div>
-            </div>
-            <div class="xyn-do-row">
-              <div class="xyn-do-key"><span style="background:#fbbf24"></span>Pending</div>
-              <div class="xyn-do-pct" style="color:#fbbf24">{{ $pendingCount }}</div>
-            </div>
-            <div class="xyn-do-row">
-              <div class="xyn-do-key"><span style="background:#f87171"></span>Rejected</div>
-              <div class="xyn-do-pct" style="color:#f87171">{{ $rejectedCount }}</div>
-            </div>
-            <div class="xyn-do-row">
-              <div class="xyn-do-key"><span style="background:#818cf8"></span>Buy USD</div>
-              <div class="xyn-do-pct" style="color:#818cf8">{{ $buyCount }}</div>
-            </div>
-            <div class="xyn-do-row">
-              <div class="xyn-do-key"><span style="background:#06b6d4"></span>Sell USD</div>
-              <div class="xyn-do-pct" style="color:#06b6d4">{{ $sellCount }}</div>
-            </div>
-          </div>
-        </div>
+                <div class="dash-bs">
+                    <div class="dash-bs-row">
+                        <span>Wallet Balance</span>
+                        <strong>₹{{ number_format((float)($user->balance ?? 0), 2) }}</strong>
+                    </div>
 
-       
+                    <div class="dash-bs-row">
+                        <span>USD Volume</span>
+                        <strong>${{ number_format((float)$totalUsd, 2) }}</strong>
+                    </div>
 
-      </div>
+                    <div class="dash-bs-row">
+                        <span>INR Volume</span>
+                        <strong>₹{{ number_format((float)$totalInr, 2) }}</strong>
+                    </div>
+
+                    <div class="dash-bs-row">
+                        <span>Approved</span>
+                        <strong style="color:var(--green)">{{ $approvedCount }} txns</strong>
+                    </div>
+
+                    <div class="dash-bs-row">
+                        <span>Pending</span>
+                        <strong style="color:var(--gold)">{{ $pendingCount }} txns</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dash-card">
+                <div class="dash-section-title">
+                    <i class="ti ti-clock"></i>
+                    Recent Activity
+                </div>
+
+                <div class="dash-activity-list">
+                    @forelse($recent5 as $act)
+                        @php
+                            $actPerson = $isMerchant ? ($act->user->name ?? 'Client') : ($act->merchant->name ?? 'Merchant');
+                            $isBuy = $act->type === 'deposit';
+                        @endphp
+
+                        <div class="dash-act">
+                            <div class="dash-act-icon" style="{{ !$isBuy ? 'background:#0d2b1e;color:var(--green)' : '' }}">
+                                <i class="ti {{ $isBuy ? 'ti-trending-up' : 'ti-trending-down' }}"></i>
+                            </div>
+
+                            <div class="dash-act-body">
+                                <b>{{ $actPerson }}</b>
+                                <small>{{ $isBuy ? 'Buy USD' : 'Sell USD' }} · {{ $act->created_at?->diffForHumans() }}</small>
+                            </div>
+
+                            <div class="dash-act-amt" style="color:{{ $isBuy ? '#ff6b7b' : '#0ecb81' }}">
+                                {{ $isBuy ? '-' : '+' }}${{ number_format((float)($act->amount ?? 0), 2) }}
+                            </div>
+                        </div>
+                    @empty
+                        <div style="padding:30px;text-align:center;color:#9fa5aa;font-weight:800;">
+                            No recent activity.
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+
+        </aside>
+
+        <main class="dash-main">
+
+            <section class="dash-kpis">
+                <div class="dash-kpi">
+                    <div class="dash-kpi-top">
+                        <div class="dash-kpi-icon"><i class="ti ti-wallet"></i></div>
+                        <div class="dash-trend gray">Wallet</div>
+                    </div>
+                    <small>Wallet Balance</small>
+                    <b>₹{{ number_format((float)($user->balance ?? 0), 0) }}</b>
+                    <p>Available funds</p>
+                </div>
+
+                <div class="dash-kpi">
+                    <div class="dash-kpi-top">
+                        <div class="dash-kpi-icon"><i class="ti ti-currency-dollar"></i></div>
+                        <div class="dash-trend green">Active</div>
+                    </div>
+                    <small>USD Volume</small>
+                    <b>${{ number_format((float)$totalUsd, 2) }}</b>
+                    <p>{{ $approvedCount }} approved requests</p>
+                </div>
+
+                <div class="dash-kpi">
+                    <div class="dash-kpi-top">
+                        <div class="dash-kpi-icon"><i class="ti ti-currency-rupee"></i></div>
+                        <div class="dash-trend {{ $pendingCount > 0 ? 'gold' : 'green' }}">
+                            {{ $pendingCount > 0 ? $pendingCount.' Pending' : 'Clear' }}
+                        </div>
+                    </div>
+                    <small>INR Volume</small>
+                    <b>₹{{ number_format((float)$totalInr, 0) }}</b>
+                    <p>Total transacted</p>
+                </div>
+
+                <div class="dash-kpi">
+                    <div class="dash-kpi-top">
+                        <div class="dash-kpi-icon"><i class="ti ti-receipt"></i></div>
+                        <div class="dash-trend gray">All Time</div>
+                    </div>
+                    <small>Total Requests</small>
+                    <b>{{ $totalCount }}</b>
+                    <p>{{ $rejectedCount }} rejected requests</p>
+                </div>
+            </section>
+
+            <section class="dash-wallet-cards">
+                <div class="dash-wcard">
+                    <div class="dash-wcard-top">
+                        <div class="dash-wcard-type">Wallet Balance</div>
+                        <div class="dash-wcard-pill">Active</div>
+                    </div>
+                    <div class="dash-wcard-val">₹{{ number_format((float)($user->balance ?? 0), 2) }}</div>
+                    <div class="dash-wcard-label">Available balance</div>
+                </div>
+
+                <div class="dash-wcard">
+                    <div class="dash-wcard-top">
+                        <div class="dash-wcard-type">USD Account</div>
+                        <div class="dash-wcard-pill">{{ $user->is_verified ? 'Verified' : 'Pending' }}</div>
+                    </div>
+                    <div class="dash-wcard-val">${{ number_format((float)$totalUsd, 2) }}</div>
+                    <div class="dash-wcard-label">Total USD transacted</div>
+                </div>
+
+                <div class="dash-wcard">
+                    <div class="dash-wcard-top">
+                        <div class="dash-wcard-type">INR Volume</div>
+                        <div class="dash-wcard-pill">{{ $roleLabel }}</div>
+                    </div>
+                    <div class="dash-wcard-val">₹{{ number_format((float)$totalInr, 2) }}</div>
+                    <div class="dash-wcard-label">{{ $approvedCount }} approved requests</div>
+                </div>
+            </section>
+
+            <section class="dash-chart">
+                <div class="dash-chart-head">
+                    <h2>Funds Overview</h2>
+
+                    <div class="dash-tabs">
+                        <button type="button" class="dash-tab active" data-period="monthly">Monthly</button>
+                        <button type="button" class="dash-tab" data-period="weekly">Weekly</button>
+                        <button type="button" class="dash-tab" data-period="daily">Daily</button>
+                    </div>
+                </div>
+
+                <div class="dash-chart-stats">
+                    <div class="dash-chart-stat">
+                        <small>Sell USD Income</small>
+                        <b id="dashTotalIncome" style="color:var(--green)">
+                            ${{ number_format(array_sum($monthlyIncome), 2) }}
+                        </b>
+                    </div>
+
+                    <div class="dash-chart-stat">
+                        <small>Buy USD Expense</small>
+                        <b id="dashTotalExpense" style="color:#ff6b7b">
+                            ${{ number_format(array_sum($monthlyExpense), 2) }}
+                        </b>
+                    </div>
+
+                    <div class="dash-chart-stat">
+                        <small>Net</small>
+                        <b id="dashTotalNet">
+                            ${{ number_format(array_sum($monthlyIncome) - array_sum($monthlyExpense), 2) }}
+                        </b>
+                    </div>
+                </div>
+
+                <div class="dash-chart-box">
+                    <canvas id="dashFundsChart"></canvas>
+                </div>
+            </section>
+
+            <section class="dash-bottom">
+
+                <div class="dash-table-box">
+                    <div class="dash-table-head">
+                        <h2>{{ $isMerchant ? 'Customer Requests' : 'Wallet Requests' }}</h2>
+                    </div>
+
+                    <div class="dash-table-wrap">
+                        <table class="dash-table">
+                            <thead>
+                                <tr>
+                                    <th>Ref</th>
+                                    <th>{{ $isMerchant ? 'Client' : 'Merchant' }}</th>
+                                    <th>Type</th>
+                                    <th>USD Amount</th>
+                                    <th>INR Total</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                @forelse($latestRequests as $req)
+                                    @php
+                                        $pName = $isMerchant ? ($req->user->name ?? 'Client') : ($req->merchant->name ?? 'Merchant');
+                                        $isBuy = $req->type === 'deposit';
+                                    @endphp
+
+                                    <tr>
+                                        <td>
+                                            <span class="dash-ref">
+                                                {{ $req->transaction_no ?? 'TNS'.str_pad($req->id, 7, '0', STR_PAD_LEFT) }}
+                                            </span>
+                                        </td>
+
+                                        <td>
+                                            <div class="dash-person">
+                                                <div class="dash-person-av">{{ strtoupper(substr($pName, 0, 1)) }}</div>
+                                                <span>{{ $pName }}</span>
+                                            </div>
+                                        </td>
+
+                                        <td>
+                                            <span class="dash-type {{ $isBuy ? 'buy' : 'sell' }}">
+                                                <i class="ti {{ $isBuy ? 'ti-trending-up' : 'ti-trending-down' }}"></i>
+                                                {{ $isBuy ? 'BUY' : 'SELL' }}
+                                            </span>
+                                        </td>
+
+                                        <td style="color:{{ $isBuy ? '#ff6b7b' : '#0ecb81' }}">
+                                            ${{ number_format((float)($req->amount ?? 0), 2) }}
+                                        </td>
+
+                                        <td>₹{{ number_format((float)($req->total_amount ?? 0), 2) }}</td>
+
+                                        <td>
+                                            <span class="dash-status {{ $req->status }}">
+                                                {{ strtoupper($req->status ?? '-') }}
+                                            </span>
+                                        </td>
+
+                                        <td style="color:#9fa5aa;">
+                                            {{ $req->created_at?->format('d M, H:i') }}
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="7" style="text-align:center;padding:35px;color:#9fa5aa;font-weight:800;">
+                                            No transactions found.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="dash-right-col">
+
+                    <div class="dash-donut">
+                        <div class="dash-section-title" style="padding:0 0 16px;border-bottom:0;">
+                            <i class="ti ti-chart-donut"></i>
+                            Request Breakdown
+                        </div>
+
+                        <div class="dash-donut-wrap">
+                            <canvas id="dashDonut" width="170" height="170"></canvas>
+
+                            <div class="dash-donut-center">
+                                <b>{{ $totalCount }}</b>
+                                <small>Total</small>
+                            </div>
+                        </div>
+
+                        <div class="dash-legend">
+                            <div class="dash-legend-row">
+                                <div class="dash-legend-key"><span class="dash-dot" style="background:#0ecb81"></span>Approved</div>
+                                <strong style="color:var(--green)">{{ $approvedCount }}</strong>
+                            </div>
+
+                            <div class="dash-legend-row">
+                                <div class="dash-legend-key"><span class="dash-dot" style="background:#ffc933"></span>Pending</div>
+                                <strong style="color:var(--gold)">{{ $pendingCount }}</strong>
+                            </div>
+
+                            <div class="dash-legend-row">
+                                <div class="dash-legend-key"><span class="dash-dot" style="background:#ff6b7b"></span>Rejected</div>
+                                <strong style="color:#ff6b7b">{{ $rejectedCount }}</strong>
+                            </div>
+
+                            <div class="dash-legend-row">
+                                <div class="dash-legend-key"><span class="dash-dot" style="background:#34d399"></span>Buy USD</div>
+                                <strong>{{ $buyCount }}</strong>
+                            </div>
+
+                            <div class="dash-legend-row">
+                                <div class="dash-legend-key"><span class="dash-dot" style="background:#e8192c"></span>Sell USD</div>
+                                <strong>{{ $sellCount }}</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dash-quick">
+                        <div class="dash-section-title" style="padding:0 0 16px;border-bottom:0;">
+                            <i class="ti ti-bolt"></i>
+                            Quick Actions
+                        </div>
+
+                        <div class="dash-quick-grid">
+                            <a href="{{ $requestRoute }}" class="dash-quick-btn">
+                                <i class="ti ti-credit-card"></i>
+                                Requests
+                            </a>
+
+                            <a href="{{ $transferRoute }}" class="dash-quick-btn">
+                                <i class="ti ti-arrows-transfer-up"></i>
+                                Transfer
+                            </a>
+
+                            <a href="{{ $chatRoute }}" class="dash-quick-btn">
+                                <i class="ti ti-message-2"></i>
+                                Chat
+                            </a>
+
+                            <a href="{{ $historyRoute }}" class="dash-quick-btn">
+                                <i class="ti ti-history"></i>
+                                History
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+
+            </section>
+
+            @if(!($user->is_verified ?? false))
+                <div class="dash-notice">
+                    <i class="ti ti-alert-triangle"></i>
+                    <span><b>Complete your verification</b> — submit KYC documents to unlock full transaction limits.</span>
+                </div>
+            @endif
+
+        </main>
     </div>
 
-    {{-- Notice bar --}}
-    @if(!($user->is_verified ?? false))
-    <div class="xyn-notice">
-      <span style="font-size:20px;">⚠️</span>
-      <span><b>Complete your verification</b> — Submit your KYC documents to unlock full transaction limits.</span>
-    </div>
+    @if(session('popup_transaction'))
+        @php $popup = session('popup_transaction'); @endphp
+
+        <div id="dashSuccessModal"
+             style="position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:99999;display:flex;align-items:center;justify-content:center;">
+            <div style="width:min(430px,92vw);background:#2b2f32;border:1px solid #3b4248;border-radius:7px;padding:26px;text-align:center;color:white;box-shadow:0 30px 80px rgba(0,0,0,.45);">
+                <div style="width:70px;height:70px;border-radius:50%;margin:0 auto 16px;background:#0d2b1e;color:#0ecb81;display:flex;align-items:center;justify-content:center;font-size:36px;">
+                    <i class="ti ti-circle-check"></i>
+                </div>
+
+                <h2 style="font-size:22px;font-weight:900;margin-bottom:8px;">
+                    {{ $popup['title'] ?? 'Transaction Completed' }}
+                </h2>
+
+                <p style="color:#aeb4ba;margin-bottom:18px;">
+                    Transaction created successfully. You can open chat for this transaction now.
+                </p>
+
+                <div style="background:#1f2428;border:1px solid #3b4248;border-radius:4px;padding:14px;margin-bottom:18px;text-align:left;">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                        <span style="color:#9fa5aa;font-weight:800;">Transaction No</span>
+                        <b>{{ $popup['no'] ?? '—' }}</b>
+                    </div>
+
+                    <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                        <span style="color:#9fa5aa;font-weight:800;">Amount</span>
+                        <b>${{ $popup['amount'] ?? '0.00' }}</b>
+                    </div>
+
+                    <div style="display:flex;justify-content:space-between;">
+                        <span style="color:#9fa5aa;font-weight:800;">Status</span>
+                        <b style="color:#0ecb81;">{{ $popup['status'] ?? 'PENDING' }}</b>
+                    </div>
+                </div>
+
+                <div style="display:flex;gap:10px;">
+                    <button type="button"
+                            onclick="document.getElementById('dashSuccessModal').remove()"
+                            style="flex:1;padding:13px;border-radius:4px;border:1px solid #3b4248;background:#1f2428;color:white;font-weight:900;cursor:pointer;">
+                        Close
+                    </button>
+
+                    <a href="{{ $popup['chat_url'] ?? '#' }}"
+                       style="flex:1;padding:13px;border-radius:4px;background:#e8192c;color:white;font-weight:900;text-decoration:none;">
+                        Open Chat
+                    </a>
+                </div>
+            </div>
+        </div>
     @endif
-@if(session('popup_transaction'))
-@php $popup = session('popup_transaction'); @endphp
-
-<div id="xynSuccessModal" style="position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:99999;display:flex;align-items:center;justify-content:center;">
-    <div style="width:min(430px,92vw);background:#0e1220;border:1px solid rgba(255,255,255,.12);border-radius:26px;padding:26px;text-align:center;color:white;box-shadow:0 30px 80px rgba(0,0,0,.45);">
-        <div style="width:70px;height:70px;border-radius:24px;margin:0 auto 16px;background:rgba(16,185,129,.14);color:#34d399;display:flex;align-items:center;justify-content:center;font-size:36px;">✓</div>
-
-        <h2 style="font-size:22px;font-weight:900;margin-bottom:8px;">
-            {{ $popup['title'] ?? 'Transaction Completed' }}
-        </h2>
-
-        <p style="color:#9ca3af;margin-bottom:18px;">
-            Transaction created successfully. You can open chat for this transaction now.
-        </p>
-
-        <div style="background:#131929;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:14px;margin-bottom:18px;text-align:left;">
-            <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-                <span style="color:#6b7280;font-weight:800;">Transaction No</span>
-                <b>{{ $popup['no'] ?? '—' }}</b>
-            </div>
-
-            <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-                <span style="color:#6b7280;font-weight:800;">Amount</span>
-                <b>${{ $popup['amount'] ?? '0.00' }}</b>
-            </div>
-
-            <div style="display:flex;justify-content:space-between;">
-                <span style="color:#6b7280;font-weight:800;">Status</span>
-                <b style="color:#34d399;">{{ $popup['status'] ?? 'PENDING' }}</b>
-            </div>
-        </div>
-
-        <div style="display:flex;gap:10px;">
-            <button type="button" onclick="document.getElementById('xynSuccessModal').remove()" style="flex:1;padding:13px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:#131929;color:white;font-weight:900;cursor:pointer;">
-                Close
-            </button>
-
-            <a href="{{ $popup['chat_url'] ?? '#' }}" style="flex:1;padding:13px;border-radius:14px;background:linear-gradient(90deg,#7c5cfc,#06b6d4);color:white;font-weight:900;text-decoration:none;">
-                Open Chat
-            </a>
-        </div>
-    </div>
-</div>
-@endif
-  </main>
-
-
-
-
 
 </div>
 
-{{-- ════════════════════════ SCRIPTS ════════════════════════ --}}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+
 <script>
 (function () {
-  /* ── Data sets from PHP ── */
-  var datasets = {
-    monthly: {
-      labels:  @json($monthLabels),
-      income:  @json($monthlyIncome),
-      expense: @json($monthlyExpense),
-    },
-    weekly: {
-      labels:  @json($weekLabels),
-      income:  @json($weeklyIncome),
-      expense: @json($weeklyExpense),
-    },
-    daily: {
-      labels:  @json($dayLabels),
-      income:  @json($dailyIncome),
-      expense: @json($dailyExpense),
-    },
-  };
-
-  /* ── Line Chart ── */
-  var fundsCtx = document.getElementById('xynFundsChart').getContext('2d');
-
-  var gradIncome = fundsCtx.createLinearGradient(0, 0, 0, 240);
-  gradIncome.addColorStop(0,   'rgba(124,92,252,0.30)');
-  gradIncome.addColorStop(1,   'rgba(124,92,252,0.00)');
-
-  var gradExpense = fundsCtx.createLinearGradient(0, 0, 0, 240);
-  gradExpense.addColorStop(0,  'rgba(239,68,68,0.20)');
-  gradExpense.addColorStop(1,  'rgba(239,68,68,0.00)');
-
-  function buildLineDatasets(d) {
-    return [
-      {
-        label: 'Sell USD (Income)',
-        data: d.income,
-        borderColor: '#7c5cfc',
-        backgroundColor: gradIncome,
-        fill: true, tension: 0.42,
-        borderWidth: 3,
-        pointBackgroundColor: '#7c5cfc',
-        pointRadius: 5, pointHoverRadius: 7,
-        borderDash: [],
-      },
-      {
-        label: 'Buy USD (Expense)',
-        data: d.expense,
-        borderColor: '#f87171',
-        backgroundColor: gradExpense,
-        fill: true, tension: 0.42,
-        borderWidth: 3,
-        pointBackgroundColor: '#f87171',
-        pointRadius: 5, pointHoverRadius: 7,
-        borderDash: [6, 4],
-      }
-    ];
-  }
-
-  var fundsChart = new Chart(fundsCtx, {
-    type: 'line',
-    data: {
-      labels: datasets.monthly.labels,
-      datasets: buildLineDatasets(datasets.monthly),
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#0e1220',
-          borderColor: 'rgba(124,92,252,0.3)',
-          borderWidth: 1,
-          titleColor: '#e8eaf0',
-          bodyColor: '#9ca3af',
-          padding: 12,
-          cornerRadius: 10,
-          callbacks: {
-            label: function(ctx) {
-              return ' ' + ctx.dataset.label + ': $' + ctx.parsed.y.toLocaleString('en-IN', {minimumFractionDigits:2});
-            }
-          }
-        }
-      },
-      scales: {
-        x: {
-          grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false },
-          ticks: { color: '#6b7280', font: { size: 11, weight: '600' } },
-          border: { color: 'transparent' },
+    const datasets = {
+        monthly: {
+            labels: @json($monthLabels),
+            income: @json($monthlyIncome),
+            expense: @json($monthlyExpense),
         },
-        y: {
-          grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false },
-          ticks: {
-            color: '#6b7280', font: { size: 11 },
-            callback: function(v) { return '$' + v.toLocaleString('en-IN'); }
-          },
-          border: { color: 'transparent' },
+        weekly: {
+            labels: @json($weekLabels),
+            income: @json($weeklyIncome),
+            expense: @json($weeklyExpense),
+        },
+        daily: {
+            labels: @json($dayLabels),
+            income: @json($dailyIncome),
+            expense: @json($dailyExpense),
+        },
+    };
+
+    const fundsCanvas = document.getElementById('dashFundsChart');
+
+    if (fundsCanvas && window.Chart) {
+        const ctx = fundsCanvas.getContext('2d');
+
+        const fundsChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: datasets.monthly.labels,
+                datasets: [
+                    {
+                        label: 'Sell USD Income',
+                        data: datasets.monthly.income,
+                        borderColor: '#0ecb81',
+                        backgroundColor: 'rgba(14,203,129,.12)',
+                        fill: true,
+                        tension: .42,
+                        borderWidth: 3,
+                        pointRadius: 4,
+                    },
+                    {
+                        label: 'Buy USD Expense',
+                        data: datasets.monthly.expense,
+                        borderColor: '#e8192c',
+                        backgroundColor: 'rgba(232,25,44,.12)',
+                        fill: true,
+                        tension: .42,
+                        borderWidth: 3,
+                        pointRadius: 4,
+                        borderDash: [6, 4],
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#aeb4ba' } },
+                    tooltip: {
+                        backgroundColor: '#1f2428',
+                        borderColor: '#3b4248',
+                        borderWidth: 1,
+                        titleColor: '#fff',
+                        bodyColor: '#aeb4ba',
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#9fa5aa' },
+                        grid: { color: 'rgba(255,255,255,.05)' }
+                    },
+                    y: {
+                        ticks: {
+                            color: '#9fa5aa',
+                            callback: value => '$' + value
+                        },
+                        grid: { color: 'rgba(255,255,255,.05)' }
+                    }
+                }
+            }
+        });
+
+        const totalIncome = document.getElementById('dashTotalIncome');
+        const totalExpense = document.getElementById('dashTotalExpense');
+        const totalNet = document.getElementById('dashTotalNet');
+
+        function sum(arr) {
+            return arr.reduce((a, b) => a + Number(b || 0), 0);
         }
-      },
-      interaction: { mode: 'index', intersect: false },
-      animation: { duration: 600, easing: 'easeInOutQuart' },
-    }
-  });
 
-  /* ── Tab switcher ── */
-  var totalIncome  = document.getElementById('xyn-total-income');
-  var totalExpense = document.getElementById('xyn-total-expense');
-  var totalNet     = document.getElementById('xyn-total-net');
-
-  function sum(arr) { return arr.reduce(function(a,b){return a+b;},0); }
-  function fmt(n)   { return '$'+n.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}); }
-
-  document.querySelectorAll('.xyn-tab').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      document.querySelectorAll('.xyn-tab').forEach(function(b){ b.classList.remove('active'); });
-      btn.classList.add('active');
-
-      var period = btn.getAttribute('data-period');
-      var d      = datasets[period];
-
-      fundsChart.data.labels   = d.labels;
-      fundsChart.data.datasets = buildLineDatasets(d);
-      fundsChart.update();
-
-      var inc = sum(d.income), exp = sum(d.expense);
-      totalIncome.textContent  = fmt(inc);
-      totalExpense.textContent = fmt(exp);
-      totalNet.textContent     = fmt(inc - exp);
-    });
-  });
-
-  /* ── Donut Chart ── */
-  var donutCtx = document.getElementById('xynDonut').getContext('2d');
-  new Chart(donutCtx, {
-    type: 'doughnut',
-    data: {
-      labels: ['Approved', 'Pending', 'Rejected'],
-      datasets: [{
-        data: [
-          {{ $approvedCount }},
-          {{ $pendingCount }},
-          {{ $rejectedCount > 0 ? $rejectedCount : 0 }},
-        ],
-        backgroundColor: ['#10b981','#f59e0b','#ef4444'],
-        hoverBackgroundColor: ['#34d399','#fbbf24','#f87171'],
-        borderWidth: 3,
-        borderColor: '#0e1220',
-        hoverOffset: 6,
-      }]
-    },
-    options: {
-      responsive: false,
-      cutout: '72%',
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#0e1220',
-          borderColor: 'rgba(255,255,255,0.08)',
-          borderWidth: 1,
-          titleColor: '#e8eaf0',
-          bodyColor: '#9ca3af',
-          padding: 10,
+        function money(n) {
+            return '$' + Number(n || 0).toLocaleString('en-IN', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
         }
-      },
-      animation: { duration: 800, easing: 'easeInOutQuart' },
-    }
-  });
 
+        document.querySelectorAll('.dash-tab').forEach(btn => {
+            btn.addEventListener('click', function () {
+                document.querySelectorAll('.dash-tab').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                const period = btn.dataset.period;
+                const d = datasets[period];
+
+                fundsChart.data.labels = d.labels;
+                fundsChart.data.datasets[0].data = d.income;
+                fundsChart.data.datasets[1].data = d.expense;
+                fundsChart.update();
+
+                const inc = sum(d.income);
+                const exp = sum(d.expense);
+
+                totalIncome.textContent = money(inc);
+                totalExpense.textContent = money(exp);
+                totalNet.textContent = money(inc - exp);
+            });
+        });
+    }
+
+    const donutCanvas = document.getElementById('dashDonut');
+
+    if (donutCanvas && window.Chart) {
+        new Chart(donutCanvas.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Approved', 'Pending', 'Rejected'],
+                datasets: [{
+                    data: [{{ $approvedCount }}, {{ $pendingCount }}, {{ $rejectedCount }}],
+                    backgroundColor: ['#0ecb81', '#ffc933', '#e8192c'],
+                    borderColor: '#2b2f32',
+                    borderWidth: 4,
+                }]
+            },
+            options: {
+                responsive: false,
+                cutout: '72%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1f2428',
+                        borderColor: '#3b4248',
+                        borderWidth: 1,
+                        titleColor: '#fff',
+                        bodyColor: '#aeb4ba',
+                    }
+                }
+            }
+        });
+    }
 })();
 </script>

@@ -83,22 +83,21 @@ class _LoginScreenState extends State<LoginScreen>
     passwordCtrl.dispose();
     super.dispose();
   }
+Future<void> login() async {
+  if (emailCtrl.text.trim().isEmpty || passwordCtrl.text.trim().isEmpty) {
+    showMessage("Please enter email and password");
+    return;
+  }
 
-  Future<void> login() async {
-    if (emailCtrl.text.trim().isEmpty || passwordCtrl.text.trim().isEmpty) {
-      showMessage("Please enter email and password");
-      return;
-    }
+  setState(() => loading = true);
 
-    setState(() => loading = true);
-
+  try {
     final data = await ApiService.login(
       emailCtrl.text.trim(),
       passwordCtrl.text.trim(),
     );
 
     if (!mounted) return;
-    setState(() => loading = false);
 
     if (data["success"] == true) {
       final user = data["user"];
@@ -121,9 +120,14 @@ class _LoginScreenState extends State<LoginScreen>
         );
       }
     } else {
-      showMessage(data["message"] ?? "Login failed");
+      showMessage(data["message"]?.toString() ?? "Login failed");
     }
+  } catch (e) {
+    if (mounted) showMessage("Login error: $e");
+  } finally {
+    if (mounted) setState(() => loading = false);
   }
+}
 
   void showMessage(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(

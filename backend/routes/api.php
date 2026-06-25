@@ -7,6 +7,11 @@ use App\Http\Controllers\Api\ConfigController;
 use App\Http\Controllers\Api\SupportTicketController;
 use App\Http\Controllers\Api\ChatController;
 
+// ✅ Handle OPTIONS preflight for ALL api routes (required for browsers)
+Route::options('{any}', function () {
+    return response()->json([], 204);
+})->where('any', '.*');
+
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
 

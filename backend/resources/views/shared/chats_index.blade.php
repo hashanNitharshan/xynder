@@ -1,320 +1,463 @@
 @extends('layouts.admin', ['title' => $title ?? 'Chats'])
 
 @push('styles')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
+
 <style>
-/* ── Reset & Base ─────────────────────────────── */
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+    --dark:#101518;
+    --hero:#2b2f32;
+    --box:#2b2f32;
+    --panel:#24292d;
+    --input:#1f2428;
+    --line:#3b4248;
+    --red:#e8192c;
+    --red2:#c91022;
+    --green:#0ecb81;
+    --gold:#ffc933;
+    --text:#fff;
+    --muted:#aeb4ba;
+    --muted2:#747b82;
+}
 
-.xyn-wrap{
-    display:flex;
-    height:calc(100dvh - 120px);
-    min-height:520px;
-    max-height:calc(100dvh - 120px);
-    border-radius:28px;
+*{box-sizing:border-box}
+
+.chat-page{
+    margin:-24px;
+    min-height:100vh;
+    background:var(--dark);
+    color:var(--text);
+    font-family:Inter,Arial,sans-serif;
+    padding-bottom:50px;
+}
+
+.chat-hero{
+    position:relative;
+    min-height:280px;
+    padding:60px 80px 110px;
+    background:var(--hero);
     overflow:hidden;
-    border:1px solid rgba(255,255,255,.07);
-    background:#0e1220;
 }
 
-/* ── Sidebar ──────────────────────────────────── */
-.xyn-sb{
-    width:340px;
-    flex:0 0 340px;
-    background:#0e1220;
-    display:flex;
-    flex-direction:column;
-    border-right:1px solid rgba(255,255,255,.08);
+.chat-hero::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    opacity:.08;
+    background-image:linear-gradient(120deg,transparent 20%,rgba(255,255,255,.18) 21%,transparent 22%);
+    background-size:260px 260px;
 }
 
-.xyn-sb-head{
-    flex-shrink:0;
-    padding:20px;
-    border-bottom:1px solid rgba(255,255,255,.08);
+.chat-hero-content{
+    position:relative;
+    z-index:2;
+    max-width:600px;
 }
 
-.xyn-sb-title{
-    font-size:20px;
+.chat-eyebrow{
+    color:var(--red);
+    font-size:12px;
     font-weight:900;
-    color:#fff;
+    letter-spacing:.14em;
+    text-transform:uppercase;
     margin-bottom:14px;
 }
 
-.xyn-search{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    background:#131929;
-    border:1px solid rgba(255,255,255,.08);
-    border-radius:15px;
-    padding:11px 13px;
+.chat-title{
+    font-size:46px;
+    line-height:1.15;
+    font-weight:900;
+    margin:0 0 18px;
 }
 
-.xyn-search input{
+.chat-title span{color:var(--red)}
+
+.chat-sub{
+    color:#b8bdc2;
+    font-size:15px;
+    line-height:1.7;
+    font-weight:700;
+}
+
+.chat-shell{
+    position:relative;
+    z-index:5;
+    max-width:1200px;
+    margin:-70px 80px 0;
+    display:grid;
+    grid-template-columns:380px 1fr;
+    min-height:620px;
+    height:calc(100dvh - 210px);
+    background:var(--box);
+    border:1.5px solid var(--red);
+    border-radius:8px;
+    overflow:hidden;
+    box-shadow:0 18px 40px rgba(0,0,0,.28);
+}
+
+.chat-sidebar{
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+    background:#24292d;
+    border-right:1px solid var(--line);
+}
+
+.chat-sb-head{
+    flex-shrink:0;
+    padding:22px;
+    border-bottom:1px solid var(--line);
+}
+
+.chat-sb-title{
+    font-size:20px;
+    font-weight:900;
+    margin-bottom:14px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.chat-sb-title i{color:var(--red)}
+
+.chat-search{
+    height:48px;
+    background:#1f2428;
+    border:1px solid #3b4248;
+    border-radius:4px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:0 14px;
+}
+
+.chat-search i{color:var(--muted2)}
+
+.chat-search input{
+    flex:1;
     background:transparent;
     border:0;
     outline:0;
     color:#fff;
-    width:100%;
     font-size:13px;
+    font-weight:700;
 }
 
-.xyn-search input::placeholder{color:#4b5563;}
+.chat-search input::placeholder{color:#747b82}
 
-/* scrollbar totally hidden — WhatsApp style */
-.xyn-list{
+.chat-list{
     flex:1;
     min-height:0;
     overflow-y:auto;
-    padding:10px;
-    scrollbar-width:none;          /* Firefox */
-    -ms-overflow-style:none;       /* IE/Edge */
+    padding:12px;
+    scrollbar-width:none;
+    -ms-overflow-style:none;
 }
-.xyn-list::-webkit-scrollbar{display:none;}  /* Chrome/Safari */
+.chat-list::-webkit-scrollbar{display:none}
 
-.xyn-chat-item{
+.chat-item{
     display:flex;
     align-items:center;
-    gap:11px;
-    padding:12px;
-    border-radius:17px;
+    gap:12px;
+    padding:13px;
+    border-radius:6px;
+    color:#fff;
     text-decoration:none;
     transition:.15s;
+    border:1px solid transparent;
 }
 
-.xyn-chat-item:hover,
-.xyn-chat-item.active{
-    background:rgba(124,92,252,.18);
+.chat-item:hover{
+    background:#2f353a;
+    border-color:#424a51;
 }
 
-.xyn-av{
-    width:46px;
-    height:46px;
-    flex:0 0 46px;
-    border-radius:15px;
-    background:linear-gradient(135deg,#7c5cfc,#06b6d4);
+.chat-av{
+    width:48px;
+    height:48px;
+    flex:0 0 48px;
+    border-radius:50%;
+    background:var(--red);
     display:flex;
     align-items:center;
     justify-content:center;
     color:#fff;
-    font-size:16px;
     font-weight:900;
     position:relative;
 }
 
-.xyn-lock-badge{
+.chat-lock{
     position:absolute;
     right:-4px;
     bottom:-4px;
-    background:#1f2937;
-    color:#f87171;
-    border-radius:7px;
-    font-size:10px;
-    padding:2px 4px;
-    line-height:1;
+    background:#3a1018;
+    color:#ff6b7b;
+    border:1px solid #71313a;
+    border-radius:50%;
+    width:20px;
+    height:20px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:11px;
 }
 
-.xyn-body{flex:1;min-width:0;}
+.chat-body{flex:1;min-width:0}
 
-.xyn-top{
+.chat-top{
     display:flex;
-    gap:7px;
     align-items:center;
+    gap:8px;
     min-width:0;
 }
 
-.xyn-name{
+.chat-name{
     font-size:14px;
     font-weight:900;
-    color:#fff;
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
 }
 
-.xyn-tag{
+.chat-tag{
+    flex-shrink:0;
+    padding:3px 7px;
+    border-radius:20px;
     font-size:10px;
     font-weight:900;
-    padding:3px 7px;
-    border-radius:7px;
-    flex-shrink:0;
 }
-.xyn-tag.req{background:rgba(245,158,11,.14);color:#fbbf24;}
-.xyn-tag.tra{background:rgba(124,92,252,.16);color:#a78bfa;}
 
-.xyn-last{
+.chat-tag.req{background:#3b2a09;color:var(--gold)}
+.chat-tag.tra{background:#3a1018;color:#ff6b7b}
+
+.chat-last{
+    margin-top:5px;
+    color:#9fa5aa;
     font-size:12px;
-    color:#6b7280;
-    margin-top:4px;
+    font-weight:700;
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
 }
 
-.xyn-meta{text-align:right;flex-shrink:0;}
-
-.xyn-time{font-size:11px;color:#6b7280;}
-
-.xyn-unread{
-    margin-top:6px;
-    display:inline-block;
-    background:#7c5cfc;
-    color:#fff;
-    border-radius:999px;
-    font-size:11px;
-    font-weight:900;
-    padding:3px 8px;
-}
-
-.xyn-pager{
+.chat-meta{
+    text-align:right;
     flex-shrink:0;
-    padding:10px 12px;
-    border-top:1px solid rgba(255,255,255,.08);
-    background:#0e1220;
-    color:#9ca3af;
 }
 
-.xyn-pager nav{display:flex;justify-content:center;}
-.xyn-pager svg{width:18px;height:18px;}
+.chat-time{
+    color:#747b82;
+    font-size:11px;
+    font-weight:800;
+}
 
-/* ── Empty right panel ────────────────────────── */
-.xyn-empty{
-    flex:1;
-    display:flex;
-    flex-direction:column;
+.chat-unread{
+    display:inline-flex;
     align-items:center;
     justify-content:center;
-    gap:14px;
-    background:#111827;
-    color:#374151;
+    margin-top:7px;
+    min-width:22px;
+    height:22px;
+    padding:0 7px;
+    background:var(--red);
+    color:#fff;
+    border-radius:20px;
+    font-size:11px;
+    font-weight:900;
 }
 
-.xyn-empty-icon{font-size:56px;opacity:.4;}
-.xyn-empty-text{font-size:15px;font-weight:700;color:#4b5563;}
+.chat-pager{
+    flex-shrink:0;
+    padding:12px;
+    border-top:1px solid var(--line);
+    background:#24292d;
+}
 
-/* ── Mobile ───────────────────────────────────── */
-@media(max-width:760px){
-    .xyn-wrap{
-        border-radius:18px;
-        height:calc(100dvh - 90px);
-        max-height:calc(100dvh - 90px);
+.chat-pager nav{display:flex;justify-content:center}
+.chat-pager svg{width:18px;height:18px}
+
+.chat-empty-panel{
+    background:#2b2f32;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:40px;
+}
+
+.chat-empty-card{
+    text-align:center;
+    max-width:360px;
+}
+
+.chat-empty-icon{
+    width:86px;
+    height:86px;
+    margin:0 auto 18px;
+    border-radius:50%;
+    background:#3a1018;
+    color:var(--red);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:42px;
+}
+
+.chat-empty-card h3{
+    font-size:22px;
+    font-weight:900;
+    margin:0 0 10px;
+}
+
+.chat-empty-card p{
+    color:#aeb4ba;
+    font-size:14px;
+    line-height:1.7;
+    font-weight:700;
+}
+
+@media(max-width:900px){
+    .chat-page{margin:-16px}
+    .chat-hero{padding:45px 24px 100px}
+    .chat-title{font-size:34px}
+    .chat-shell{
+        margin:-70px 20px 0;
+        grid-template-columns:1fr;
+        height:calc(100dvh - 160px);
     }
-    .xyn-sb{width:100%;flex:1;}
-    .xyn-empty{display:none;}
+    .chat-empty-panel{display:none}
 }
 </style>
 @endpush
 
 @section('content')
-@php
-    $backRoute = $user->role === 'merchant'
-        ? route('merchant.chats')
-        : route('client.chats');
-@endphp
+<div class="chat-page">
 
-<div class="xyn-wrap">
-
-    {{-- ── Sidebar list ── --}}
-    <div class="xyn-sb">
-        <div class="xyn-sb-head">
-            <div class="xyn-sb-title">Transaction Chats</div>
-            <div class="xyn-search">
-                <span>🔍</span>
-                <input type="text" id="chatSearch" placeholder="Search chat or reference…">
+    <section class="chat-hero">
+        <div class="chat-hero-content">
+            <div class="chat-eyebrow">Xynder Wallet</div>
+            <h1 class="chat-title">Transaction <span>Chats</span></h1>
+            <div class="chat-sub">
+                Chat with clients and merchants for wallet requests and wallet transfers.
+                Secure messages, attachments, and transaction based conversation history.
             </div>
         </div>
+    </section>
 
-        <div class="xyn-list" id="chatList">
-            @forelse($conversations as $c)
-                @php
-                    $cIsTransfer = !is_null($c->wallet_transfer_id);
+    <section class="chat-shell">
+        <aside class="chat-sidebar">
+            <div class="chat-sb-head">
+                <div class="chat-sb-title">
+                    <i class="ti ti-messages"></i>
+                    Transaction Chats
+                </div>
 
-                    $cChatNo = $cIsTransfer
-                        ? 'TRA'.str_pad($c->wallet_transfer_id, 9, '0', STR_PAD_LEFT)
-                        : 'TNS'.str_pad($c->wallet_request_id, 9, '0', STR_PAD_LEFT);
+                <div class="chat-search">
+                    <i class="ti ti-search"></i>
+                    <input type="text" id="chatSearch" placeholder="Search chat or reference...">
+                </div>
+            </div>
 
-                    $cOther  = $c->user_one_id == $user->id ? $c->userTwo : $c->userOne;
-                    $cLast   = $c->messages->first();
-                    $cLocked = $c->isLocked();
+            <div class="chat-list" id="chatList">
+                @forelse($conversations as $c)
+                    @php
+                        $cIsTransfer = !is_null($c->wallet_transfer_id);
 
-                    $cUnread = \App\Models\ChatMessage::where('conversation_id', $c->id)
-                        ->where('receiver_id', $user->id)
-                        ->whereIn('status', ['sent', 'delivered'])
-                        ->count();
+                        $cChatNo = $cIsTransfer
+                            ? 'TRA'.str_pad($c->wallet_transfer_id, 9, '0', STR_PAD_LEFT)
+                            : 'TNS'.str_pad($c->wallet_request_id, 9, '0', STR_PAD_LEFT);
 
-                    $cRoute = $user->role === 'merchant'
-                        ? route('merchant.chats.show', $c)
-                        : route('client.chats.show', $c);
-                @endphp
+                        $cOther  = $c->user_one_id == $user->id ? $c->userTwo : $c->userOne;
+                        $cLast   = $c->messages->first();
+                        $cLocked = $c->isLocked();
 
-                <a href="{{ $cRoute }}"
-                   class="xyn-chat-item"
-                   data-name="{{ strtolower($cOther->name ?? '') }}"
-                   data-ref="{{ strtolower($cChatNo) }}">
+                        $cUnread = \App\Models\ChatMessage::where('conversation_id', $c->id)
+                            ->where('receiver_id', $user->id)
+                            ->whereIn('status', ['sent', 'delivered'])
+                            ->count();
 
-                    <div class="xyn-av">
-                        {{ strtoupper(substr($cOther->name ?? 'U', 0, 1)) }}
-                        @if($cLocked)
-                            <span class="xyn-lock-badge">🔒</span>
-                        @endif
-                    </div>
+                        $cRoute = $user->role === 'merchant'
+                            ? route('merchant.chats.show', $c)
+                            : route('client.chats.show', $c);
+                    @endphp
 
-                    <div class="xyn-body">
-                        <div class="xyn-top">
-                            <div class="xyn-name">{{ $cOther->name ?? 'Unknown' }}</div>
-                            <span class="xyn-tag {{ $cIsTransfer ? 'tra' : 'req' }}">
-                                {{ $cIsTransfer ? 'TRA' : 'REQ' }}
-                            </span>
-                        </div>
+                    <a href="{{ $cRoute }}"
+                       class="chat-item"
+                       data-name="{{ strtolower($cOther->name ?? '') }}"
+                       data-ref="{{ strtolower($cChatNo) }}">
 
-                        <div class="xyn-last">
+                        <div class="chat-av">
+                            {{ strtoupper(substr($cOther->name ?? 'U', 0, 1)) }}
                             @if($cLocked)
-                                🔒 Chat locked
-                            @elseif($cLast)
-                                {{ $cLast->message
-                                    ? \Illuminate\Support\Str::limit($cLast->message, 38)
-                                    : '📎 '.$cLast->attachment_name }}
-                            @else
-                                No messages yet
+                                <span class="chat-lock">
+                                    <i class="ti ti-lock"></i>
+                                </span>
                             @endif
                         </div>
-                    </div>
 
-                    <div class="xyn-meta">
-                        <div class="xyn-time">
-                            {{ $c->updated_at?->isToday()
-                                ? $c->updated_at->format('H:i')
-                                : $c->updated_at?->format('M d') }}
+                        <div class="chat-body">
+                            <div class="chat-top">
+                                <div class="chat-name">{{ $cOther->name ?? 'Unknown' }}</div>
+                                <span class="chat-tag {{ $cIsTransfer ? 'tra' : 'req' }}">
+                                    {{ $cIsTransfer ? 'TRA' : 'REQ' }}
+                                </span>
+                            </div>
+
+                            <div class="chat-last">
+                                @if($cLocked)
+                                    Chat locked
+                                @elseif($cLast)
+                                    {{ $cLast->message
+                                        ? \Illuminate\Support\Str::limit($cLast->message, 42)
+                                        : 'Attachment: '.$cLast->attachment_name }}
+                                @else
+                                    No messages yet
+                                @endif
+                            </div>
                         </div>
-                        @if($cUnread > 0)
-                            <span class="xyn-unread">{{ $cUnread }}</span>
-                        @endif
+
+                        <div class="chat-meta">
+                            <div class="chat-time">
+                                {{ $c->updated_at?->isToday()
+                                    ? $c->updated_at->format('H:i')
+                                    : $c->updated_at?->format('M d') }}
+                            </div>
+
+                            @if($cUnread > 0)
+                                <span class="chat-unread">{{ $cUnread }}</span>
+                            @endif
+                        </div>
+                    </a>
+                @empty
+                    <div style="text-align:center;color:#9fa5aa;padding:42px 20px;font-weight:800;">
+                        No chats yet.
                     </div>
-                </a>
+                @endforelse
+            </div>
 
-            @empty
-                <div style="text-align:center;color:#6b7280;padding:40px 20px;">
-                    No chats yet.
+            @if($conversations->hasPages())
+                <div class="chat-pager">
+                    {{ $conversations->links() }}
                 </div>
-            @endforelse
-        </div>
+            @endif
+        </aside>
 
-        <div class="xyn-pager">
-            {{ $conversations->links() }}
-        </div>
-    </div>
-
-    {{-- ── Empty state (right panel when no chat selected) ── --}}
-    <div class="xyn-empty">
-        <div class="xyn-empty-icon">💬</div>
-        <div class="xyn-empty-text">Select a conversation to start chatting</div>
-    </div>
-
+        <main class="chat-empty-panel">
+            <div class="chat-empty-card">
+                <div class="chat-empty-icon">
+                    <i class="ti ti-message-circle"></i>
+                </div>
+                <h3>Select a Conversation</h3>
+                <p>Choose a transaction chat from the left side to view messages and send replies.</p>
+            </div>
+        </main>
+    </section>
 </div>
 
 <script>
 document.getElementById('chatSearch')?.addEventListener('input', function () {
     const q = this.value.toLowerCase().trim();
-    document.querySelectorAll('.xyn-chat-item').forEach(el => {
+
+    document.querySelectorAll('.chat-item').forEach(el => {
         el.style.display =
             (!q || el.dataset.name.includes(q) || el.dataset.ref.includes(q))
                 ? '' : 'none';

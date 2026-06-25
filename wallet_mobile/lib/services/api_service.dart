@@ -111,21 +111,41 @@ class ApiService {
 
   // ── Auth ─────────────────────────────────────────────────────────────
 
-  static Future<Map<String, dynamic>> login(
-      String email, String password) async {
-    await clearToken();
+  static Future<Map<String, dynamic>> login(String email, String password) async {
+  await clearToken();
+
+  try {
     final res = await http.post(
       Uri.parse("$baseUrl/login"),
-      headers: {"Accept": "application/json"},
-      body: {"email": email, "password": password},
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode({
+        "email": email,
+        "password": password,
+      }),
     ).timeout(const Duration(seconds: 25));
 
     final data = decode(res);
+
     if (data["success"] == true && data["token"] != null) {
       await saveToken(data["token"].toString());
     }
+
     return data;
+  } on TimeoutException {
+    return {
+      "success": false,
+      "message": "Login timeout. Please check server.",
+    };
+  } catch (e) {
+    return {
+      "success": false,
+      "message": "Login failed: $e",
+    };
   }
+}
 
   static Future<Map<String, dynamic>> profile() async {
     final res = await http.get(

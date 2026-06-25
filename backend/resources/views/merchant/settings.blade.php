@@ -1,211 +1,258 @@
 @extends('layouts.admin', ['title' => 'Settings'])
 
 @push('styles')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
+
 <style>
-.xyn-settings-wrap{
-    max-width:720px;
-    margin:0 auto;
+:root{
+    --dark:#101518;
+    --hero:#2b2f32;
+    --box:#2b2f32;
+    --panel:#24292d;
+    --input:#1f2428;
+    --line:#3b4248;
+    --red:#e8192c;
+    --red2:#c91022;
+    --green:#0ecb81;
+    --gold:#ffc933;
+    --text:#fff;
+    --muted:#aeb4ba;
+    --muted2:#747b82;
+}
+
+*{box-sizing:border-box}
+
+.settings-page{
+    margin:-24px;
+    min-height:100vh;
+    background:var(--dark);
+    color:var(--text);
+    font-family:Inter,Arial,sans-serif;
+    padding-bottom:60px;
+}
+
+.settings-hero{
+    position:relative;
+    min-height:320px;
+    padding:65px 85px 120px;
+    background:var(--hero);
+    overflow:hidden;
+}
+
+.settings-hero::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    opacity:.08;
+    background-image:linear-gradient(120deg,transparent 20%,rgba(255,255,255,.18) 21%,transparent 22%);
+    background-size:260px 260px;
+}
+
+.settings-hero-content{
+    position:relative;
+    z-index:2;
+    max-width:650px;
+}
+
+.settings-eyebrow{
+    color:var(--red);
+    font-size:12px;
+    font-weight:900;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    margin-bottom:14px;
+}
+
+.settings-title{
+    font-size:48px;
+    line-height:1.15;
+    font-weight:900;
+    margin:0 0 20px;
+}
+
+.settings-title span{color:var(--red)}
+
+.settings-sub{
+    color:#b8bdc2;
+    font-size:15px;
+    line-height:1.7;
+    font-weight:700;
+}
+
+.settings-wrap{
+    position:relative;
+    z-index:5;
+    max-width:780px;
+    margin:-70px auto 0;
+    padding:0 20px;
     display:flex;
     flex-direction:column;
     gap:18px;
 }
 
-.xyn-settings-hero{
-    background:#0e1220;
-    border:1px solid rgba(255,255,255,.07);
-    border-radius:28px;
-    padding:26px;
-    position:relative;
-    overflow:hidden;
+.settings-alert{
+    padding:14px 16px;
+    border-radius:4px;
+    font-weight:800;
 }
 
-.xyn-settings-hero::before{
-    content:'';
-    position:absolute;
-    right:-90px;
-    top:-90px;
-    width:300px;
-    height:300px;
-    background:radial-gradient(circle,rgba(124,92,252,.24),transparent 70%);
+.settings-alert.ok{
+    background:#0d2b1e;
+    color:var(--green);
+    border:1px solid #1a4a35;
 }
 
-.xyn-settings-title{
-    font-size:30px;
-    font-weight:900;
-    margin:0 0 6px;
-    position:relative;
-    z-index:1;
+.settings-alert.err{
+    background:#3a1018;
+    color:#ff6b7b;
+    border:1px solid #71313a;
 }
 
-.xyn-settings-title span{
-    background:linear-gradient(90deg,#7c5cfc,#06b6d4);
-    -webkit-background-clip:text;
-    -webkit-text-fill-color:transparent;
-}
-
-.xyn-settings-sub{
-    color:#9ca3af;
-    font-size:14px;
-    position:relative;
-    z-index:1;
-}
-
-.xyn-profile-card{
+.settings-profile{
     display:flex;
     align-items:center;
-    gap:16px;
-    padding:22px;
-    background:linear-gradient(135deg,#1a1060,#071228);
-    border:1px solid rgba(124,92,252,.28);
-    border-radius:28px;
-    position:relative;
-    overflow:hidden;
+    gap:18px;
+    padding:24px;
+    background:var(--box);
+    border:1.5px solid var(--red);
+    border-radius:7px;
     text-decoration:none;
+    color:#fff;
+    box-shadow:0 18px 40px rgba(0,0,0,.28);
 }
 
-.xyn-profile-card::before{
-    content:'';
-    position:absolute;
-    right:-70px;
-    top:-70px;
-    width:220px;
-    height:220px;
-    background:radial-gradient(circle,rgba(6,182,212,.18),transparent 70%);
-}
-
-.xyn-avatar-ring{
-    width:76px;
-    height:76px;
+.settings-avatar{
+    width:84px;
+    height:84px;
     border-radius:50%;
-    background:linear-gradient(135deg,#7c5cfc,#06b6d4);
-    padding:3px;
+    background:var(--red);
+    padding:4px;
     flex-shrink:0;
-    position:relative;
-    z-index:1;
 }
 
-.xyn-avatar-ring img,
-.xyn-avatar-inner{
+.settings-avatar img,
+.settings-avatar-inner{
     width:100%;
     height:100%;
     border-radius:50%;
     object-fit:cover;
 }
 
-.xyn-avatar-inner{
-    background:#131929;
-    color:#a78bfa;
+.settings-avatar-inner{
+    background:#1f2428;
     display:flex;
     align-items:center;
     justify-content:center;
-    font-size:30px;
-    font-weight:900;
-}
-
-.xyn-user-info{
-    flex:1;
-    min-width:0;
-    position:relative;
-    z-index:1;
-}
-
-.xyn-user-info h3{
-    margin:0;
-    font-size:20px;
+    font-size:32px;
     font-weight:900;
     color:#fff;
 }
 
-.xyn-user-info p{
+.settings-user{
+    flex:1;
+    min-width:0;
+}
+
+.settings-user h3{
+    margin:0 0 6px;
+    font-size:23px;
+    font-weight:900;
+    color:#fff;
+}
+
+.settings-user p{
     margin:4px 0;
-    color:#9ca3af;
+    color:#aeb4ba;
     font-size:14px;
+    font-weight:700;
     word-break:break-word;
 }
 
-.xyn-verified{
+.settings-verified{
     display:inline-flex;
     align-items:center;
     gap:6px;
-    margin-top:6px;
+    margin-top:9px;
     padding:6px 12px;
-    border-radius:999px;
+    border-radius:20px;
     font-size:11px;
     font-weight:900;
 }
 
-.xyn-verified.ok{
-    background:rgba(16,185,129,.12);
-    color:#34d399;
-    border:1px solid rgba(16,185,129,.25);
+.settings-verified.ok{
+    background:#0d2b1e;
+    color:var(--green);
 }
 
-.xyn-verified.no{
-    background:rgba(245,158,11,.13);
-    color:#fbbf24;
-    border:1px solid rgba(245,158,11,.25);
+.settings-verified.no{
+    background:#3b2a09;
+    color:var(--gold);
 }
 
-.xyn-arrow{
-    color:#9ca3af;
-    font-size:32px;
-    position:relative;
-    z-index:1;
+.settings-arrow{
+    color:#9fa5aa;
+    font-size:28px;
+    flex-shrink:0;
 }
 
-.xyn-setting-item{
-    background:#0e1220;
-    border:1px solid rgba(255,255,255,.07);
-    border-radius:24px;
+.settings-item{
+    background:var(--box);
+    border:1px solid var(--line);
+    border-radius:6px;
     overflow:hidden;
-    position:relative;
 }
 
-.xyn-setting-link,
-.xyn-setting-summary{
+.settings-item:hover{
+    border-color:rgba(232,25,44,.55);
+}
+
+.settings-link,
+.settings-summary{
     display:flex;
     align-items:center;
     gap:15px;
     padding:18px;
     cursor:pointer;
     text-decoration:none;
+    color:#fff;
 }
 
-.xyn-setting-link:hover,
-.xyn-setting-summary:hover{
-    background:#131929;
+.settings-link:hover,
+.settings-summary:hover{
+    background:#30363a;
 }
 
-.xyn-setting-icon{
+.settings-icon{
     width:50px;
     height:50px;
-    border-radius:16px;
-    background:linear-gradient(135deg,rgba(124,92,252,.18),rgba(6,182,212,.10));
-    color:#a78bfa;
+    border-radius:50%;
+    background:#3a1018;
+    color:var(--red);
     display:flex;
     align-items:center;
     justify-content:center;
-    font-size:21px;
+    font-size:23px;
     font-weight:900;
     flex-shrink:0;
 }
 
-.xyn-setting-text{
+.settings-text{
     flex:1;
     min-width:0;
 }
 
-.xyn-setting-text h4{
+.settings-text h4{
     margin:0;
     font-size:16px;
     font-weight:900;
     color:#fff;
 }
 
-.xyn-setting-text p{
+.settings-text p{
     margin:5px 0 0;
-    color:#9ca3af;
+    color:#9fa5aa;
     font-size:13px;
+    font-weight:700;
 }
 
 details summary{
@@ -216,177 +263,217 @@ details summary::-webkit-details-marker{
     display:none;
 }
 
-details[open] .xyn-arrow{
+details[open] .settings-arrow{
     transform:rotate(90deg);
 }
 
-.xyn-setting-body{
+.settings-body{
     padding:18px;
-    border-top:1px solid rgba(255,255,255,.07);
-    background:#0b0f1a;
+    border-top:1px solid var(--line);
+    background:#24292d;
 }
 
-.xyn-field{
+.settings-field{
     margin-bottom:14px;
 }
 
-.xyn-field label{
+.settings-field label{
     display:block;
-    color:#9ca3af;
-    font-size:12px;
+    color:#9fa5aa;
+    font-size:11px;
     font-weight:900;
     text-transform:uppercase;
     letter-spacing:.08em;
     margin-bottom:8px;
 }
 
-.xyn-field input,
-.xyn-field textarea{
+.settings-field input,
+.settings-field textarea{
     width:100%;
-    background:#131929;
-    border:1px solid rgba(255,255,255,.08);
+    background:#1f2428;
+    border:1px solid var(--line);
     color:#fff;
-    border-radius:14px;
+    border-radius:4px;
     padding:13px 14px;
     outline:none;
+    font-weight:700;
 }
 
-.xyn-field input:focus,
-.xyn-field textarea:focus{
-    border-color:rgba(124,92,252,.55);
-    box-shadow:0 0 0 3px rgba(124,92,252,.12);
+.settings-field input:focus,
+.settings-field textarea:focus{
+    border-color:var(--red);
+    box-shadow:0 0 0 3px rgba(232,25,44,.12);
 }
 
-.xyn-btn{
+.settings-field textarea{
+    resize:vertical;
+    min-height:110px;
+}
+
+.settings-btn{
     border:0;
-    border-radius:15px;
+    border-radius:4px;
     padding:13px 18px;
     font-weight:900;
     cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
 }
 
-.xyn-btn.primary{
-    background:linear-gradient(90deg,#7c5cfc,#06b6d4);
+.settings-btn.primary{
+    background:var(--red);
     color:#fff;
 }
 
-.xyn-ticket-title{
+.settings-btn.primary:hover{
+    background:var(--red2);
+}
+
+.settings-ticket-title{
     font-size:17px;
     font-weight:900;
     color:#fff;
-    margin:22px 0 14px;
+    margin:24px 0 14px;
+    display:flex;
+    align-items:center;
+    gap:8px;
 }
 
-.xyn-ticket-wrap{
+.settings-ticket-title i{
+    color:var(--red);
+}
+
+.settings-ticket-wrap{
     overflow-x:auto;
 }
 
-.xyn-ticket-table{
+.settings-table{
     width:100%;
-    border-collapse:separate;
-    border-spacing:0 7px;
-    font-size:13px;
+    min-width:640px;
+    border-collapse:collapse;
 }
 
-.xyn-ticket-table th{
-    color:#6b7280;
+.settings-table th{
+    color:#9fa5aa;
     font-size:11px;
     text-transform:uppercase;
-    letter-spacing:.08em;
     text-align:left;
-    padding:0 12px 8px;
+    padding:14px 16px;
+    background:#1f2428;
 }
 
-.xyn-ticket-table td{
-    background:#131929;
-    padding:13px 12px;
-    border-top:1px solid rgba(255,255,255,.07);
-    border-bottom:1px solid rgba(255,255,255,.07);
+.settings-table td{
+    padding:15px 16px;
+    border-top:1px solid #3a4147;
+    color:#c9ced3;
+    font-size:13px;
+    font-weight:700;
     vertical-align:top;
 }
 
-.xyn-ticket-table td:first-child{
-    border-left:1px solid rgba(255,255,255,.07);
-    border-radius:14px 0 0 14px;
+.settings-table tr:hover td{
+    background:#30363a;
 }
 
-.xyn-ticket-table td:last-child{
-    border-right:1px solid rgba(255,255,255,.07);
-    border-radius:0 14px 14px 0;
-}
-
-.xyn-status{
+.settings-status{
     display:inline-block;
-    padding:6px 10px;
-    border-radius:999px;
+    padding:6px 11px;
+    border-radius:20px;
     font-size:11px;
     font-weight:900;
 }
 
-.xyn-status.pending,
-.xyn-status.open{
-    background:rgba(245,158,11,.13);
-    color:#fbbf24;
+.settings-status.pending,
+.settings-status.open{
+    background:#3b2a09;
+    color:var(--gold);
 }
 
-.xyn-status.approved,
-.xyn-status.resolved,
-.xyn-status.closed{
-    background:rgba(16,185,129,.12);
-    color:#34d399;
+.settings-status.approved,
+.settings-status.resolved,
+.settings-status.closed{
+    background:#0d2b1e;
+    color:var(--green);
 }
 
-.xyn-status.rejected{
-    background:rgba(239,68,68,.12);
-    color:#f87171;
+.settings-status.rejected{
+    background:#3a1018;
+    color:#ff6b7b;
 }
 
-.xyn-empty{
+.settings-empty{
     text-align:center;
-    color:#6b7280;
-    padding:30px!important;
+    color:#9fa5aa!important;
+    padding:34px!important;
+    font-weight:800!important;
 }
 
-.xyn-alert-success,
-.xyn-alert-error{
-    border-radius:16px;
-    padding:14px 16px;
-    font-weight:800;
+.settings-logout{
+    background:#3a1018;
+    border:1px solid rgba(232,25,44,.45);
+    border-radius:6px;
+    padding:20px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:20px;
 }
 
-.xyn-alert-success{
-    background:rgba(16,185,129,.12);
-    border:1px solid rgba(16,185,129,.22);
-    color:#d1fae5;
+.settings-logout h3{
+    margin:0 0 5px;
+    font-size:18px;
+    font-weight:900;
 }
 
-.xyn-alert-error{
-    background:rgba(239,68,68,.12);
-    border:1px solid rgba(239,68,68,.22);
-    color:#fee2e2;
+.settings-logout p{
+    margin:0;
+    color:#ffb4bc;
+    font-size:13px;
+    font-weight:700;
 }
 
-@media(max-width:650px){
-    .xyn-settings-wrap{
-        max-width:100%;
+.settings-btn.danger{
+    background:var(--red);
+    color:#fff;
+}
+
+.settings-btn.danger:hover{
+    background:var(--red2);
+}
+
+@media(max-width:760px){
+    .settings-page{margin:-16px}
+
+    .settings-hero{
+        padding:45px 24px 110px;
     }
 
-    .xyn-profile-card{
+    .settings-title{
+        font-size:36px;
+    }
+
+    .settings-wrap{
+        margin-top:-70px;
+        padding:0 20px;
+    }
+
+    .settings-profile{
         align-items:flex-start;
     }
 
-    .xyn-avatar-ring{
-        width:64px;
-        height:64px;
+    .settings-avatar{
+        width:68px;
+        height:68px;
     }
 
-    .xyn-settings-title{
-        font-size:25px;
+    .settings-user h3{
+        font-size:20px;
     }
 
-    .xyn-setting-icon{
-        width:44px;
-        height:44px;
+    .settings-logout{
+        flex-direction:column;
+        align-items:flex-start;
     }
 }
 </style>
@@ -406,169 +493,240 @@ details[open] .xyn-arrow{
         ? route('merchant.settings.support')
         : route('client.settings.support');
 
+    $roleLabel = $user->role === 'merchant' ? 'Merchant' : 'Client';
     $photo = $user->photo ? url('/api/storage/'.$user->photo) : null;
 @endphp
 
-<div class="xyn-settings-wrap">
+<div class="settings-page">
 
-    
+    <section class="settings-hero">
+        <div class="settings-hero-content">
+            <div class="settings-eyebrow">Xynder Wallet</div>
 
-    @if(session('success'))
-        <div class="xyn-alert-success">
-            {{ session('success') }}
-        </div>
-    @endif
+            <h1 class="settings-title">
+                Account
+                <span>Settings</span>
+            </h1>
 
-    @if($errors->any())
-        <div class="xyn-alert-error">
-            @foreach($errors->all() as $error)
-                <div>{{ $error }}</div>
-            @endforeach
-        </div>
-    @endif
-
-    <a href="{{ $profileRoute }}" class="xyn-profile-card">
-        <div class="xyn-avatar-ring">
-            @if($photo)
-                <img src="{{ $photo }}" alt="Profile">
-            @else
-                <div class="xyn-avatar-inner">
-                    {{ strtoupper(substr($user->name ?? 'U', 0, 1)) }}
-                </div>
-            @endif
-        </div>
-
-        <div class="xyn-user-info">
-            <h3>{{ $user->name }}</h3>
-            <p>{{ $user->phone ?? '-' }}</p>
-            <p>{{ $user->email }}</p>
-
-            @if($user->is_verified)
-                <div class="xyn-verified ok">✽ Verified Merchant</div>
-            @else
-                <div class="xyn-verified no">✽ Unverified Merchant</div>
-            @endif
-        </div>
-
-        <div class="xyn-arrow">›</div>
-    </a>
-
-    <a href="{{ $profileRoute }}" class="xyn-setting-item xyn-setting-link">
-        <div class="xyn-setting-icon">▣</div>
-        <div class="xyn-setting-text">
-            <h4>Payment Methods</h4>
-            <p>Bank, UPI and account details</p>
-        </div>
-        <div class="xyn-arrow">›</div>
-    </a>
-
-    <details class="xyn-setting-item">
-        <summary class="xyn-setting-summary">
-            <div class="xyn-setting-icon">⟲</div>
-            <div class="xyn-setting-text">
-                <h4>Change Password</h4>
-                <p>Update your merchant account password</p>
+            <div class="settings-sub">
+                Manage your profile, payment methods, password, support tickets and account session.
             </div>
-            <div class="xyn-arrow">›</div>
-        </summary>
+        </div>
+    </section>
 
-        <div class="xyn-setting-body">
-            <form method="POST" action="{{ $passwordRoute }}">
+    <div class="settings-wrap">
+
+        @if(session('success'))
+            <div class="settings-alert ok">
+                <i class="ti ti-circle-check"></i>
+                {{ session('success') }}
+            </div>
+        @endif
+
+        @if($errors->any())
+            <div class="settings-alert err">
+                <i class="ti ti-alert-triangle"></i>
+                @foreach($errors->all() as $error)
+                    <div>{{ $error }}</div>
+                @endforeach
+            </div>
+        @endif
+
+        <a href="{{ $profileRoute }}" class="settings-profile">
+            <div class="settings-avatar">
+                @if($photo)
+                    <img src="{{ $photo }}" alt="Profile">
+                @else
+                    <div class="settings-avatar-inner">
+                        {{ strtoupper(substr($user->name ?? 'U', 0, 1)) }}
+                    </div>
+                @endif
+            </div>
+
+            <div class="settings-user">
+                <h3>{{ $user->name }}</h3>
+                <p><i class="ti ti-phone"></i> {{ $user->phone ?? '-' }}</p>
+                <p><i class="ti ti-mail"></i> {{ $user->email }}</p>
+
+                @if($user->is_verified)
+                    <div class="settings-verified ok">
+                        <i class="ti ti-circle-check"></i>
+                        VERIFIED {{ strtoupper($roleLabel) }}
+                    </div>
+                @else
+                    <div class="settings-verified no">
+                        <i class="ti ti-alert-circle"></i>
+                        UNVERIFIED {{ strtoupper($roleLabel) }}
+                    </div>
+                @endif
+            </div>
+
+            <div class="settings-arrow">
+                <i class="ti ti-chevron-right"></i>
+            </div>
+        </a>
+
+        <a href="{{ $profileRoute }}" class="settings-item settings-link">
+            <div class="settings-icon">
+                <i class="ti ti-credit-card"></i>
+            </div>
+
+            <div class="settings-text">
+                <h4>Payment Methods</h4>
+                <p>Bank, UPI and account details</p>
+            </div>
+
+            <div class="settings-arrow">
+                <i class="ti ti-chevron-right"></i>
+            </div>
+        </a>
+
+        <details class="settings-item">
+            <summary class="settings-summary">
+                <div class="settings-icon">
+                    <i class="ti ti-lock-password"></i>
+                </div>
+
+                <div class="settings-text">
+                    <h4>Change Password</h4>
+                    <p>Update your {{ strtolower($roleLabel) }} account password securely</p>
+                </div>
+
+                <div class="settings-arrow">
+                    <i class="ti ti-chevron-right"></i>
+                </div>
+            </summary>
+
+            <div class="settings-body">
+                <form method="POST" action="{{ $passwordRoute }}">
+                    @csrf
+
+                    <div class="settings-field">
+                        <label>Current Password</label>
+                        <input type="password" name="current_password" required>
+                    </div>
+
+                    <div class="settings-field">
+                        <label>New Password</label>
+                        <input type="password" name="password" required>
+                    </div>
+
+                    <div class="settings-field">
+                        <label>Confirm Password</label>
+                        <input type="password" name="password_confirmation" required>
+                    </div>
+
+                    <button type="submit" class="settings-btn primary">
+                        <i class="ti ti-shield-check"></i>
+                        Update Password
+                    </button>
+                </form>
+            </div>
+        </details>
+
+        <details class="settings-item">
+            <summary class="settings-summary">
+                <div class="settings-icon">
+                    <i class="ti ti-headset"></i>
+                </div>
+
+                <div class="settings-text">
+                    <h4>Help & Support</h4>
+                    <p>Raise a {{ strtolower($roleLabel) }} support ticket</p>
+                </div>
+
+                <div class="settings-arrow">
+                    <i class="ti ti-chevron-right"></i>
+                </div>
+            </summary>
+
+            <div class="settings-body">
+                <form method="POST" action="{{ $supportRoute }}">
+                    @csrf
+
+                    <div class="settings-field">
+                        <label>Name</label>
+                        <input type="text" name="name" value="{{ old('name', $user->name) }}" required>
+                    </div>
+
+                    <div class="settings-field">
+                        <label>Email</label>
+                        <input type="email" name="email" value="{{ old('email', $user->email) }}" required>
+                    </div>
+
+                    <div class="settings-field">
+                        <label>Message</label>
+                        <textarea name="message" rows="4" required>{{ old('message') }}</textarea>
+                    </div>
+
+                    <button type="submit" class="settings-btn primary">
+                        <i class="ti ti-send"></i>
+                        Submit Ticket
+                    </button>
+                </form>
+
+                <div class="settings-ticket-title">
+                    <i class="ti ti-ticket"></i>
+                    Your Tickets
+                </div>
+
+                <div class="settings-ticket-wrap">
+                    <table class="settings-table">
+                        <thead>
+                            <tr>
+                                <th>Message</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @forelse($tickets as $ticket)
+                                <tr>
+                                    <td>{{ $ticket->message }}</td>
+
+                                    <td>
+                                        <span class="settings-status {{ strtolower($ticket->status) }}">
+                                            {{ strtoupper($ticket->status) }}
+                                        </span>
+                                    </td>
+
+                                    <td style="color:#9fa5aa;">
+                                        {{ $ticket->created_at?->format('Y-m-d H:i') }}
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="3" class="settings-empty">
+                                        No support tickets yet.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </details>
+
+        <div class="settings-logout">
+            <div>
+                <h3>
+                    <i class="ti ti-logout"></i>
+                    Logout Account
+                </h3>
+                <p>End your current session safely.</p>
+            </div>
+
+            <form method="POST" action="{{ route('logout') }}">
                 @csrf
 
-                <div class="xyn-field">
-                    <label>Current Password</label>
-                    <input type="password" name="current_password" required>
-                </div>
-
-                <div class="xyn-field">
-                    <label>New Password</label>
-                    <input type="password" name="password" required>
-                </div>
-
-                <div class="xyn-field">
-                    <label>Confirm Password</label>
-                    <input type="password" name="password_confirmation" required>
-                </div>
-
-                <button type="submit" class="xyn-btn primary">
-                    Update Password
+                <button type="submit" class="settings-btn danger">
+                    <i class="ti ti-power"></i>
+                    Logout
                 </button>
             </form>
         </div>
-    </details>
 
-    <details class="xyn-setting-item">
-        <summary class="xyn-setting-summary">
-            <div class="xyn-setting-icon">☏</div>
-            <div class="xyn-setting-text">
-                <h4>Help & Support</h4>
-                <p>Raise a merchant support ticket</p>
-            </div>
-            <div class="xyn-arrow">›</div>
-        </summary>
-
-        <div class="xyn-setting-body">
-            <form method="POST" action="{{ $supportRoute }}">
-                @csrf
-
-                <div class="xyn-field">
-                    <label>Name</label>
-                    <input type="text" name="name" value="{{ old('name', $user->name) }}" required>
-                </div>
-
-                <div class="xyn-field">
-                    <label>Email</label>
-                    <input type="email" name="email" value="{{ old('email', $user->email) }}" required>
-                </div>
-
-                <div class="xyn-field">
-                    <label>Message</label>
-                    <textarea name="message" rows="4" required>{{ old('message') }}</textarea>
-                </div>
-
-                <button type="submit" class="xyn-btn primary">
-                    Submit Ticket
-                </button>
-            </form>
-
-            <div class="xyn-ticket-title">Your Tickets</div>
-
-            <div class="xyn-ticket-wrap">
-                <table class="xyn-ticket-table">
-                    <thead>
-                        <tr>
-                            <th>Message</th>
-                            <th>Status</th>
-                            <th>Date</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        @forelse($tickets as $ticket)
-                            <tr>
-                                <td>{{ $ticket->message }}</td>
-                                <td>
-                                    <span class="xyn-status {{ strtolower($ticket->status) }}">
-                                        {{ strtoupper($ticket->status) }}
-                                    </span>
-                                </td>
-                                <td style="color:#9ca3af;">
-                                    {{ $ticket->created_at?->format('Y-m-d H:i') }}
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="3" class="xyn-empty">
-                                    No support tickets yet.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </details>
-
+    </div>
 </div>
 @endsection

@@ -1,222 +1,258 @@
 @extends('layouts.admin', ['title' => 'Settings'])
 
 @push('styles')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
+
 <style>
-.xyn-settings-wrap{
-    max-width:720px;
-    margin:0 auto;
+:root{
+    --dark:#101518;
+    --hero:#2b2f32;
+    --box:#2b2f32;
+    --panel:#24292d;
+    --input:#1f2428;
+    --line:#3b4248;
+    --red:#e8192c;
+    --red2:#c91022;
+    --green:#0ecb81;
+    --gold:#ffc933;
+    --text:#fff;
+    --muted:#aeb4ba;
+    --muted2:#747b82;
+}
+
+*{box-sizing:border-box}
+
+.client-set-page{
+    margin:-24px;
+    min-height:100vh;
+    background:var(--dark);
+    color:var(--text);
+    font-family:Inter,Arial,sans-serif;
+    padding-bottom:60px;
+}
+
+.client-set-hero{
+    position:relative;
+    min-height:320px;
+    padding:65px 85px 120px;
+    background:var(--hero);
+    overflow:hidden;
+}
+
+.client-set-hero::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    opacity:.08;
+    background-image:linear-gradient(120deg,transparent 20%,rgba(255,255,255,.18) 21%,transparent 22%);
+    background-size:260px 260px;
+}
+
+.client-set-content{
+    position:relative;
+    z-index:2;
+    max-width:650px;
+}
+
+.client-set-eyebrow{
+    color:var(--red);
+    font-size:12px;
+    font-weight:900;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    margin-bottom:14px;
+}
+
+.client-set-title{
+    font-size:48px;
+    line-height:1.15;
+    font-weight:900;
+    margin:0 0 20px;
+}
+
+.client-set-title span{color:var(--red)}
+
+.client-set-sub{
+    color:#b8bdc2;
+    font-size:15px;
+    line-height:1.7;
+    font-weight:700;
+}
+
+.client-set-wrap{
+    position:relative;
+    z-index:5;
+    max-width:780px;
+    margin:-70px auto 0;
+    padding:0 20px;
     display:flex;
     flex-direction:column;
     gap:18px;
 }
 
-.xyn-settings-hero{
-    background:#0e1220;
-    border:1px solid rgba(255,255,255,.07);
-    border-radius:28px;
-    padding:26px;
-    position:relative;
-    overflow:hidden;
+.client-alert{
+    padding:14px 16px;
+    border-radius:4px;
+    font-weight:800;
 }
 
-.xyn-settings-hero::before{
-    content:'';
-    position:absolute;
-    right:-90px;
-    top:-90px;
-    width:300px;
-    height:300px;
-    background:radial-gradient(circle,rgba(124,92,252,.24),transparent 70%);
+.client-alert.ok{
+    background:#0d2b1e;
+    color:var(--green);
+    border:1px solid #1a4a35;
 }
 
-.xyn-settings-hero::after{
-    content:'';
-    position:absolute;
-    left:35%;
-    bottom:-90px;
-    width:220px;
-    height:220px;
-    background:radial-gradient(circle,rgba(6,182,212,.12),transparent 70%);
+.client-alert.err{
+    background:#3a1018;
+    color:#ff6b7b;
+    border:1px solid #71313a;
 }
 
-.xyn-settings-title{
-    font-size:30px;
-    font-weight:900;
-    position:relative;
-    z-index:1;
-    margin:0 0 6px;
-}
-
-.xyn-settings-title span{
-    background:linear-gradient(90deg,#7c5cfc,#06b6d4);
-    -webkit-background-clip:text;
-    -webkit-text-fill-color:transparent;
-    background-clip:text;
-}
-
-.xyn-settings-sub{
-    color:#9ca3af;
-    font-size:14px;
-    position:relative;
-    z-index:1;
-}
-
-.xyn-profile-card{
+.client-profile-card{
     display:flex;
     align-items:center;
-    gap:16px;
-    padding:22px;
-    background:linear-gradient(135deg,#1a1060,#071228);
-    border:1px solid rgba(124,92,252,.28);
-    border-radius:28px;
-    position:relative;
-    overflow:hidden;
+    gap:18px;
+    padding:24px;
+    background:var(--box);
+    border:1.5px solid var(--red);
+    border-radius:7px;
     text-decoration:none;
+    color:#fff;
+    box-shadow:0 18px 40px rgba(0,0,0,.28);
 }
 
-.xyn-profile-card::before{
-    content:'';
-    position:absolute;
-    right:-70px;
-    top:-70px;
-    width:220px;
-    height:220px;
-    background:radial-gradient(circle,rgba(6,182,212,.18),transparent 70%);
-}
-
-.xyn-avatar-ring{
-    width:76px;
-    height:76px;
+.client-avatar{
+    width:84px;
+    height:84px;
     border-radius:50%;
-    background:linear-gradient(135deg,#7c5cfc,#06b6d4);
-    padding:3px;
+    background:var(--red);
+    padding:4px;
     flex-shrink:0;
-    position:relative;
-    z-index:1;
 }
 
-.xyn-avatar-ring img,
-.xyn-avatar-inner{
+.client-avatar img,
+.client-avatar-inner{
     width:100%;
     height:100%;
     border-radius:50%;
     object-fit:cover;
 }
 
-.xyn-avatar-inner{
-    background:#131929;
-    color:#a78bfa;
+.client-avatar-inner{
+    background:#1f2428;
     display:flex;
     align-items:center;
     justify-content:center;
-    font-size:30px;
-    font-weight:900;
-}
-
-.xyn-user-info{
-    flex:1;
-    min-width:0;
-    position:relative;
-    z-index:1;
-}
-
-.xyn-user-info h3{
-    margin:0;
-    font-size:20px;
+    font-size:32px;
     font-weight:900;
     color:#fff;
 }
 
-.xyn-user-info p{
+.client-user-info{
+    flex:1;
+    min-width:0;
+}
+
+.client-user-info h3{
+    margin:0 0 6px;
+    font-size:23px;
+    font-weight:900;
+    color:#fff;
+}
+
+.client-user-info p{
     margin:4px 0;
-    color:#9ca3af;
+    color:#aeb4ba;
     font-size:14px;
+    font-weight:700;
     word-break:break-word;
 }
 
-.xyn-verified{
+.client-verified{
     display:inline-flex;
     align-items:center;
     gap:6px;
-    margin-top:6px;
+    margin-top:9px;
     padding:6px 12px;
-    border-radius:999px;
+    border-radius:20px;
     font-size:11px;
     font-weight:900;
 }
 
-.xyn-verified.ok{
-    background:rgba(16,185,129,.12);
-    color:#34d399;
-    border:1px solid rgba(16,185,129,.25);
+.client-verified.ok{
+    background:#0d2b1e;
+    color:var(--green);
 }
 
-.xyn-verified.no{
-    background:rgba(245,158,11,.13);
-    color:#fbbf24;
-    border:1px solid rgba(245,158,11,.25);
+.client-verified.no{
+    background:#3b2a09;
+    color:var(--gold);
 }
 
-.xyn-arrow{
-    color:#9ca3af;
-    font-size:32px;
-    position:relative;
-    z-index:1;
+.client-arrow{
+    color:#9fa5aa;
+    font-size:28px;
+    flex-shrink:0;
 }
 
-.xyn-setting-item{
-    background:#0e1220;
-    border:1px solid rgba(255,255,255,.07);
-    border-radius:24px;
+.client-item{
+    background:var(--box);
+    border:1px solid var(--line);
+    border-radius:6px;
     overflow:hidden;
-    position:relative;
 }
 
-.xyn-setting-link,
-.xyn-setting-summary{
+.client-item:hover{
+    border-color:rgba(232,25,44,.55);
+}
+
+.client-link,
+.client-summary{
     display:flex;
     align-items:center;
     gap:15px;
     padding:18px;
     cursor:pointer;
     text-decoration:none;
+    color:#fff;
 }
 
-.xyn-setting-link:hover,
-.xyn-setting-summary:hover{
-    background:#131929;
+.client-link:hover,
+.client-summary:hover{
+    background:#30363a;
 }
 
-.xyn-setting-icon{
+.client-icon{
     width:50px;
     height:50px;
-    border-radius:16px;
-    background:linear-gradient(135deg,rgba(124,92,252,.18),rgba(6,182,212,.10));
-    color:#a78bfa;
+    border-radius:50%;
+    background:#3a1018;
+    color:var(--red);
     display:flex;
     align-items:center;
     justify-content:center;
-    font-size:21px;
+    font-size:23px;
     font-weight:900;
     flex-shrink:0;
 }
 
-.xyn-setting-text{
+.client-text{
     flex:1;
     min-width:0;
 }
 
-.xyn-setting-text h4{
+.client-text h4{
     margin:0;
     font-size:16px;
     font-weight:900;
     color:#fff;
 }
 
-.xyn-setting-text p{
+.client-text p{
     margin:5px 0 0;
-    color:#9ca3af;
+    color:#9fa5aa;
     font-size:13px;
+    font-weight:700;
 }
 
 details summary{
@@ -227,177 +263,217 @@ details summary::-webkit-details-marker{
     display:none;
 }
 
-details[open] .xyn-arrow{
+details[open] .client-arrow{
     transform:rotate(90deg);
 }
 
-.xyn-setting-body{
+.client-body{
     padding:18px;
-    border-top:1px solid rgba(255,255,255,.07);
-    background:#0b0f1a;
+    border-top:1px solid var(--line);
+    background:#24292d;
 }
 
-.xyn-field{
+.client-field{
     margin-bottom:14px;
 }
 
-.xyn-field label{
+.client-field label{
     display:block;
-    color:#9ca3af;
-    font-size:12px;
+    color:#9fa5aa;
+    font-size:11px;
     font-weight:900;
     text-transform:uppercase;
     letter-spacing:.08em;
     margin-bottom:8px;
 }
 
-.xyn-field input,
-.xyn-field textarea{
+.client-field input,
+.client-field textarea{
     width:100%;
-    background:#131929;
-    border:1px solid rgba(255,255,255,.08);
+    background:#1f2428;
+    border:1px solid var(--line);
     color:#fff;
-    border-radius:14px;
+    border-radius:4px;
     padding:13px 14px;
     outline:none;
+    font-weight:700;
 }
 
-.xyn-field input:focus,
-.xyn-field textarea:focus{
-    border-color:rgba(124,92,252,.55);
-    box-shadow:0 0 0 3px rgba(124,92,252,.12);
+.client-field input:focus,
+.client-field textarea:focus{
+    border-color:var(--red);
+    box-shadow:0 0 0 3px rgba(232,25,44,.12);
 }
 
-.xyn-btn{
+.client-field textarea{
+    resize:vertical;
+    min-height:110px;
+}
+
+.client-btn{
     border:0;
-    border-radius:15px;
+    border-radius:4px;
     padding:13px 18px;
     font-weight:900;
     cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
 }
 
-.xyn-btn.primary{
-    background:linear-gradient(90deg,#7c5cfc,#06b6d4);
+.client-btn.primary{
+    background:var(--red);
     color:#fff;
 }
 
-.xyn-ticket-title{
+.client-btn.primary:hover{
+    background:var(--red2);
+}
+
+.client-ticket-title{
     font-size:17px;
     font-weight:900;
     color:#fff;
-    margin:22px 0 14px;
+    margin:24px 0 14px;
+    display:flex;
+    align-items:center;
+    gap:8px;
 }
 
-.xyn-ticket-wrap{
+.client-ticket-title i{
+    color:var(--red);
+}
+
+.client-ticket-wrap{
     overflow-x:auto;
 }
 
-.xyn-ticket-table{
+.client-ticket-table{
     width:100%;
-    border-collapse:separate;
-    border-spacing:0 7px;
-    font-size:13px;
+    min-width:640px;
+    border-collapse:collapse;
 }
 
-.xyn-ticket-table th{
-    color:#6b7280;
+.client-ticket-table th{
+    color:#9fa5aa;
     font-size:11px;
     text-transform:uppercase;
-    letter-spacing:.08em;
     text-align:left;
-    padding:0 12px 8px;
+    padding:14px 16px;
+    background:#1f2428;
 }
 
-.xyn-ticket-table td{
-    background:#131929;
-    padding:13px 12px;
-    border-top:1px solid rgba(255,255,255,.07);
-    border-bottom:1px solid rgba(255,255,255,.07);
+.client-ticket-table td{
+    padding:15px 16px;
+    border-top:1px solid #3a4147;
+    color:#c9ced3;
+    font-size:13px;
+    font-weight:700;
     vertical-align:top;
 }
 
-.xyn-ticket-table td:first-child{
-    border-left:1px solid rgba(255,255,255,.07);
-    border-radius:14px 0 0 14px;
+.client-ticket-table tr:hover td{
+    background:#30363a;
 }
 
-.xyn-ticket-table td:last-child{
-    border-right:1px solid rgba(255,255,255,.07);
-    border-radius:0 14px 14px 0;
-}
-
-.xyn-status{
+.client-status{
     display:inline-block;
-    padding:6px 10px;
-    border-radius:999px;
+    padding:6px 11px;
+    border-radius:20px;
     font-size:11px;
     font-weight:900;
 }
 
-.xyn-status.pending,
-.xyn-status.open{
-    background:rgba(245,158,11,.13);
-    color:#fbbf24;
+.client-status.pending,
+.client-status.open{
+    background:#3b2a09;
+    color:var(--gold);
 }
 
-.xyn-status.approved,
-.xyn-status.resolved,
-.xyn-status.closed{
-    background:rgba(16,185,129,.12);
-    color:#34d399;
+.client-status.approved,
+.client-status.resolved,
+.client-status.closed{
+    background:#0d2b1e;
+    color:var(--green);
 }
 
-.xyn-status.rejected{
-    background:rgba(239,68,68,.12);
-    color:#f87171;
+.client-status.rejected{
+    background:#3a1018;
+    color:#ff6b7b;
 }
 
-.xyn-empty{
+.client-empty{
     text-align:center;
-    color:#6b7280;
-    padding:30px!important;
+    color:#9fa5aa!important;
+    padding:34px!important;
+    font-weight:800!important;
 }
 
-.xyn-alert-success,
-.xyn-alert-error{
-    border-radius:16px;
-    padding:14px 16px;
-    font-weight:800;
+.client-logout{
+    background:#3a1018;
+    border:1px solid rgba(232,25,44,.45);
+    border-radius:6px;
+    padding:20px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:20px;
 }
 
-.xyn-alert-success{
-    background:rgba(16,185,129,.12);
-    border:1px solid rgba(16,185,129,.22);
-    color:#d1fae5;
+.client-logout h3{
+    margin:0 0 5px;
+    font-size:18px;
+    font-weight:900;
 }
 
-.xyn-alert-error{
-    background:rgba(239,68,68,.12);
-    border:1px solid rgba(239,68,68,.22);
-    color:#fee2e2;
+.client-logout p{
+    margin:0;
+    color:#ffb4bc;
+    font-size:13px;
+    font-weight:700;
 }
 
-@media(max-width:650px){
-    .xyn-settings-wrap{
-        max-width:100%;
+.client-btn.danger{
+    background:var(--red);
+    color:#fff;
+}
+
+.client-btn.danger:hover{
+    background:var(--red2);
+}
+
+@media(max-width:760px){
+    .client-set-page{margin:-16px}
+
+    .client-set-hero{
+        padding:45px 24px 110px;
     }
 
-    .xyn-profile-card{
+    .client-set-title{
+        font-size:36px;
+    }
+
+    .client-set-wrap{
+        margin-top:-70px;
+        padding:0 20px;
+    }
+
+    .client-profile-card{
         align-items:flex-start;
     }
 
-    .xyn-avatar-ring{
-        width:64px;
-        height:64px;
+    .client-avatar{
+        width:68px;
+        height:68px;
     }
 
-    .xyn-settings-title{
-        font-size:25px;
+    .client-user-info h3{
+        font-size:20px;
     }
 
-    .xyn-setting-icon{
-        width:44px;
-        height:44px;
+    .client-logout{
+        flex-direction:column;
+        align-items:flex-start;
     }
 }
 </style>
@@ -420,166 +496,236 @@ details[open] .xyn-arrow{
     $photo = $user->photo ? url('/api/storage/'.$user->photo) : null;
 @endphp
 
-<div class="xyn-settings-wrap">
+<div class="client-set-page">
 
-    
+    <section class="client-set-hero">
+        <div class="client-set-content">
+            <div class="client-set-eyebrow">Xynder Wallet</div>
 
-    @if(session('success'))
-        <div class="xyn-alert-success">
-            {{ session('success') }}
-        </div>
-    @endif
+            <h1 class="client-set-title">
+                Client
+                <span>Settings</span>
+            </h1>
 
-    @if($errors->any())
-        <div class="xyn-alert-error">
-            @foreach($errors->all() as $error)
-                <div>{{ $error }}</div>
-            @endforeach
-        </div>
-    @endif
-
-    <a href="{{ $profileRoute }}" class="xyn-profile-card">
-        <div class="xyn-avatar-ring">
-            @if($photo)
-                <img src="{{ $photo }}" alt="Profile">
-            @else
-                <div class="xyn-avatar-inner">
-                    {{ strtoupper(substr($user->name ?? 'U', 0, 1)) }}
-                </div>
-            @endif
-        </div>
-
-        <div class="xyn-user-info">
-            <h3>{{ $user->name }}</h3>
-            <p>{{ $user->phone ?? '-' }}</p>
-            <p>{{ $user->email }}</p>
-
-            @if($user->is_verified)
-                <div class="xyn-verified ok">✽ Verified</div>
-            @else
-                <div class="xyn-verified no">✽ Unverified</div>
-            @endif
-        </div>
-
-        <div class="xyn-arrow">›</div>
-    </a>
-
-    <a href="{{ $profileRoute }}" class="xyn-setting-item xyn-setting-link">
-        <div class="xyn-setting-icon">▣</div>
-        <div class="xyn-setting-text">
-            <h4>Payment Methods</h4>
-            <p>Bank, UPI and account details</p>
-        </div>
-        <div class="xyn-arrow">›</div>
-    </a>
-
-    <details class="xyn-setting-item">
-        <summary class="xyn-setting-summary">
-            <div class="xyn-setting-icon">⟲</div>
-            <div class="xyn-setting-text">
-                <h4>Change Password</h4>
-                <p>Update your account password</p>
+            <div class="client-set-sub">
+                Manage your profile, payment methods, password, support tickets, and account session.
             </div>
-            <div class="xyn-arrow">›</div>
-        </summary>
+        </div>
+    </section>
 
-        <div class="xyn-setting-body">
-            <form method="POST" action="{{ $passwordRoute }}">
+    <div class="client-set-wrap">
+
+        @if(session('success'))
+            <div class="client-alert ok">
+                <i class="ti ti-circle-check"></i>
+                {{ session('success') }}
+            </div>
+        @endif
+
+        @if($errors->any())
+            <div class="client-alert err">
+                <i class="ti ti-alert-triangle"></i>
+                @foreach($errors->all() as $error)
+                    <div>{{ $error }}</div>
+                @endforeach
+            </div>
+        @endif
+
+        <a href="{{ $profileRoute }}" class="client-profile-card">
+            <div class="client-avatar">
+                @if($photo)
+                    <img src="{{ $photo }}" alt="Profile">
+                @else
+                    <div class="client-avatar-inner">
+                        {{ strtoupper(substr($user->name ?? 'U', 0, 1)) }}
+                    </div>
+                @endif
+            </div>
+
+            <div class="client-user-info">
+                <h3>{{ $user->name }}</h3>
+                <p><i class="ti ti-phone"></i> {{ $user->phone ?? '-' }}</p>
+                <p><i class="ti ti-mail"></i> {{ $user->email }}</p>
+
+                @if($user->is_verified)
+                    <div class="client-verified ok">
+                        <i class="ti ti-circle-check"></i>
+                        VERIFIED ACCOUNT
+                    </div>
+                @else
+                    <div class="client-verified no">
+                        <i class="ti ti-alert-circle"></i>
+                        UNVERIFIED ACCOUNT
+                    </div>
+                @endif
+            </div>
+
+            <div class="client-arrow">
+                <i class="ti ti-chevron-right"></i>
+            </div>
+        </a>
+
+        <a href="{{ $profileRoute }}" class="client-item client-link">
+            <div class="client-icon">
+                <i class="ti ti-credit-card"></i>
+            </div>
+
+            <div class="client-text">
+                <h4>Payment Methods</h4>
+                <p>Bank, UPI and account details</p>
+            </div>
+
+            <div class="client-arrow">
+                <i class="ti ti-chevron-right"></i>
+            </div>
+        </a>
+
+        <details class="client-item">
+            <summary class="client-summary">
+                <div class="client-icon">
+                    <i class="ti ti-lock-password"></i>
+                </div>
+
+                <div class="client-text">
+                    <h4>Change Password</h4>
+                    <p>Update your account password securely</p>
+                </div>
+
+                <div class="client-arrow">
+                    <i class="ti ti-chevron-right"></i>
+                </div>
+            </summary>
+
+            <div class="client-body">
+                <form method="POST" action="{{ $passwordRoute }}">
+                    @csrf
+
+                    <div class="client-field">
+                        <label>Current Password</label>
+                        <input type="password" name="current_password" required>
+                    </div>
+
+                    <div class="client-field">
+                        <label>New Password</label>
+                        <input type="password" name="password" required>
+                    </div>
+
+                    <div class="client-field">
+                        <label>Confirm Password</label>
+                        <input type="password" name="password_confirmation" required>
+                    </div>
+
+                    <button type="submit" class="client-btn primary">
+                        <i class="ti ti-shield-check"></i>
+                        Update Password
+                    </button>
+                </form>
+            </div>
+        </details>
+
+        <details class="client-item">
+            <summary class="client-summary">
+                <div class="client-icon">
+                    <i class="ti ti-headset"></i>
+                </div>
+
+                <div class="client-text">
+                    <h4>Help & Support</h4>
+                    <p>Raise a support ticket</p>
+                </div>
+
+                <div class="client-arrow">
+                    <i class="ti ti-chevron-right"></i>
+                </div>
+            </summary>
+
+            <div class="client-body">
+                <form method="POST" action="{{ $supportRoute }}">
+                    @csrf
+
+                    <div class="client-field">
+                        <label>Name</label>
+                        <input type="text" name="name" value="{{ old('name', $user->name) }}" required>
+                    </div>
+
+                    <div class="client-field">
+                        <label>Email</label>
+                        <input type="email" name="email" value="{{ old('email', $user->email) }}" required>
+                    </div>
+
+                    <div class="client-field">
+                        <label>Message</label>
+                        <textarea name="message" rows="4" required>{{ old('message') }}</textarea>
+                    </div>
+
+                    <button type="submit" class="client-btn primary">
+                        <i class="ti ti-send"></i>
+                        Submit Ticket
+                    </button>
+                </form>
+
+                <div class="client-ticket-title">
+                    <i class="ti ti-ticket"></i>
+                    Your Tickets
+                </div>
+
+                <div class="client-ticket-wrap">
+                    <table class="client-ticket-table">
+                        <thead>
+                            <tr>
+                                <th>Message</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @forelse($tickets as $ticket)
+                                <tr>
+                                    <td>{{ $ticket->message }}</td>
+
+                                    <td>
+                                        <span class="client-status {{ strtolower($ticket->status) }}">
+                                            {{ strtoupper($ticket->status) }}
+                                        </span>
+                                    </td>
+
+                                    <td style="color:#9fa5aa;">
+                                        {{ $ticket->created_at?->format('Y-m-d H:i') }}
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="3" class="client-empty">
+                                        No support tickets yet.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </details>
+
+        <div class="client-logout">
+            <div>
+                <h3>
+                    <i class="ti ti-logout"></i>
+                    Logout Account
+                </h3>
+                <p>End your current session safely.</p>
+            </div>
+
+            <form method="POST" action="{{ route('logout') }}">
                 @csrf
 
-                <div class="xyn-field">
-                    <label>Current Password</label>
-                    <input type="password" name="current_password" required>
-                </div>
-
-                <div class="xyn-field">
-                    <label>New Password</label>
-                    <input type="password" name="password" required>
-                </div>
-
-                <div class="xyn-field">
-                    <label>Confirm Password</label>
-                    <input type="password" name="password_confirmation" required>
-                </div>
-
-                <button type="submit" class="xyn-btn primary">
-                    Update Password
+                <button type="submit" class="client-btn danger">
+                    <i class="ti ti-power"></i>
+                    Logout
                 </button>
             </form>
         </div>
-    </details>
 
-    <details class="xyn-setting-item">
-        <summary class="xyn-setting-summary">
-            <div class="xyn-setting-icon">☏</div>
-            <div class="xyn-setting-text">
-                <h4>Help & Support</h4>
-                <p>Raise a support ticket</p>
-            </div>
-            <div class="xyn-arrow">›</div>
-        </summary>
-
-        <div class="xyn-setting-body">
-            <form method="POST" action="{{ $supportRoute }}">
-                @csrf
-
-                <div class="xyn-field">
-                    <label>Name</label>
-                    <input type="text" name="name" value="{{ old('name', $user->name) }}" required>
-                </div>
-
-                <div class="xyn-field">
-                    <label>Email</label>
-                    <input type="email" name="email" value="{{ old('email', $user->email) }}" required>
-                </div>
-
-                <div class="xyn-field">
-                    <label>Message</label>
-                    <textarea name="message" rows="4" required>{{ old('message') }}</textarea>
-                </div>
-
-                <button type="submit" class="xyn-btn primary">
-                    Submit Ticket
-                </button>
-            </form>
-
-            <div class="xyn-ticket-title">Your Tickets</div>
-
-            <div class="xyn-ticket-wrap">
-                <table class="xyn-ticket-table">
-                    <thead>
-                        <tr>
-                            <th>Message</th>
-                            <th>Status</th>
-                            <th>Date</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        @forelse($tickets as $ticket)
-                            <tr>
-                                <td>{{ $ticket->message }}</td>
-                                <td>
-                                    <span class="xyn-status {{ strtolower($ticket->status) }}">
-                                        {{ strtoupper($ticket->status) }}
-                                    </span>
-                                </td>
-                                <td style="color:#9ca3af;">
-                                    {{ $ticket->created_at?->format('Y-m-d H:i') }}
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="3" class="xyn-empty">
-                                    No support tickets yet.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </details>
-
+    </div>
 </div>
 @endsection

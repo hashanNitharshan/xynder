@@ -1,225 +1,822 @@
-@extends('layouts.admin', ['title' => 'Client Requests'])
+@extends('layouts.admin', ['title' => 'Wallet Requests'])
 
 @push('styles')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
+
 <style>
-.xyn-page{display:flex;flex-direction:column;gap:22px}
-.xyn-hero-card,.xyn-form-card,.xyn-table-card{
-    background:#0e1220;border:1px solid rgba(255,255,255,.07);
-    border-radius:28px;padding:24px;position:relative;overflow:hidden;
+:root{
+    --bg:#11161a;
+    --hero:#2b2f32;
+    --box:#2b2f32;
+    --dark:#101518;
+    --red:#e8192c;
+    --red2:#c91022;
+    --green:#0ecb81;
+    --green2:#0aac6c;
+    --text:#fff;
+    --muted:#aeb4ba;
+    --muted2:#747b82;
+    --input:#f4f4f4;
+    --gold:#ffc933;
+    --line:#3b4248;
 }
-.xyn-hero-card::before{
-    content:'';position:absolute;right:-90px;top:-90px;width:300px;height:300px;
-    background:radial-gradient(circle,rgba(124,92,252,.20),transparent 70%);
+
+*{box-sizing:border-box}
+
+.rq-page{
+    margin:-24px;
+    background:var(--dark);
+    min-height:100vh;
+    color:var(--text);
+    font-family:Inter,Arial,sans-serif;
+    padding-bottom:60px;
 }
-.xyn-hero-title{font-size:28px;font-weight:900;margin-bottom:6px}
-.xyn-hero-title span{
-    background:linear-gradient(90deg,#7c5cfc,#06b6d4);
-    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+
+.rq-hero{
+    position:relative;
+    min-height:500px;
+    padding:70px 85px 120px;
+    background:linear-gradient(90deg,#2b2f32 0%,#2b2f32 100%);
+    overflow:hidden;
 }
-.xyn-hero-sub{color:#9ca3af;font-size:14px}
-.xyn-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:20px}
-.xyn-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
-.xyn-field label{font-size:12px;font-weight:900;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em}
-.xyn-field input,.xyn-field select,.xyn-field textarea{
-    width:100%;margin-top:8px;background:#131929;border:1px solid rgba(255,255,255,.08);
-    color:#fff;border-radius:14px;padding:13px 14px;outline:none;
+
+.rq-hero::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    opacity:.08;
+    background-image:linear-gradient(120deg,transparent 20%,rgba(255,255,255,.18) 21%,transparent 22%);
+    background-size:260px 260px;
 }
-.xyn-field input:focus,.xyn-field select:focus,.xyn-field textarea:focus{
-    border-color:rgba(124,92,252,.55);box-shadow:0 0 0 3px rgba(124,92,252,.12);
+
+.rq-content{
+    position:relative;
+    z-index:2;
+    max-width:560px;
 }
-.xyn-online{
-    color:#34d399;
+
+.rq-eyebrow{
+    color:var(--red);
+    font-size:12px;
+    font-weight:900;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    margin-bottom:14px;
+}
+
+.rq-title{
+    font-size:48px;
+    line-height:1.15;
+    font-weight:900;
+    margin:0 0 22px;
+}
+
+.rq-title span{
+    display:block;
+    color:var(--red);
+}
+
+.rq-subtitle{
+    color:#b8bdc2;
+    font-size:15px;
+    line-height:1.7;
+    font-weight:700;
+    margin-bottom:45px;
+}
+
+.rq-main-btn{
+    background:var(--red);
+    color:#fff;
+    text-decoration:none;
+    padding:16px 30px;
+    border-radius:2px;
+    font-weight:900;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+}
+
+.rq-main-btn:hover{background:var(--red2)}
+
+.rq-art{
+    position:absolute;
+    right:90px;
+    top:55px;
+    width:540px;
+    height:370px;
+    z-index:1;
+}
+
+.phone{
+    position:absolute;
+    bottom:25px;
+    width:150px;
+    height:275px;
+    border:7px solid #151b20;
+    border-radius:28px;
+    background:#22282c;
+}
+
+.phone.left{left:70px}
+.phone.right{right:70px}
+
+.phone-icon{
+    width:78px;
+    height:78px;
+    border:3px solid var(--red);
+    border-radius:50%;
+    margin:28px auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:42px;
+    color:#fff;
+}
+
+.phone-row{
+    width:112px;
+    height:34px;
+    background:var(--red);
+    border-radius:8px;
+    margin:12px auto;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:8px;
+}
+
+.phone-row:nth-child(3){background:#4b4be8}
+
+.chip{
+    width:24px;
+    height:17px;
+    background:var(--gold);
+    border-radius:4px;
+}
+
+.line{
+    height:7px;
+    flex:1;
+    background:#fff;
+    border-radius:20px;
+}
+
+.down{
+    position:absolute;
+    top:38px;
+    left:50%;
+    transform:translateX(-50%);
+    font-size:88px;
+    color:var(--red);
+}
+
+.coin-stack{
+    position:absolute;
+    bottom:52px;
+    left:32px;
+    width:110px;
+}
+
+.coin-stack span{
+    display:block;
+    height:10px;
+    margin-bottom:4px;
+    background:var(--gold);
+    border-radius:20px;
+}
+
+.big-coin{
+    position:absolute;
+    bottom:38px;
+    left:15px;
+    width:78px;
+    height:78px;
+    border-radius:50%;
+    background:#ffd247;
+    border:6px solid #ffbf1d;
+}
+
+.arc{
+    position:absolute;
+    top:0;
+    left:160px;
+    width:245px;
+    height:120px;
+    border-top:4px dashed var(--red);
+    border-radius:180px 180px 0 0;
+}
+
+.arc.blue{
+    top:28px;
+    left:190px;
+    width:180px;
+    height:85px;
+    border-color:#4545ff;
+}
+
+.coin{
+    position:absolute;
+    width:44px;
+    height:44px;
+    background:var(--gold);
+    border:4px solid #e8a000;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#e09100;
     font-weight:900;
 }
-.xyn-rate-card{
-    background:linear-gradient(145deg,#1a1060,#071228);
-    border:1px solid rgba(124,92,252,.25);border-radius:24px;padding:22px;
+
+.c1{top:0;left:170px}.c2{top:-22px;left:290px}.c3{top:0;right:65px}.c4{top:62px;left:118px}.c5{top:62px;right:5px}
+
+/* Main request box */
+.rq-box{
+    position:relative;
+    z-index:5;
+    max-width:980px;
+    margin:-88px 0 0 85px;
+    background:var(--box);
+    border:1.5px solid var(--red);
+    border-radius:7px;
+    overflow:hidden;
+    box-shadow:0 18px 40px rgba(0,0,0,.28);
 }
-.xyn-rate-title{font-size:15px;font-weight:900;margin-bottom:16px}
-.xyn-rate-row{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.08);color:#9ca3af}
-.xyn-rate-row strong{color:#fff}
-.xyn-total-box{
-    margin-top:16px;padding:16px;border-radius:18px;
-    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);
+
+.rq-tabs{
+    display:flex;
+    border-bottom:1px solid var(--line);
+    background:#24292d;
 }
-.xyn-total-box .big{font-size:26px;font-weight:900;color:#34d399}
-.xyn-submit{
-    margin-top:18px;border:0;border-radius:16px;padding:14px 20px;
-    background:linear-gradient(90deg,#7c5cfc,#06b6d4);color:#fff;
-    font-weight:900;cursor:pointer;
+
+.rq-tab{
+    appearance:none;
+    border:0;
+    border-right:1px solid var(--line);
+    background:transparent;
+    color:#9fa5aa;
+    cursor:pointer;
+    padding:16px 24px;
+    font-weight:900;
+    display:flex;
+    gap:8px;
+    align-items:center;
 }
-.xyn-submit:disabled{opacity:.55;cursor:not-allowed}
-.xyn-table-wrap{overflow-x:auto}
-.xyn-table{width:100%;border-collapse:separate;border-spacing:0 7px;font-size:13px}
-.xyn-table th{
-    color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:.08em;
-    text-align:left;padding:0 12px 8px;
+
+.rq-tab.active.sell{
+    background:rgba(232,25,44,.12);
+    color:var(--red);
+    box-shadow:inset 0 -3px 0 var(--red);
 }
-.xyn-table td{
-    background:#131929;padding:14px 12px;border-top:1px solid rgba(255,255,255,.07);
-    border-bottom:1px solid rgba(255,255,255,.07);
+
+.rq-tab.active.buy{
+    background:rgba(14,203,129,.12);
+    color:var(--green);
+    box-shadow:inset 0 -3px 0 var(--green);
 }
-.xyn-table td:first-child{border-left:1px solid rgba(255,255,255,.07);border-radius:15px 0 0 15px}
-.xyn-table td:last-child{border-right:1px solid rgba(255,255,255,.07);border-radius:0 15px 15px 0}
-.xyn-type{display:inline-flex;align-items:center;gap:7px;font-weight:900}
-.xyn-dot{width:28px;height:28px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center}
-.xyn-buy{background:rgba(239,68,68,.13);color:#f87171}
-.xyn-sell{background:rgba(16,185,129,.13);color:#34d399}
-.xyn-ref{font-family:monospace;color:#9ca3af;font-size:12px}
-.xyn-empty{text-align:center;color:#6b7280;padding:35px!important}
-.xyn-alert{
-    padding:14px 16px;border-radius:16px;font-weight:800;
-    background:rgba(239,68,68,.12);color:#fca5a5;border:1px solid rgba(239,68,68,.25);
-    margin-bottom:16px;
+
+.rq-box-inner{
+    padding:40px;
 }
-.xyn-success{
-    padding:14px 16px;border-radius:16px;font-weight:800;
-    background:rgba(16,185,129,.12);color:#6ee7b7;border:1px solid rgba(16,185,129,.25);
-    margin-bottom:16px;
+
+.rq-form-row{
+    display:grid;
+    grid-template-columns:1fr 36px 1fr 220px;
+    gap:16px;
+    align-items:center;
 }
-@media(max-width:1000px){.xyn-grid{grid-template-columns:1fr}.xyn-form-grid{grid-template-columns:1fr}}
-.xyn-pagination{
-    margin-top:18px;
+
+.rq-input-box{
+    height:56px;
+    background:var(--input);
+    color:#222;
+    display:grid;
+    grid-template-columns:1fr 92px;
+    border-radius:3px;
+    overflow:hidden;
+}
+
+.rq-input-left{padding:10px 16px}
+
+.rq-small{
+    color:#6b6b6b;
+    font-size:11px;
+    font-weight:800;
+    margin-bottom:3px;
+}
+
+.rq-input-left input{
+    width:100%;
+    border:0;
+    outline:0;
+    background:transparent;
+    color:#333;
+    font-size:18px;
+    font-weight:900;
+}
+
+.rq-value{
+    color:#333;
+    font-size:18px;
+    font-weight:900;
+}
+
+.rq-currency{
+    border-left:1px solid #d1d1d1;
+    padding:9px 14px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    color:#555;
+}
+
+.rq-currency strong{
+    font-size:17px;
+    color:#444;
+}
+
+.rq-swap{
+    width:32px;
+    height:32px;
+    border-radius:50%;
+    background:#161b1f;
+    border:0;
+    color:#747b82;
+    font-size:18px;
+    cursor:pointer;
+}
+
+.rq-submit{
+    height:56px;
+    border:0;
+    border-radius:3px;
+    background:var(--red);
+    color:#fff;
+    font-size:14px;
+    font-weight:900;
+    cursor:pointer;
+}
+
+.rq-submit.buy{background:var(--green)}
+.rq-submit:hover{background:var(--red2)}
+.rq-submit.buy:hover{background:var(--green2)}
+.rq-submit:disabled{background:#1f2428;color:#6b7280;cursor:not-allowed}
+
+.rq-rate-line{
+    margin-top:24px;
+    color:#fff;
+    font-size:14px;
+    font-weight:800;
+}
+
+.rq-rate-line span{color:var(--red)}
+.rq-rate-line.buy span{color:var(--green)}
+
+.rq-extra{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+    margin-top:22px;
+}
+
+.rq-field label{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color:#c3c6ca;
+    font-size:12px;
+    font-weight:900;
+    margin-bottom:8px;
+}
+
+.rq-online{
+    color:var(--green);
+    background:#0d2b1e;
+    border:1px solid #1a4a35;
+    border-radius:20px;
+    padding:2px 8px;
+    font-size:11px;
+}
+
+.rq-select,.rq-textarea{
+    width:100%;
+    background:#1f2428;
+    color:#fff;
+    border:1px solid #3b4248;
+    border-radius:4px;
+    padding:13px 14px;
+    outline:0;
+    font-weight:700;
+}
+
+.rq-select:focus,.rq-textarea:focus{
+    border-color:var(--red);
+    box-shadow:0 0 0 3px rgba(232,25,44,.12);
+}
+
+.rq-textarea{
+    min-height:48px;
+    resize:vertical;
+}
+
+.rq-alert{
+    margin-bottom:18px;
+    padding:13px 16px;
+    border-radius:4px;
+    font-weight:800;
+}
+
+.rq-alert.ok{background:#0d2b1e;color:#0ecb81}
+.rq-alert.err{background:#3a1018;color:#ff6b7b}
+
+/* Stats */
+.rq-cards{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:20px;
+    margin:100px 85px 0;
+}
+
+.rq-card{
+    background:#2b2f32;
+    border-radius:4px;
+    padding:22px 20px;
     display:flex;
     align-items:center;
     justify-content:space-between;
-    gap:14px;
-    flex-wrap:wrap;
-    padding:14px 16px;
-    background:#131929;
-    border:1px solid rgba(255,255,255,.07);
-    border-radius:18px;
+    min-height:76px;
 }
 
-.xyn-page-btn{
-    display:inline-flex;
+.rq-pair{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    font-weight:900;
+}
+
+.rq-token{
+    width:36px;
+    height:36px;
+    border-radius:50%;
+    background:#e4a719;
+    border:2px solid #ffc94d;
+    display:flex;
     align-items:center;
     justify-content:center;
-    min-height:40px;
-    padding:0 16px;
-    border-radius:13px;
-    background:linear-gradient(90deg,#7c5cfc,#06b6d4);
-    color:#fff!important;
-    font-size:13px;
+    color:#2b2f32;
     font-weight:900;
-    text-decoration:none!important;
 }
 
-.xyn-page-btn.disabled{
-    background:#0e1220;
-    color:#6b7280!important;
-    border:1px solid rgba(255,255,255,.07);
-    cursor:not-allowed;
+.rq-change{
+    font-size:12px;
+    color:#9fa5aa;
+    line-height:1.5;
+    text-align:right;
 }
 
-.xyn-page-info{
-    color:#9ca3af;
+.rq-change b{color:var(--red)}
+.rq-change.buy b{color:var(--green)}
+
+/* History */
+.rq-history{
+    margin:34px 85px 0;
+    background:#2b2f32;
+    border-radius:6px;
+    overflow:hidden;
+}
+
+.rq-history-head{
+    padding:18px 22px;
+    border-bottom:1px solid #3b4248;
+    font-weight:900;
+    display:flex;
+    gap:10px;
+    align-items:center;
+}
+
+.rq-table-wrap{overflow-x:auto}
+
+.rq-table{
+    width:100%;
+    min-width:980px;
+    border-collapse:collapse;
+}
+
+.rq-table th{
+    color:#9fa5aa;
+    font-size:11px;
+    text-transform:uppercase;
+    text-align:left;
+    padding:14px 16px;
+    background:#24292d;
+}
+
+.rq-table td{
+    padding:16px;
+    border-top:1px solid #3a4147;
+    color:#c9ced3;
+    font-size:13px;
+    font-weight:700;
+    white-space:nowrap;
+}
+
+.rq-table tr:hover td{background:#30363a}
+
+.rq-ref{
+    font-family:monospace;
+    color:#9fa5aa;
+}
+
+.rq-type{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-weight:900;
+}
+
+.rq-type.buy{color:var(--green)}
+.rq-type.sell{color:var(--red)}
+
+.rq-amount,.rq-total{
+    color:#fff;
+    font-weight:900;
+}
+
+.badge{
+    padding:5px 10px;
+    border-radius:20px;
+    font-size:11px;
+    font-weight:900;
+    text-transform:uppercase;
+}
+
+.badge.pending{background:#3b2a09;color:#ffc933}
+.badge.approved,.badge.completed{background:#0d2b1e;color:#0ecb81}
+.badge.rejected{background:#3a1018;color:#ff6b7b}
+
+.rq-empty{
+    text-align:center;
+    padding:45px;
+    color:#9fa5aa;
+}
+
+.rq-pagination{
+    padding:16px 22px;
+    border-top:1px solid #3a4147;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:12px;
+}
+
+.rq-page-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:9px 14px;
+    background:#1f2428;
+    color:#fff;
+    text-decoration:none;
+    border-radius:4px;
     font-size:13px;
     font-weight:800;
+    margin-left:6px;
+}
+
+.rq-page-btn.disabled{
+    opacity:.4;
+    pointer-events:none;
+}
+
+@media(max-width:1100px){
+    .rq-art{opacity:.25;right:20px}
+    .rq-form-row{grid-template-columns:1fr}
+    .rq-swap{margin:auto}
+    .rq-cards{grid-template-columns:1fr}
+}
+
+@media(max-width:760px){
+    .rq-page{margin:-16px}
+    .rq-hero{padding:45px 24px 120px}
+    .rq-title{font-size:36px}
+    .rq-box{margin:-80px 20px 0}
+    .rq-box-inner{padding:28px 20px}
+    .rq-extra{grid-template-columns:1fr}
+    .rq-cards,.rq-history{margin-left:20px;margin-right:20px}
+    .rq-tabs{overflow-x:auto}
+    .rq-tab{min-width:130px;justify-content:center}
 }
 </style>
 @endpush
 
 @section('content')
 @php
-    $onlineMerchants = collect($merchants)->filter(function ($m) {
-        return $m->is_online == true || $m->is_online == 1 || $m->is_online === '1';
-    });
+    $onlineMerchants = collect($merchants)->filter(fn($m) =>
+        $m->is_online == true || $m->is_online == 1 || $m->is_online === '1'
+    );
+
+    $totalFees = (float)$config->xynder_fee + (float)$config->network_fee;
+    $oldType = old('type', 'withdrawal');
 @endphp
 
-<div class="xyn-page">
+<div class="rq-page">
 
-  
-    <div class="xyn-grid">
-        <div class="xyn-form-card">
-            <h2 style="font-size:18px;font-weight:900;margin-bottom:18px;">Create New Request</h2>
+    <section class="rq-hero">
+        <div class="rq-content">
+            <div class="rq-eyebrow">Xynder Wallet</div>
 
+            <h1 class="rq-title">
+                Secure Wallet
+                <span>Buy & Sell Request</span>
+            </h1>
+
+            <div class="rq-subtitle">
+                Buy or sell USD through verified online merchants.
+                Fast processing, clear rates, fee calculation, and complete request history.
+            </div>
+
+            <a href="#requestBox" class="rq-main-btn">
+                <i class="ti ti-send"></i>
+                Create Request
+            </a>
+        </div>
+
+        <div class="rq-art">
+            <div class="arc"></div>
+            <div class="arc blue"></div>
+
+            <div class="coin c1">$</div>
+            <div class="coin c2">$</div>
+            <div class="coin c3">$</div>
+            <div class="coin c4">$</div>
+            <div class="coin c5">$</div>
+
+            <div class="phone left">
+                <div class="phone-icon"><i class="ti ti-user-filled"></i></div>
+                <div class="phone-row"><div class="chip"></div><div class="line"></div></div>
+                <div class="phone-row"><div class="chip"></div><div class="line"></div></div>
+                <div class="phone-row"><div class="chip"></div><div class="line"></div></div>
+            </div>
+
+            <div class="phone right">
+                <i class="ti ti-arrow-down down"></i>
+                <div class="coin-stack">
+                    <span></span><span></span><span></span><span></span><span></span>
+                </div>
+                <div class="big-coin"></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="rq-box" id="requestBox">
+        <div class="rq-tabs">
+            <button class="rq-tab sell active" type="button" id="tabSell">
+                <i class="ti ti-trending-down"></i>
+                Sell USD
+            </button>
+
+            <button class="rq-tab buy" type="button" id="tabBuy">
+                <i class="ti ti-trending-up"></i>
+                Buy USD
+            </button>
+        </div>
+
+        <div class="rq-box-inner">
             @if(session('success'))
-                <div class="xyn-success">{{ session('success') }}</div>
+                <div class="rq-alert ok">
+                    <i class="ti ti-circle-check"></i>
+                    {{ session('success') }}
+                </div>
             @endif
 
             @if($errors->any())
-                <div class="xyn-alert">
-                    @foreach($errors->all() as $error)
-                        <div>{{ $error }}</div>
+                <div class="rq-alert err">
+                    @foreach($errors->all() as $e)
+                        <div>{{ $e }}</div>
                     @endforeach
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('client.requests.store') }}">
+            <form method="POST" action="{{ route('client.requests.store') }}" id="reqForm">
                 @csrf
+                <input type="hidden" name="type" id="typeHidden" value="{{ $oldType }}">
 
-                <div class="xyn-form-grid">
-                    <div class="xyn-field">
-                        <label>Request Type</label>
-                        <select name="type" id="type" required>
-                            <option value="withdrawal" {{ old('type') === 'withdrawal' ? 'selected' : '' }}>SELL USD</option>
-                            <option value="deposit" {{ old('type') === 'deposit' ? 'selected' : '' }}>BUY USD</option>
-                        </select>
+                <div class="rq-form-row">
+                    <div class="rq-input-box">
+                        <div class="rq-input-left">
+                            <div class="rq-small" id="sendLabel">You Sell</div>
+                            <input type="number" step="0.01" min="1" name="amount" id="amount"
+                                   value="{{ old('amount') }}" placeholder="45" required>
+                        </div>
+                        <div class="rq-currency">
+                            <small>Currency</small>
+                            <strong>USD</strong>
+                        </div>
                     </div>
 
-                    <div class="xyn-field">
-                        <label>USD Amount</label>
-                        <input type="number" step="0.01" min="1" name="amount" id="amount" value="{{ old('amount') }}" required>
+                    <button class="rq-swap" type="button" id="swapBtn" title="Switch Buy / Sell">
+                        <i class="ti ti-arrows-exchange"></i>
+                    </button>
+
+                    <div class="rq-input-box">
+                        <div class="rq-input-left">
+                            <div class="rq-small" id="receiveLabel">You Receive</div>
+                            <div class="rq-value">₹<span id="totalDisp">0.00</span></div>
+                        </div>
+                        <div class="rq-currency">
+                            <small>Currency</small>
+                            <strong>INR</strong>
+                        </div>
                     </div>
 
-                    <div class="xyn-field">
-                        <label>Online Merchant Only</label>
-                        <select name="merchant_id" required>
-                            <option value="">Select Online Merchant</option>
+                    <button type="submit" class="rq-submit" id="submitBtn" {{ $onlineMerchants->isEmpty() ? 'disabled' : '' }}>
+                        <span id="btnLabel">Place Sell Order</span>
+                    </button>
+                </div>
+
+                <div class="rq-rate-line" id="rateLine">
+                    1 USD ~ ₹{{ number_format((float)$config->inr_rate, 4) }}
+                    · Xynder Fee ₹{{ number_format((float)$config->xynder_fee, 2) }}
+                    · Network Fee ₹{{ number_format((float)$config->network_fee, 2) }}
+                    · <span>All Fees Included</span>
+                </div>
+
+                <div class="rq-extra">
+                    <div class="rq-field">
+                        <label for="merchant_id">
+                            Select Merchant
+                            <span class="rq-online">{{ $onlineMerchants->count() }} online</span>
+                        </label>
+
+                        <select class="rq-select" name="merchant_id" id="merchant_id" required>
+                            <option value="">— Choose a merchant —</option>
                             @forelse($onlineMerchants as $m)
                                 <option value="{{ $m->id }}" {{ old('merchant_id') == $m->id ? 'selected' : '' }}>
-                                    {{ $m->name }} - ONLINE
+                                    {{ $m->name }}
                                 </option>
                             @empty
-                                <option value="" disabled>No online merchants available</option>
+                                <option value="" disabled>No merchants online right now</option>
                             @endforelse
                         </select>
                     </div>
-                </div>
 
-                <div class="xyn-field" style="margin-top:16px;">
-                    <label>Note</label>
-                    <textarea name="note" rows="3">{{ old('note') }}</textarea>
+                    <div class="rq-field">
+                        <label for="note">Note Optional</label>
+                        <textarea class="rq-textarea" name="note" id="note" placeholder="Any instructions for the merchant...">{{ old('note') }}</textarea>
+                    </div>
                 </div>
-
-                <button type="submit" class="xyn-submit" {{ $onlineMerchants->isEmpty() ? 'disabled' : '' }}>
-                    Submit Request
-                </button>
             </form>
         </div>
+    </section>
 
-        <div class="xyn-rate-card">
-            <div class="xyn-rate-title">Rate Summary</div>
-
-            <div class="xyn-rate-row"><span>USD Rate</span><strong>${{ number_format((float)$config->usd_rate, 4) }}</strong></div>
-            <div class="xyn-rate-row"><span>INR Rate</span><strong>₹{{ number_format((float)$config->inr_rate, 4) }}</strong></div>
-            <div class="xyn-rate-row"><span>Xynder Fee</span><strong>₹{{ number_format((float)$config->xynder_fee, 2) }}</strong></div>
-            <div class="xyn-rate-row"><span>Network Fee</span><strong>₹{{ number_format((float)$config->network_fee, 2) }}</strong></div>
-
-            <div class="xyn-total-box">
-                <div style="color:#9ca3af;font-size:12px;font-weight:900;text-transform:uppercase;">Converted INR</div>
-                <div style="font-size:18px;font-weight:900;">₹<span id="converted">0.00</span></div>
-
-                <div style="height:1px;background:rgba(255,255,255,.09);margin:14px 0;"></div>
-
-                <div style="color:#9ca3af;font-size:12px;font-weight:900;text-transform:uppercase;">Total INR</div>
-                <div class="big">₹<span id="total">0.00</span></div>
+    <section class="rq-cards">
+        <div class="rq-card">
+            <div class="rq-pair">
+                <span class="rq-token">$</span> USD <span>→</span>
+                <span class="rq-token">₹</span> INR
+            </div>
+            <div class="rq-change">
+                <b>{{ number_format((float)$config->inr_rate, 2) }}</b> INR Rate<br>
+                Fee ₹{{ number_format($totalFees, 2) }}
             </div>
         </div>
-    </div>
 
-    <div class="xyn-table-card">
-        <h2 style="font-size:18px;font-weight:900;margin-bottom:18px;">My Wallet Requests</h2>
+        <div class="rq-card">
+            <div class="rq-pair">
+                <span class="rq-token"><i class="ti ti-users"></i></span> Merchants
+            </div>
+            <div class="rq-change buy">
+                <b>{{ $onlineMerchants->count() }}</b> Online<br>
+                Available now
+            </div>
+        </div>
 
-        <div class="xyn-table-wrap">
-            <table class="xyn-table">
+        <div class="rq-card">
+            <div class="rq-pair">
+                <span class="rq-token"><i class="ti ti-receipt"></i></span> Requests
+            </div>
+            <div class="rq-change">
+                <b>Buy / Sell</b><br>
+                Full history below
+            </div>
+        </div>
+    </section>
+
+    <section class="rq-history">
+        <div class="rq-history-head">
+            <i class="ti ti-list-details"></i>
+            My Wallet Requests
+        </div>
+
+        <div class="rq-table-wrap">
+            <table class="rq-table">
                 <thead>
                     <tr>
-                        <th>No</th>
+                        <th>Ref No</th>
                         <th>Type</th>
                         <th>Merchant</th>
-                        <th>USD</th>
+                        <th>USD Amount</th>
                         <th>INR Rate</th>
                         <th>Xynder Fee</th>
                         <th>Network Fee</th>
@@ -228,76 +825,167 @@
                         <th>Date</th>
                     </tr>
                 </thead>
+
                 <tbody>
                     @forelse($requests as $r)
+                        @php
+                            $isBuy = $r->type === 'deposit';
+                        @endphp
+
                         <tr>
-                            <td class="xyn-ref">{{ $r->transaction_no ?? 'TNS'.str_pad($r->id, 9, '0', STR_PAD_LEFT) }}</td>
                             <td>
-                                <span class="xyn-type">
-                                    <span class="xyn-dot {{ $r->type === 'deposit' ? 'xyn-buy' : 'xyn-sell' }}">
-                                        {{ $r->type === 'deposit' ? 'B' : 'S' }}
-                                    </span>
-                                    {{ $r->type === 'deposit' ? 'BUY USD' : 'SELL USD' }}
+                                <span class="rq-ref">
+                                    {{ $r->transaction_no ?? 'TNS'.str_pad($r->id, 9, '0', STR_PAD_LEFT) }}
                                 </span>
                             </td>
-                            <td>{{ $r->merchant->name ?? '-' }}</td>
-                            <td>${{ number_format((float)$r->amount, 2) }}</td>
+
+                            <td>
+                                @if($isBuy)
+                                    <span class="rq-type buy">
+                                        <i class="ti ti-trending-up"></i>
+                                        Buy USD
+                                    </span>
+                                @else
+                                    <span class="rq-type sell">
+                                        <i class="ti ti-trending-down"></i>
+                                        Sell USD
+                                    </span>
+                                @endif
+                            </td>
+
+                            <td>{{ $r->merchant->name ?? '—' }}</td>
+
+                            <td>
+                                <span class="rq-amount">
+                                    ${{ number_format((float)$r->amount, 2) }}
+                                </span>
+                            </td>
+
                             <td>₹{{ number_format((float)$r->inr_rate, 4) }}</td>
                             <td>₹{{ number_format((float)$r->xynder_fee, 2) }}</td>
                             <td>₹{{ number_format((float)$r->network_fee, 2) }}</td>
-                            <td style="font-weight:900;color:#34d399;">₹{{ number_format((float)$r->total_amount, 2) }}</td>
-                            <td><span class="badge {{ $r->status }}">{{ strtoupper($r->status) }}</span></td>
-                            <td>{{ $r->created_at?->format('Y-m-d H:i') }}</td>
+
+                            <td>
+                                <span class="rq-total">
+                                    ₹{{ number_format((float)$r->total_amount, 2) }}
+                                </span>
+                            </td>
+
+                            <td>
+                                <span class="badge {{ $r->status }}">
+                                    {{ $r->status }}
+                                </span>
+                            </td>
+
+                            <td>{{ $r->created_at?->format('d M Y, H:i') }}</td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="10" class="xyn-empty">No requests found.</td>
+                            <td colspan="10">
+                                <div class="rq-empty">No requests yet. Create your first request above.</div>
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
 
-       @if ($requests->hasPages())
-    <div class="xyn-pagination">
-        @if ($requests->onFirstPage())
-            <span class="xyn-page-btn disabled">‹ Previous</span>
-        @else
-            <a class="xyn-page-btn" href="{{ $requests->previousPageUrl() }}">‹ Previous</a>
-        @endif
+        @if($requests->hasPages())
+            <div class="rq-pagination">
+                <div>
+                    Page {{ $requests->currentPage() }} of {{ $requests->lastPage() }}
+                    @if($requests->total())
+                        · {{ $requests->firstItem() }}–{{ $requests->lastItem() }} of {{ $requests->total() }}
+                    @endif
+                </div>
 
-        <span class="xyn-page-info">
-            Page {{ $requests->currentPage() }} of {{ $requests->lastPage() }}
-            · Showing {{ $requests->firstItem() }} to {{ $requests->lastItem() }} of {{ $requests->total() }}
-        </span>
+                <div>
+                    @if($requests->onFirstPage())
+                        <span class="rq-page-btn disabled"><i class="ti ti-chevron-left"></i> Previous</span>
+                    @else
+                        <a class="rq-page-btn" href="{{ $requests->previousPageUrl() }}">
+                            <i class="ti ti-chevron-left"></i> Previous
+                        </a>
+                    @endif
 
-        @if ($requests->hasMorePages())
-            <a class="xyn-page-btn" href="{{ $requests->nextPageUrl() }}">Next ›</a>
-        @else
-            <span class="xyn-page-btn disabled">Next ›</span>
+                    @if($requests->hasMorePages())
+                        <a class="rq-page-btn" href="{{ $requests->nextPageUrl() }}">
+                            Next <i class="ti ti-chevron-right"></i>
+                        </a>
+                    @else
+                        <span class="rq-page-btn disabled">
+                            Next <i class="ti ti-chevron-right"></i>
+                        </span>
+                    @endif
+                </div>
+            </div>
         @endif
-    </div>
-@endif
-    </div>
+    </section>
 </div>
 
 <script>
-const amountInput = document.getElementById('amount');
+(function(){
+    const INR_RATE = {{ (float)$config->inr_rate }};
+    const TOTAL_FEES = {{ $totalFees }};
 
-const inrRate = {{ (float)$config->inr_rate }};
-const xynderFee = {{ (float)$config->xynder_fee }};
-const networkFee = {{ (float)$config->network_fee }};
+    const amount = document.getElementById('amount');
+    const totalDisp = document.getElementById('totalDisp');
+    const typeHidden = document.getElementById('typeHidden');
 
-function calculateTotal() {
-    const amount = parseFloat(amountInput.value || 0);
-    const converted = amount * inrRate;
-    const total = converted + xynderFee + networkFee;
+    const tabSell = document.getElementById('tabSell');
+    const tabBuy = document.getElementById('tabBuy');
+    const swapBtn = document.getElementById('swapBtn');
 
-    document.getElementById('converted').innerText = converted.toFixed(2);
-    document.getElementById('total').innerText = total.toFixed(2);
-}
+    const submitBtn = document.getElementById('submitBtn');
+    const btnLabel = document.getElementById('btnLabel');
+    const sendLabel = document.getElementById('sendLabel');
+    const receiveLabel = document.getElementById('receiveLabel');
+    const rateLine = document.getElementById('rateLine');
 
-amountInput.addEventListener('input', calculateTotal);
-calculateTotal();
+    function calc(){
+        const usd = parseFloat(amount.value) || 0;
+        const total = (usd * INR_RATE) + TOTAL_FEES;
+        totalDisp.textContent = total.toFixed(2);
+    }
+
+    function setType(type){
+        typeHidden.value = type;
+
+        if(type === 'deposit'){
+            tabBuy.classList.add('active');
+            tabSell.classList.remove('active');
+
+            submitBtn.classList.add('buy');
+            rateLine.classList.add('buy');
+
+            btnLabel.textContent = 'Place Buy Order';
+            sendLabel.textContent = 'You Buy';
+            receiveLabel.textContent = 'You Pay';
+        }else{
+            tabSell.classList.add('active');
+            tabBuy.classList.remove('active');
+
+            submitBtn.classList.remove('buy');
+            rateLine.classList.remove('buy');
+
+            btnLabel.textContent = 'Place Sell Order';
+            sendLabel.textContent = 'You Sell';
+            receiveLabel.textContent = 'You Receive';
+        }
+
+        calc();
+    }
+
+    tabSell.addEventListener('click', function(){ setType('withdrawal'); });
+    tabBuy.addEventListener('click', function(){ setType('deposit'); });
+    swapBtn.addEventListener('click', function(){
+        setType(typeHidden.value === 'deposit' ? 'withdrawal' : 'deposit');
+    });
+
+    amount.addEventListener('input', calc);
+
+    setType('{{ $oldType }}');
+    calc();
+})();
 </script>
 @endsection

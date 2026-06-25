@@ -1,21 +1,19 @@
 <?php
 
 return [
-
-    'paths' => [
-        'api/*',
-        'storage/*',
-        'sanctum/csrf-cookie',
-    ],
+    'paths' => ['api/*', 'sanctum/csrf-cookie'],
 
     'allowed_methods' => ['*'],
 
     'allowed_origins' => [
-        'http://localhost:55595',
-        'http://127.0.0.1:55595',
         'http://localhost:*',
         'http://127.0.0.1:*',
+        'https://wallet.bitxnow.com',
+        // Add your production web domain here too
     ],
+
+    // OR for development, just allow all:
+    // 'allowed_origins' => ['*'],
 
     'allowed_origins_patterns' => [],
 
@@ -25,6 +23,5 @@ return [
 
     'max_age' => 0,
 
-    'supports_credentials' => false,
-
+    'supports_credentials' => true,
 ];
