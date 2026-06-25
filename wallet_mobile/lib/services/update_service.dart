@@ -29,12 +29,13 @@ class UpdateService {
       final apkUrl        = data['apk_url']?.toString() ?? '';
       final forceUpdate   = data['force_update'] == true;
 
-      if (_isNewer(serverVersion, currentVersion)) {
-        if (context.mounted) {
-          // ✅ FIX: await the dialog so force_update blocks navigation
-          await _showUpdateDialog(context, serverVersion, apkUrl, forceUpdate);
-        }
-      }
+      if (!_isNewer(serverVersion, currentVersion)) return;
+      if (!context.mounted) return;
+
+      // ✅ THE FIX: await the dialog so checkLogin() is BLOCKED until
+      //    the user dismisses it (or installs the update and app restarts).
+      //    Without this await, login page loaded immediately on top of dialog.
+      await _showUpdateDialog(context, serverVersion, apkUrl, forceUpdate);
     } catch (_) {
       // Never crash the app because of a failed update check
     }
@@ -52,17 +53,17 @@ class UpdateService {
     return false;
   }
 
-  // ✅ FIX: returns Future so caller can await it
+  // ✅ THE FIX: was void — now Future<void> so it can be awaited
   static Future<void> _showUpdateDialog(
     BuildContext context,
     String version,
     String apkUrl,
     bool forceUpdate,
-  ) {
-    return showDialog(
+  ) async {
+    // ✅ THE FIX: was missing await — now awaits until dialog is dismissed
+    await showDialog(
       context: context,
-      // ✅ FIX: respect forceUpdate flag — non-forced can be tapped away
-      barrierDismissible: !forceUpdate,
+      barrierDismissible: !forceUpdate, // force=true → cannot tap outside
       builder: (ctx) => _UpdateDialog(
         version: version,
         apkUrl: apkUrl,
@@ -72,7 +73,7 @@ class UpdateService {
   }
 }
 
-// ─── Update Dialog ───────────────────────────────────────────────────────────
+// ─── Update Dialog ────────────────────────────────────────────────────────────
 
 class _UpdateDialog extends StatefulWidget {
   final String version;
@@ -92,7 +93,7 @@ class _UpdateDialog extends StatefulWidget {
 class _UpdateDialogState extends State<_UpdateDialog> {
   double _progress    = 0;
   bool   _downloading = false;
-  bool   _hasError    = false; // ✅ ADDED: track error state separately
+  bool   _hasError    = false;
   String _status      = '';
 
   Future<void> _downloadAndInstall() async {
@@ -106,7 +107,7 @@ class _UpdateDialogState extends State<_UpdateDialog> {
     try {
       // ── 1. Permissions ────────────────────────────────────────────────────
       if (Platform.isAndroid) {
-        await Permission.storage.request(); // needed on Android ≤ 9
+        await Permission.storage.request();
 
         final installPerm = await Permission.requestInstallPackages.request();
         if (!installPerm.isGranted) {
@@ -116,12 +117,9 @@ class _UpdateDialogState extends State<_UpdateDialog> {
       }
 
       // ── 2. Download ───────────────────────────────────────────────────────
-      // ✅ FIX: getApplicationDocumentsDirectory() is more reliable than
-      //         getTemporaryDirectory() for APK install on Android 10+
       final dir      = await getApplicationDocumentsDirectory();
       final savePath = '${dir.path}/wallet_update.apk';
 
-      // Remove any leftover file from a previous failed attempt
       final oldFile = File(savePath);
       if (await oldFile.exists()) await oldFile.delete();
 
@@ -148,7 +146,6 @@ class _UpdateDialogState extends State<_UpdateDialog> {
         _progress = 1.0;
       });
 
-      // ✅ FIX: check OpenResult so we can surface install errors
       final result = await OpenFile.open(
         savePath,
         type: 'application/vnd.android.package-archive',
@@ -157,7 +154,7 @@ class _UpdateDialogState extends State<_UpdateDialog> {
       if (result.type != ResultType.done) {
         _setError('Install failed: ${result.message}');
       }
-      // If ResultType.done → Android system installer takes over
+      // If done → Android system installer takes over
     } on DioException catch (e) {
       _setError('Download failed: ${e.message ?? "Network error"}');
     } catch (e) {
@@ -178,8 +175,7 @@ class _UpdateDialogState extends State<_UpdateDialog> {
       canPop: !widget.forceUpdate && !_downloading,
       onPopInvoked: (didPop) {
         if (!didPop && widget.forceUpdate) {
-          // Force-update: pressing back exits the app entirely
-          SystemNavigator.pop();
+          SystemNavigator.pop(); // back button exits app on force update
         }
       },
       child: AlertDialog(
@@ -216,8 +212,6 @@ class _UpdateDialogState extends State<_UpdateDialog> {
                 style: const TextStyle(color: Colors.white70, height: 1.5),
               ),
             ),
-
-            // ✅ FIX: unified status block — progress bar + status text in one place
             if (_downloading || _status.isNotEmpty) ...[
               const SizedBox(height: 16),
               if (_downloading)
@@ -233,7 +227,6 @@ class _UpdateDialogState extends State<_UpdateDialog> {
                   _status,
                   style: TextStyle(
                     fontSize: 12,
-                    // ✅ FIX: red for errors, subtle for progress
                     color: _hasError ? Colors.redAccent : Colors.white54,
                   ),
                 ),
@@ -248,8 +241,6 @@ class _UpdateDialogState extends State<_UpdateDialog> {
               child: const Text('Later',
                   style: TextStyle(color: Colors.white38)),
             ),
-          // ✅ Show button when not actively downloading,
-          //    OR when there's an error (so user can retry)
           if (!_downloading || _hasError)
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(

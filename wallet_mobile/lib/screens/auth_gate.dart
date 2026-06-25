@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
-import '../services/update_service.dart'; // ✅ ADDED
+import '../services/update_service.dart';
 import 'login_screen.dart';
 import 'client_dashboard.dart';
 import 'merchant_dashboard.dart';
@@ -17,16 +17,16 @@ class _AuthGateState extends State<AuthGate> {
   @override
   void initState() {
     super.initState();
-    // ✅ FIX: use addPostFrameCallback so context is fully mounted
-    //         before we pass it to UpdateService
+    // ✅ addPostFrameCallback gives us a fully mounted context
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // ── Step 1: Check for update FIRST ────────────────────────────────────
-      // If force_update = true in backend, this dialog cannot be dismissed
-      // and the user cannot reach login until they update.
+      // ── STEP 1: Update check ──────────────────────────────────────────────
+      // This AWAITS the dialog — if force_update=true the user is STUCK here
+      // until they install the update. checkLogin() cannot run until this
+      // Future completes (i.e. the dialog is dismissed).
       await UpdateService.checkForUpdate(context);
 
-      // ── Step 2: Then check auth ────────────────────────────────────────────
-      if (mounted) checkLogin();
+      // ── STEP 2: Auth check — only runs after update dialog is gone ────────
+      if (mounted) await checkLogin();
     });
   }
 
