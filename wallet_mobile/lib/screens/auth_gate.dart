@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../services/update_service.dart'; // ✅ ADDED
 import 'login_screen.dart';
 import 'client_dashboard.dart';
 import 'merchant_dashboard.dart';
@@ -16,7 +17,17 @@ class _AuthGateState extends State<AuthGate> {
   @override
   void initState() {
     super.initState();
-    checkLogin();
+    // ✅ FIX: use addPostFrameCallback so context is fully mounted
+    //         before we pass it to UpdateService
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // ── Step 1: Check for update FIRST ────────────────────────────────────
+      // If force_update = true in backend, this dialog cannot be dismissed
+      // and the user cannot reach login until they update.
+      await UpdateService.checkForUpdate(context);
+
+      // ── Step 2: Then check auth ────────────────────────────────────────────
+      if (mounted) checkLogin();
+    });
   }
 
   Future<void> checkLogin() async {
@@ -95,7 +106,6 @@ class _AuthGateState extends State<AuthGate> {
   }
 }
 
-// ✅ Renamed to avoid conflict with login_screen.dart XynderLogo
 class _XynderSplashLogo extends StatelessWidget {
   final double size;
   const _XynderSplashLogo({required this.size});

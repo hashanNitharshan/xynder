@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    LOCATION: android/app/src/main/res/xml/file_paths.xml
+
+    If the xml/ folder does not exist, create it:
+    android/app/src/main/res/xml/
+
+    This file tells FileProvider which directories it is allowed to share.
+    We cover all common Flutter storage directories to ensure OpenFile.open()
+    works regardless of which path getApplicationDocumentsDirectory() returns
+    on a given device/Android version.
+-->
+<paths>
+    <!-- getApplicationDocumentsDirectory() → /data/user/0/{pkg}/app_flutter/ -->
+    <files-path
+        name="internal_files"
+        path="." />
+
+    <!-- getTemporaryDirectory() → /data/user/0/{pkg}/cache/ -->
+    <cache-path
+        name="cache"
+        path="." />
+
+    <!-- getExternalStorageDirectory() → /storage/emulated/0/Android/data/{pkg}/files/ -->
+    <external-files-path
+        name="external_app_files"
+        path="." />
+
+    <!-- External cache -->
+    <external-cache-path
+        name="external_cache"
+        path="." />
+
+    <!-- Broad external storage coverage (Android ≤ 9) -->
+    <external-path
+        name="external_storage"
+        path="." />
+</paths>

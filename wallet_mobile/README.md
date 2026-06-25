@@ -20,8 +20,8 @@ X/
 │   │   │   │   │   └── SupportTicketController.php
 │   │   │   │   │
 │   │   │   │   ├── Auth/
-│   │   │   │   │   ├── LoginController.php 
-│   │   │   │   │   └── RegisterController.php              # ✅ NEW web signup controller
+│   │   │   │   │   ├── LoginController.php
+│   │   │   │   │   └── RegisterController.php
 │   │   │   │   │
 │   │   │   │   ├── Client/
 │   │   │   │   │   └── RequestController.php
@@ -52,13 +52,14 @@ X/
 │   │       └── AppServiceProvider.php
 │   │
 │   ├── bootstrap/
-│   │   ├── app.php
+│   │   ├── app.php                              # UPDATED - HandleCors middleware added
 │   │   └── providers.php
 │   │
 │   ├── config/
 │   │   ├── app.php
 │   │   ├── auth.php
 │   │   ├── cache.php
+│   │   ├── cors.php                             # UPDATED - allowed_origins set to ['*']
 │   │   ├── database.php
 │   │   ├── filesystems.php
 │   │   ├── logging.php
@@ -104,7 +105,7 @@ X/
 │   │
 │   ├── public/
 │   │   ├── apk/
-│   │   │   └── wallet-mobile.apk
+│   │   │   └── wallet-mobile.apk                # UPLOADED - release APK hosted here
 │   │   │
 │   │   ├── storage/
 │   │   ├── index.php
@@ -122,29 +123,23 @@ X/
 │   │       │   ├── chats/
 │   │       │   │   ├── index.blade.php
 │   │       │   │   └── show.blade.php
-│   │       │   │
 │   │       │   ├── config/
 │   │       │   │   └── index.blade.php
-│   │       │   │
 │   │       │   ├── settings/
 │   │       │   │   └── index.blade.php
-│   │       │   │
 │   │       │   ├── support_tickets/
 │   │       │   │   └── index.blade.php
-│   │       │   │
 │   │       │   ├── users/
 │   │       │   │   ├── form.blade.php
 │   │       │   │   └── index.blade.php
-│   │       │   │
 │   │       │   ├── wallet_requests/
 │   │       │   │   └── index.blade.php
-│   │       │   │
 │   │       │   └── wallet_transfers/
 │   │       │       └── index.blade.php
 │   │       │
 │   │       ├── auth/
-│   │       │   ├── login.blade.php                 # ✅ UPDATED signup link added
-│   │       │   └── register.blade.php              # ✅ NEW web signup page
+│   │       │   ├── login.blade.php
+│   │       │   └── register.blade.php
 │   │       │
 │   │       ├── client/
 │   │       │   ├── dashboard.blade.php
@@ -165,21 +160,12 @@ X/
 │   │       │   └── settings.blade.php
 │   │       │
 │   │       ├── shared/
-│   │       │   ├── PS C:\Users\User\Desktop\Projects\X\backend\resources\views\shared> dir
-
-
-    Directory: C:\Users\User\Desktop\Projects\X\backend\resources\views\shared
-
-
-Mode                 LastWriteTime         Length Name                                                                                                                                     
-----                 -------------         ------ ----                                                                                                                                     
--a----         6/23/2026   1:02 PM           3246 chats_index.blade.php                                                                                                                    
--a----         6/23/2026   1:02 PM           4691 chat_show.blade.php                                                                                                                      
--a----         6/23/2026   9:03 PM           9578 dark_dashboard.blade.php                                                                                                                 
--a----         6/23/2026   1:33 PM           4633 history.blade.php                                                                                                                        
--a----         6/23/2026   1:17 PM           6019 settings.blade.php                                                                                                                       
--a----         6/23/2026  12:48 PM           4739 transfers.blade.php                                                                                                                      
-
+│   │       │   ├── chats_index.blade.php
+│   │       │   ├── chat_show.blade.php
+│   │       │   ├── dark_dashboard.blade.php
+│   │       │   ├── history.blade.php
+│   │       │   ├── settings.blade.php
+│   │       │   └── transfers.blade.php
 │   │       │
 │   │       ├── dashboards/
 │   │       │   ├── admin.blade.php
@@ -192,9 +178,9 @@ Mode                 LastWriteTime         Length Name
 │   │       └── welcome.blade.php
 │   │
 │   ├── routes/
-│   │   ├── api.php
+│   │   ├── api.php                              # UPDATED - OPTIONS + /version endpoint + force_update
 │   │   ├── console.php
-│   │   └── web.php                              # ✅ UPDATED register routes added
+│   │   └── web.php
 │   │
 │   ├── storage/
 │   │   ├── app/
@@ -203,18 +189,14 @@ Mode                 LastWriteTime         Length Name
 │   │   │       │   ├── photos/
 │   │   │       │   ├── aadhaar/
 │   │   │       │   └── upi_qr/
-│   │   │       │
 │   │   │       ├── wallet/
 │   │   │       │   └── slips/
-│   │   │       │
 │   │   │       └── chat_attachments/
-│   │   │
 │   │   ├── framework/
 │   │   │   ├── cache/
 │   │   │   ├── sessions/
 │   │   │   ├── testing/
 │   │   │   └── views/
-│   │   │
 │   │   └── logs/
 │   │       └── laravel.log
 │   │
@@ -247,21 +229,22 @@ Mode                 LastWriteTime         Length Name
     │   │
     │   ├── screens/
     │   │   ├── admin_dashboard.dart
-    │   │   ├── auth_gate.dart
+    │   │   ├── auth_gate.dart                   # UPDATED - removed duplicate initState, renamed XynderLogo
     │   │   ├── chat_screen.dart
     │   │   ├── chat_users_screen.dart
     │   │   ├── client_dashboard.dart
-    │   │   ├── login_screen.dart
+    │   │   ├── login_screen.dart                # UPDATED - added UpdateService check + XynderLogo class
     │   │   ├── merchant_dashboard.dart
     │   │   ├── merchant_requests_screen.dart
     │   │   ├── profile_screen.dart
-    │   │   ├── register_screen.dart               # ✅ Flutter signup already working
+    │   │   ├── register_screen.dart
     │   │   ├── request_screen.dart
     │   │   ├── transaction_detail_screen.dart
     │   │   └── wallet_transfer_screen.dart
     │   │
     │   ├── services/
-    │   │   └── api_service.dart                   # ✅ Flutter uses /api/register
+    │   │   ├── api_service.dart
+    │   │   └── update_service.dart              # NEW - auto update + force update + download + install
     │   │
     │   ├── utils/
     │   │   ├── tv_iframe_registry.dart
@@ -281,7 +264,17 @@ Mode                 LastWriteTime         Length Name
     │
     ├── android/
     │   ├── app/
+    │   │   ├── src/
+    │   │   │   └── main/
+    │   │   │       └── AndroidManifest.xml      # UPDATED - INTERNET + INSTALL_PACKAGES permissions
+    │   │   └── build.gradle                     # UPDATED - lint disabled, minify off
+    │   │
+    │   ├── gradle/
+    │   │   └── wrapper/
+    │   │       └── gradle-wrapper.properties    # UPDATED - gradle-8.13-bin.zip
+    │   │
     │   ├── build.gradle
+    │   ├── gradle.properties                    # UPDATED - JAVA_HOME set to JDK 17
     │   └── settings.gradle
     │
     ├── ios/
@@ -316,8 +309,148 @@ Mode                 LastWriteTime         Length Name
     │
     ├── .flutter-plugins-dependencies
     ├── .gitignore
-    ├── pubspec.yaml
+    ├── pubspec.yaml                             # UPDATED - added 5 new packages
     └── README.md
-    
+
+
+========================================
+CHANGED FILES SUMMARY
+========================================
+
+BACKEND (Laravel):
+------------------
+backend/bootstrap/app.php
+  - Added: use Illuminate\Http\Middleware\HandleCors;
+  - Added: $middleware->prepend(HandleCors::class);
+
+backend/config/cors.php
+  - Changed: allowed_origins => ['*']
+  - Removed: allowed_origins_patterns
+  - Changed: supports_credentials => false
+
+backend/routes/api.php
+  - Added: Route::options preflight handler
+  - Added: Route::get('/version') endpoint
+  - Added: force_update => true
+  - Added: apk_url => wallet-mobile.apk
+
+backend/public/apk/wallet-mobile.apk
+  - UPLOADED: release APK hosted here for auto-update downloads
+
+
+FLUTTER (wallet_mobile):
+------------------------
+wallet_mobile/pubspec.yaml
+  - Added: package_info_plus: ^8.0.0
+  - Added: dio: ^5.4.0
+  - Added: open_file: ^3.3.2
+  - Added: permission_handler: ^11.3.0
+  - Added: path_provider: ^2.1.0
+
+wallet_mobile/lib/services/update_service.dart  [NEW FILE]
+  - CheckForUpdate() calls /api/version
+  - Compares server version vs app version
+  - Shows dialog if newer version found
+  - force_update=true blocks back button
+  - Downloads APK via Dio
+  - Installs via OpenFile
+
+wallet_mobile/lib/screens/auth_gate.dart
+  - Removed: duplicate initState
+  - Renamed: XynderLogo to _XynderSplashLogo
+  - Renamed: _XynderLogoPainter to _XynderSplashLogoPainter
+  - Removed: UpdateService import and call
+
+wallet_mobile/lib/screens/login_screen.dart
+  - Added: import update_service.dart
+  - Added: UpdateService.checkForUpdate() in initState
+  - Added: XynderLogo class at bottom (top level)
+  - Added: _LoginXynderLogoPainter class at bottom (top level)
+  - Removed: import auth_gate.dart
+
+wallet_mobile/android/app/src/main/AndroidManifest.xml
+  - Added: android.permission.INTERNET
+  - Added: android.permission.ACCESS_NETWORK_STATE
+  - Added: android.permission.REQUEST_INSTALL_PACKAGES
+  - Added: android.permission.WRITE_EXTERNAL_STORAGE
+  - Added: android.permission.READ_EXTERNAL_STORAGE
+  - Added: android:usesCleartextTraffic="true"
+
+wallet_mobile/android/app/build.gradle
+  - Added: lint { checkReleaseBuilds = false; abortOnError = false }
+  - Added: isMinifyEnabled = false
+  - Added: isShrinkResources = false
+
+wallet_mobile/android/gradle/wrapper/gradle-wrapper.properties
+  - Changed: distributionUrl to gradle-8.13-bin.zip
+
+wallet_mobile/android/gradle.properties
+  - Added: org.gradle.java.home=C:\Program Files\Eclipse Adoptium\jdk-17.0.19.10-hotspot
+
+
+========================================
+VPS / DEPLOYMENT
+========================================
+
+Server path:
+  /home/bitxnow-wallet/htdocs/wallet.bitxnow.com/backend/
+
+Git branch in use:
+  ui8
+
+APK hosted at:
+  https://wallet.bitxnow.com/apk/wallet-mobile.apk
+
+Version API:
+  https://wallet.bitxnow.com/api/version
+
+Java installed:
+  C:\Program Files\Eclipse Adoptium\jdk-17.0.19.10-hotspot  (Java 17)
+  C:\Program Files\Eclipse Adoptium\jdk-25.0.3.9-hotspot    (Java 25 - not used)
+
+Android SDK:
+  C:\Users\User\AppData\Local\Android\Sdk
+
+Flutter:
+  C:\src\flutter
+
+
+========================================
+HOW TO DO NEXT UPDATE
+========================================
+
+Step 1 - VS Code:
+  Edit code in wallet_mobile/ or backend/
+  Change version in backend/routes/api.php: '1.0.2' -> '1.0.3'
+  Change version in wallet_mobile/pubspec.yaml: 1.0.2+2 -> 1.0.3+3
+
+Step 2 - VS Code Terminal:
+  cd C:\Users\User\Desktop\Projects\X\wallet_mobile
+  flutter build apk --release
+
+Step 3 - CloudPanel File Manager:
+  Upload: build\app\outputs\flutter-apk\app-release.apk
+  Path:   htdocs/wallet.bitxnow.com/backend/public/apk/
+  Rename: wallet-mobile.apk
+
+Step 4 - VS Code Terminal:
+  cd C:\Users\User\Desktop\Projects\X
+  git add .
+  git commit -m "v1.0.3 update"
+  git push origin ui8
+
+Step 5 - VPS SSH Terminal:
+  cd /home/bitxnow-wallet/htdocs/wallet.bitxnow.com
+  git fetch origin ui8
+  git reset --hard origin/ui8
+  cd backend
+  php artisan optimize:clear
+
+Step 6 - Verify:
+  Open: https://wallet.bitxnow.com/api/version
+  Check: "version" shows new number
+
+Step 7 - Users:
+  Open app -> update dialog appears -> tap Update Now -> done
 flutter run -d chrome
 
