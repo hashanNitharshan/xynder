@@ -49,32 +49,31 @@ class ChatController extends Controller
                     ->count();
 
                 $isTransfer = ! is_null($conversation->wallet_transfer_id);
-                $isLocked = $conversation->isLocked();
+                $isLocked   = $conversation->isLocked();
 
                 return [
                     'conversation_id' => $conversation->id,
-                    'chat_type' => $isTransfer ? 'transfer' : 'request',
-                    'chat_id' => $isTransfer
+                    'chat_type'       => $isTransfer ? 'transfer' : 'request',
+                    'chat_id'         => $isTransfer
                         ? (int) $conversation->wallet_transfer_id
                         : (int) $conversation->wallet_request_id,
 
-                    'is_locked' => $isLocked,
-                    'can_open' => ! $isLocked,
-                    'chat_started_at' => $conversation->chat_started_at,
-                    'locked_at' => $conversation->locked_at,
-                    'lock_reason' => $conversation->lock_reason,
+                    'is_locked'        => $isLocked,
+                    'can_open'         => ! $isLocked,
+                    'chat_started_at'  => $conversation->chat_started_at,
+                    'locked_at'        => $conversation->locked_at,
+                    'lock_reason'      => $conversation->lock_reason,
                     'remaining_seconds' => $conversation->remainingSeconds(),
 
                     'other_user' => [
-                        'id' => $other->id,
-                        'name' => $other->name,
-                        'email' => $other->email,
-                        'role' => $other->role,
-                        'photo' => $other->photo,
-                        'photo_url' => $other->photo
-                            ? url('/storage/' . ltrim($other->photo, '/'))
-                            : null,
-                        'is_online' => $other->is_online,
+                        'id'           => $other->id,
+                        'name'         => $other->name,
+                        'email'        => $other->email,
+                        'role'         => $other->role,
+                        'photo'        => $other->photo,
+                        // FIX: use the User model accessor so null/'0'/'' are all handled correctly
+                        'photo_url'    => $other->photo_url,
+                        'is_online'    => $other->is_online,
                         'last_seen_at' => $other->last_seen_at,
                     ],
 
@@ -83,14 +82,14 @@ class ChatController extends Controller
                         : ($lastMessage?->message ?: ($lastMessage?->attachment_name ? '📎 ' . $lastMessage->attachment_name : null)),
 
                     'last_message_at' => $lastMessage?->created_at,
-                    'unread_count' => $unreadCount,
+                    'unread_count'    => $unreadCount,
                 ];
             })
             ->filter()
             ->values();
 
         return response()->json([
-            'success' => true,
+            'success'       => true,
             'conversations' => $conversations,
         ]);
     }
@@ -107,12 +106,12 @@ class ChatController extends Controller
         $this->markSeen($conversation->id, $request->user()->id);
 
         return response()->json([
-            'success' => true,
-            'is_locked' => false,
+            'success'           => true,
+            'is_locked'         => false,
             'remaining_seconds' => $conversation->remainingSeconds(),
-            'conversation' => $conversation,
-            'other_user' => $this->userData($this->otherUser($conversation, $request->user()->id)),
-            'messages' => $this->messages($conversation->id),
+            'conversation'      => $conversation,
+            'other_user'        => $this->userData($this->otherUser($conversation, $request->user()->id)),
+            'messages'          => $this->messages($conversation->id),
         ]);
     }
 
@@ -133,12 +132,12 @@ class ChatController extends Controller
         $this->markSeen($conversation->id, $request->user()->id);
 
         return response()->json([
-            'success' => true,
-            'is_locked' => false,
+            'success'           => true,
+            'is_locked'         => false,
             'remaining_seconds' => $conversation->remainingSeconds(),
-            'conversation' => $conversation,
-            'other_user' => $this->userData($this->otherUser($conversation, $request->user()->id)),
-            'messages' => $this->messages($conversation->id),
+            'conversation'      => $conversation,
+            'other_user'        => $this->userData($this->otherUser($conversation, $request->user()->id)),
+            'messages'          => $this->messages($conversation->id),
         ]);
     }
 
@@ -156,7 +155,7 @@ class ChatController extends Controller
         }
 
         $data = $request->validate([
-            'message' => 'nullable|string|max:2000',
+            'message'    => 'nullable|string|max:2000',
             'attachment' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,webp,pdf,doc,docx,xls,xlsx,txt,zip',
         ]);
 
@@ -177,19 +176,19 @@ class ChatController extends Controller
 
         $message = ChatMessage::create(array_merge([
             'conversation_id' => $conversation->id,
-            'sender_id' => $request->user()->id,
-            'receiver_id' => $receiver->id,
-            'message' => $data['message'] ?? '',
-            'status' => 'sent',
+            'sender_id'       => $request->user()->id,
+            'receiver_id'     => $receiver->id,
+            'message'         => $data['message'] ?? '',
+            'status'          => 'sent',
         ], $this->storeAttachment($request)));
 
         $conversation->touch();
 
         return response()->json([
-            'success' => true,
-            'is_locked' => false,
+            'success'           => true,
+            'is_locked'         => false,
             'remaining_seconds' => $conversation->remainingSeconds(),
-            'message' => $message->load([
+            'message'           => $message->load([
                 'sender:id,name,email,role,photo',
                 'receiver:id,name,email,role,photo',
             ]),
@@ -201,7 +200,7 @@ class ChatController extends Controller
         ChatMessage::where('receiver_id', $request->user()->id)
             ->where('status', 'sent')
             ->update([
-                'status' => 'delivered',
+                'status'       => 'delivered',
                 'delivered_at' => now(),
             ]);
 
@@ -211,12 +210,12 @@ class ChatController extends Controller
     private function lockedResponse(Conversation $conversation)
     {
         return response()->json([
-            'success' => false,
-            'is_locked' => true,
-            'can_open' => false,
-            'message' => 'This chat is locked. 15 minutes completed after first message.',
-            'locked_at' => $conversation->locked_at,
-            'lock_reason' => $conversation->lock_reason,
+            'success'           => false,
+            'is_locked'         => true,
+            'can_open'          => false,
+            'message'           => 'This chat is locked. 15 minutes completed after first message.',
+            'locked_at'         => $conversation->locked_at,
+            'lock_reason'       => $conversation->lock_reason,
             'remaining_seconds' => 0,
         ], 423);
     }
@@ -235,7 +234,7 @@ class ChatController extends Controller
     private function getOrCreateTransferConversation(Request $request, $transferId)
     {
         $transfer = WalletTransfer::findOrFail($transferId);
-        $userId = $request->user()->id;
+        $userId   = $request->user()->id;
 
         if ($transfer->sender_id != $userId && $transfer->receiver_id != $userId) {
             abort(403, 'Unauthorized chat.');
@@ -244,8 +243,8 @@ class ChatController extends Controller
         return Conversation::firstOrCreate(
             ['wallet_transfer_id' => $transfer->id],
             [
-                'user_one_id' => $transfer->sender_id,
-                'user_two_id' => $transfer->receiver_id,
+                'user_one_id'       => $transfer->sender_id,
+                'user_two_id'       => $transfer->receiver_id,
                 'wallet_request_id' => null,
             ]
         );
@@ -254,7 +253,7 @@ class ChatController extends Controller
     private function getOrCreateRequestConversation(Request $request, $requestId)
     {
         $walletRequest = WalletRequest::findOrFail($requestId);
-        $userId = $request->user()->id;
+        $userId        = $request->user()->id;
 
         if ($walletRequest->user_id != $userId && $walletRequest->merchant_id != $userId) {
             abort(403, 'Unauthorized chat.');
@@ -267,9 +266,9 @@ class ChatController extends Controller
         return Conversation::firstOrCreate(
             ['wallet_request_id' => $walletRequest->id],
             [
-                'user_one_id' => $walletRequest->user_id,
-                'user_two_id' => $walletRequest->merchant_id,
-                'wallet_transfer_id' => null,
+                'user_one_id'          => $walletRequest->user_id,
+                'user_two_id'          => $walletRequest->merchant_id,
+                'wallet_transfer_id'   => null,
             ]
         );
     }
@@ -290,11 +289,17 @@ class ChatController extends Controller
             ->where('receiver_id', $userId)
             ->whereIn('status', ['sent', 'delivered'])
             ->update([
-                'status' => 'seen',
+                'status'  => 'seen',
                 'seen_at' => now(),
             ]);
     }
 
+    // -----------------------------------------------------------------------
+    // FIX: attachment_url was using url('/api/storage/' . $path) which routed
+    // through a Laravel controller and often returned wrong/broken URLs.
+    // Changed to asset('storage/' . $path) which resolves directly to the
+    // public symlink — same approach as WebChatController (already correct).
+    // -----------------------------------------------------------------------
     private function storeAttachment(Request $request): array
     {
         if (! $request->hasFile('attachment')) {
@@ -302,12 +307,17 @@ class ChatController extends Controller
         }
 
         $file = $request->file('attachment');
+
+        if (! $file->isValid()) {
+            throw new \Exception('Uploaded file is not valid.');
+        }
+
         $path = $file->store('chat_attachments', 'public');
-        $mime = $file->getMimeType();
+        $mime = $file->getMimeType() ?: 'application/octet-stream';
 
         return [
             'attachment_path' => $path,
-            'attachment_url' => url('/api/storage/' . $path),
+            'attachment_url'  => asset('storage/' . $path),  // FIX: was url('/api/storage/' . $path)
             'attachment_name' => $file->getClientOriginalName(),
             'attachment_mime' => $mime,
             'attachment_size' => $file->getSize(),
@@ -315,18 +325,21 @@ class ChatController extends Controller
         ];
     }
 
+    // -----------------------------------------------------------------------
+    // FIX: use User model's photo_url accessor so null / '0' / '' values
+    // are handled consistently instead of generating broken URLs like
+    // https://wallet.bitxnow.com/storage/0
+    // -----------------------------------------------------------------------
     private function userData($user): array
     {
         return [
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'role' => $user->role,
-            'photo' => $user->photo,
-            'photo_url' => $user->photo
-                ? url('/storage/' . ltrim($user->photo, '/'))
-                : null,
-            'is_online' => $user->is_online,
+            'id'           => $user->id,
+            'name'         => $user->name,
+            'email'        => $user->email,
+            'role'         => $user->role,
+            'photo'        => $user->photo,
+            'photo_url'    => $user->photo_url,  // FIX: was manually constructed with url('/storage/...')
+            'is_online'    => $user->is_online,
             'last_seen_at' => $user->last_seen_at,
         ];
     }

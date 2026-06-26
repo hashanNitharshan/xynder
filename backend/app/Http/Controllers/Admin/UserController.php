@@ -14,7 +14,7 @@ class UserController extends Controller
 {
     private function adminOnly(): void
     {
-        if (!Auth::user() || Auth::user()->role !== 'admin') {
+        if (! Auth::user() || Auth::user()->role !== 'admin') {
             abort(403);
         }
     }
@@ -34,7 +34,7 @@ class UserController extends Controller
 
         $type = $request->get('type', 'client');
 
-        if (!in_array($type, ['client', 'merchant'])) {
+        if (! in_array($type, ['client', 'merchant'])) {
             $type = 'client';
         }
 
@@ -61,10 +61,10 @@ class UserController extends Controller
             ->withQueryString();
 
         $stats = [
-            'clients' => User::where('role', 'client')->count(),
+            'clients'   => User::where('role', 'client')->count(),
             'merchants' => User::where('role', 'merchant')->count(),
-            'active' => User::whereIn('role', ['client', 'merchant'])->where('status', 'active')->count(),
-            'online' => User::whereIn('role', ['client', 'merchant'])->where('is_online', true)->count(),
+            'active'    => User::whereIn('role', ['client', 'merchant'])->where('status', 'active')->count(),
+            'online'    => User::whereIn('role', ['client', 'merchant'])->where('is_online', true)->count(),
         ];
 
         return view('admin.users.index', compact('users', 'type', 'stats'));
@@ -110,7 +110,7 @@ class UserController extends Controller
         $newStatus = $user->status === 'active' ? 'blocked' : 'active';
 
         $user->update([
-            'status' => $newStatus,
+            'status'    => $newStatus,
             'is_active' => $newStatus === 'active',
         ]);
 
@@ -126,7 +126,7 @@ class UserController extends Controller
         }
 
         $user->update([
-            'is_verified' => !$user->is_verified,
+            'is_verified' => ! $user->is_verified,
         ]);
 
         return back()->with(
@@ -138,36 +138,36 @@ class UserController extends Controller
     private function validateUser(Request $request, ?int $userId = null): array
     {
         return $request->validate([
-            'name' => 'required|string|max:255',
-            'original_name' => 'nullable|string|max:255',
-            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($userId)],
-            'role' => 'required|in:client,merchant',
-            'phone' => ['nullable', 'string', 'max:30', Rule::unique('users', 'phone')->ignore($userId)],
+            'name'           => 'required|string|max:255',
+            'original_name'  => 'nullable|string|max:255',
+            'email'          => ['required', 'email', Rule::unique('users', 'email')->ignore($userId)],
+            'role'           => 'required|in:client,merchant',
+            'phone'          => ['nullable', 'string', 'max:30', Rule::unique('users', 'phone')->ignore($userId)],
 
-            'address' => 'nullable|string|max:255',
-            'country' => 'nullable|string|max:100',
-            'state' => 'nullable|string|max:100',
+            'address'  => 'nullable|string|max:255',
+            'country'  => 'nullable|string|max:100',
+            'state'    => 'nullable|string|max:100',
 
-            'nic' => 'nullable|string|max:50',
-            'aadhaar' => 'nullable|string|max:50',
+            'nic'         => 'nullable|string|max:50',
+            'aadhaar'     => 'nullable|string|max:50',
             'card_number' => 'nullable|string|max:100',
 
-            'bank_name' => 'nullable|string|max:100',
-            'branch' => 'nullable|string|max:100',
+            'bank_name'      => 'nullable|string|max:100',
+            'branch'         => 'nullable|string|max:100',
             'account_number' => 'nullable|string|max:100',
-            'account_type' => 'nullable|string|max:100',
-            'ifsc' => 'nullable|string|max:100',
+            'account_type'   => 'nullable|string|max:100',
+            'ifsc'           => 'nullable|string|max:100',
 
             'upi_name' => 'nullable|string|max:100',
-            'upi_id' => 'nullable|string|max:100',
+            'upi_id'   => 'nullable|string|max:100',
 
-            'photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:10240',
+            'photo'         => 'nullable|image|mimes:jpg,jpeg,png,webp|max:10240',
             'aadhaar_photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:10240',
-            'upi_qr' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:10240',
+            'upi_qr'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:10240',
 
-            'balance' => 'required|numeric|min:0',
+            'balance'  => 'required|numeric|min:0',
             'password' => $userId ? 'nullable|min:6' : 'required|min:6',
-            'status' => 'nullable|in:active,blocked',
+            'status'   => 'nullable|in:active,blocked',
         ]);
     }
 
@@ -177,20 +177,24 @@ class UserController extends Controller
 
         $data = $this->validateUser($request);
 
-        if ($request->hasFile('photo')) {
-            $data['photo'] = $request->file('photo')->store('users/photos', 'public');
-        }
+        // Image fields: only store path when a file is actually uploaded.
+        // Otherwise keep null (new user, no photo yet — that is fine).
+        $imageFolders = [
+            'photo'         => 'users/photos',
+            'aadhaar_photo' => 'users/aadhaar',
+            'upi_qr'        => 'users/upi_qr',
+        ];
 
-        if ($request->hasFile('aadhaar_photo')) {
-            $data['aadhaar_photo'] = $request->file('aadhaar_photo')->store('users/aadhaar', 'public');
-        }
-
-        if ($request->hasFile('upi_qr')) {
-            $data['upi_qr'] = $request->file('upi_qr')->store('users/upi_qr', 'public');
+        foreach ($imageFolders as $field => $folder) {
+            if ($request->hasFile($field)) {
+                $data[$field] = $request->file($field)->store($folder, 'public');
+            } else {
+                $data[$field] = null;
+            }
         }
 
         $data['password'] = Hash::make($data['password']);
-        $data['status'] = $request->input('status', 'active');
+        $data['status']    = $request->input('status', 'active');
         $data['is_active'] = $data['status'] === 'active';
         $data['wallet_id'] = $this->generateWalletId();
 
@@ -207,19 +211,29 @@ class UserController extends Controller
 
         $data = $this->validateUser($request, $user->id);
 
-        if ($request->hasFile('photo')) {
-            $data['photo'] = $request->file('photo')->store('users/photos', 'public');
+        // ---------------------------------------------------------------
+        // FIX: Only overwrite image columns when a new file is uploaded.
+        //
+        // Without this, $data contains null for image fields (from Laravel
+        // validation) whenever no file is submitted.  Calling $user->update($data)
+        // would then set photo / aadhaar_photo / upi_qr to NULL, wiping the
+        // existing stored path — the root cause of images disappearing.
+        // ---------------------------------------------------------------
+        $imageFolders = [
+            'photo'         => 'users/photos',
+            'aadhaar_photo' => 'users/aadhaar',
+            'upi_qr'        => 'users/upi_qr',
+        ];
+
+        foreach ($imageFolders as $field => $folder) {
+            if ($request->hasFile($field)) {
+                $data[$field] = $request->file($field)->store($folder, 'public');
+            } else {
+                unset($data[$field]); // Leave existing DB value untouched
+            }
         }
 
-        if ($request->hasFile('aadhaar_photo')) {
-            $data['aadhaar_photo'] = $request->file('aadhaar_photo')->store('users/aadhaar', 'public');
-        }
-
-        if ($request->hasFile('upi_qr')) {
-            $data['upi_qr'] = $request->file('upi_qr')->store('users/upi_qr', 'public');
-        }
-
-        if (!empty($data['password'])) {
+        if (! empty($data['password'])) {
             $data['password'] = Hash::make($data['password']);
         } else {
             unset($data['password']);
@@ -229,7 +243,7 @@ class UserController extends Controller
             $data['wallet_id'] = $this->generateWalletId();
         }
 
-        $data['status'] = $request->input('status', $user->status);
+        $data['status']    = $request->input('status', $user->status);
         $data['is_active'] = $data['status'] === 'active';
 
         $user->update($data);

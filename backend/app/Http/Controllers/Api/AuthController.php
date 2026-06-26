@@ -31,7 +31,7 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $data = $request->validate([
-            'email' => 'required|email',
+            'email'    => 'required|email',
             'password' => 'required',
         ]);
 
@@ -52,7 +52,7 @@ class AuthController extends Controller
         }
 
         $user->update([
-            'is_online' => true,
+            'is_online'    => true,
             'last_seen_at' => now(),
         ]);
 
@@ -60,8 +60,8 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'token' => $token,
-            'user' => $user->fresh(),
+            'token'   => $token,
+            'user'    => $user->fresh(),
         ]);
     }
 
@@ -69,14 +69,14 @@ class AuthController extends Controller
     {
         return response()->json([
             'success' => true,
-            'user' => $request->user()->fresh(),
+            'user'    => $request->user()->fresh(),
         ]);
     }
 
     public function ping(Request $request)
     {
         $request->user()->update([
-            'is_online' => true,
+            'is_online'    => true,
             'last_seen_at' => now(),
         ]);
 
@@ -86,7 +86,7 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         $request->user()->update([
-            'is_online' => false,
+            'is_online'    => false,
             'last_seen_at' => now(),
         ]);
 
@@ -94,38 +94,39 @@ class AuthController extends Controller
 
         return response()->json(['success' => true]);
     }
-public function merchants(Request $request)
-{
-    $merchants = User::where('role', 'merchant')
-        ->where('status', 'active')
-        ->where('is_active', true)
-        ->where('is_verified', true)
-        ->select([
-            'id',
-            'name',
-            'email',
-            'phone',
-            'photo',
-            'upi_qr',
-            'is_online',
-            'last_seen_at',
-            'bank_name',
-            'branch',
-            'account_number',
-            'account_type',
-            'ifsc',
-            'upi_name',
-            'upi_id',
-        ])
-        ->orderByDesc('is_online')
-        ->latest()
-        ->get();
 
-    return response()->json([
-        'success' => true,
-        'merchants' => $merchants,
-    ]);
-}
+    public function merchants(Request $request)
+    {
+        $merchants = User::where('role', 'merchant')
+            ->where('status', 'active')
+            ->where('is_active', true)
+            ->where('is_verified', true)
+            ->select([
+                'id',
+                'name',
+                'email',
+                'phone',
+                'photo',
+                'upi_qr',
+                'is_online',
+                'last_seen_at',
+                'bank_name',
+                'branch',
+                'account_number',
+                'account_type',
+                'ifsc',
+                'upi_name',
+                'upi_id',
+            ])
+            ->orderByDesc('is_online')
+            ->latest()
+            ->get();
+
+        return response()->json([
+            'success'   => true,
+            'merchants' => $merchants,
+        ]);
+    }
 
     public function createRequest(Request $request)
     {
@@ -150,10 +151,10 @@ public function merchants(Request $request)
         }
 
         $data = $request->validate([
-            'type' => 'required|in:deposit,withdrawal',
-            'amount' => 'required|numeric|min:1',
+            'type'        => 'required|in:deposit,withdrawal',
+            'amount'      => 'required|numeric|min:1',
             'merchant_id' => 'required|exists:users,id',
-            'note' => 'nullable|string|max:500',
+            'note'        => 'nullable|string|max:500',
         ]);
 
         $merchant = User::where('id', $data['merchant_id'])
@@ -183,33 +184,33 @@ public function merchants(Request $request)
         $config = SystemConfig::current();
 
         $convertedAmount = round($amount * (float) $config->inr_rate, 2);
-        $fee = round((float) $config->xynder_fee + (float) $config->network_fee, 2);
-        $totalAmount = round($convertedAmount + $fee, 2);
+        $fee             = round((float) $config->xynder_fee + (float) $config->network_fee, 2);
+        $totalAmount     = round($convertedAmount + $fee, 2);
 
         $walletRequest = WalletRequest::create([
-            'user_id' => $user->id,
-            'merchant_id' => $merchant->id,
-            'type' => $data['type'],
-            'amount' => $amount,
-            'usd_rate' => $config->usd_rate,
-            'inr_rate' => $config->inr_rate,
-            'xynder_fee' => $config->xynder_fee,
-            'network_fee' => $config->network_fee,
+            'user_id'          => $user->id,
+            'merchant_id'      => $merchant->id,
+            'type'             => $data['type'],
+            'amount'           => $amount,
+            'usd_rate'         => $config->usd_rate,
+            'inr_rate'         => $config->inr_rate,
+            'xynder_fee'       => $config->xynder_fee,
+            'network_fee'      => $config->network_fee,
             'converted_amount' => $convertedAmount,
-            'fee' => $fee,
-            'total_amount' => $totalAmount,
-            'note' => $data['note'] ?? null,
-            'payment_slip' => null,
-            'status' => 'pending',
+            'fee'              => $fee,
+            'total_amount'     => $totalAmount,
+            'note'             => $data['note'] ?? null,
+            'payment_slip'     => null,
+            'status'           => 'pending',
         ]);
 
         return response()->json([
-            'success' => true,
-            'message' => $data['type'] === 'withdrawal'
+            'success'    => true,
+            'message'    => $data['type'] === 'withdrawal'
                 ? 'Sell request submitted successfully.'
                 : 'Buy request submitted successfully.',
-            'request' => $walletRequest->fresh(['merchant']),
-            'merchant' => $merchant,
+            'request'    => $walletRequest->fresh(['merchant']),
+            'merchant'   => $merchant,
             'request_id' => $walletRequest->id,
         ]);
     }
@@ -249,7 +250,7 @@ public function merchants(Request $request)
 
         return response()->json([
             'success' => true,
-            'user' => $user,
+            'user'    => $user,
         ]);
     }
 
@@ -257,8 +258,8 @@ public function merchants(Request $request)
     {
         $data = $request->validate([
             'receiver_wallet_id' => 'required|string|max:50',
-            'amount' => 'required|numeric|min:1',
-            'note' => 'nullable|string|max:500',
+            'amount'             => 'required|numeric|min:1',
+            'note'               => 'nullable|string|max:500',
         ]);
 
         $sender = $request->user();
@@ -300,25 +301,25 @@ public function merchants(Request $request)
                 }
 
                 $lockedSender->balance = round((float) $lockedSender->balance - $amount, 2);
-                $receiver->balance = round((float) $receiver->balance + $amount, 2);
+                $receiver->balance     = round((float) $receiver->balance + $amount, 2);
 
                 $lockedSender->save();
                 $receiver->save();
 
                 return WalletTransfer::create([
-                    'sender_id' => $lockedSender->id,
-                    'receiver_id' => $receiver->id,
+                    'sender_id'          => $lockedSender->id,
+                    'receiver_id'        => $receiver->id,
                     'receiver_wallet_id' => $receiver->wallet_id,
-                    'amount' => $amount,
-                    'note' => $data['note'] ?? null,
+                    'amount'             => $amount,
+                    'note'               => $data['note'] ?? null,
                 ]);
             });
 
             return response()->json([
-                'success' => true,
-                'message' => 'Wallet transfer completed successfully.',
+                'success'  => true,
+                'message'  => 'Wallet transfer completed successfully.',
                 'transfer' => $transfer->fresh(['receiver']),
-                'user' => $request->user()->fresh(),
+                'user'     => $request->user()->fresh(),
             ]);
         } catch (\Throwable $e) {
             return response()->json([
@@ -333,9 +334,9 @@ public function merchants(Request $request)
         $userId = $request->user()->id;
 
         $transfers = WalletTransfer::with([
-                'sender:id,name,email,wallet_id',
-                'receiver:id,name,email,wallet_id',
-            ])
+            'sender:id,name,email,wallet_id',
+            'receiver:id,name,email,wallet_id',
+        ])
             ->where(function ($query) use ($userId) {
                 $query->where('sender_id', $userId)
                     ->orWhere('receiver_id', $userId);
@@ -344,54 +345,56 @@ public function merchants(Request $request)
             ->get();
 
         return response()->json([
-            'success' => true,
+            'success'   => true,
             'transfers' => $transfers,
         ]);
     }
 
-  public function updateProfile(Request $request)
-{
-    $user = $request->user();
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
 
-    if (! $user->is_active || $user->status !== 'active') {
-        return response()->json([
-            'success' => false,
-            'message' => 'Your account has been blocked.',
-        ], 403);
-    }
-
-    $data = $this->validateProfile($request, $user->id, true);
-    $data = $this->cleanImageFields($data);
-
-    foreach (['photo', 'aadhaar_photo', 'upi_qr'] as $field) {
-        if ($request->hasFile($field)) {
-            if ($user->{$field} && $user->{$field} !== '0') {
-                Storage::disk('public')->delete($user->{$field});
-            }
-
-            $folder = match ($field) {
-                'photo' => 'users/photos',
-                'aadhaar_photo' => 'users/aadhaar',
-                'upi_qr' => 'users/upi_qr',
-            };
-
-            $data[$field] = $request->file($field)->store($folder, 'public');
+        if (! $user->is_active || $user->status !== 'active') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your account has been blocked.',
+            ], 403);
         }
+
+        $data = $this->validateProfile($request, $user->id, true);
+        $data = $this->cleanImageFields($data);
+
+        foreach (['photo', 'aadhaar_photo', 'upi_qr'] as $field) {
+            if ($request->hasFile($field)) {
+                if ($user->{$field} && $user->{$field} !== '0') {
+                    Storage::disk('public')->delete($user->{$field});
+                }
+
+                $folder = match ($field) {
+                    'photo'         => 'users/photos',
+                    'aadhaar_photo' => 'users/aadhaar',
+                    'upi_qr'        => 'users/upi_qr',
+                };
+
+                $data[$field] = $request->file($field)->store($folder, 'public');
+            }
+            // If no file uploaded, the field was already unset by cleanImageFields()
+            // (handles null, '0', 0, ''), so the existing DB value is preserved.
+        }
+
+        $user->update($data);
+
+        return response()->json([
+            'success' => true,
+            'user'    => $user->fresh(),
+        ]);
     }
-
-    $user->update($data);
-
-    return response()->json([
-        'success' => true,
-        'user' => $user->fresh(),
-    ]);
-}
 
     public function changePassword(Request $request)
     {
         $request->validate([
             'current_password' => 'required',
-            'password' => 'required|min:6|confirmed',
+            'password'         => 'required|min:6|confirmed',
         ]);
 
         $user = $request->user();
@@ -421,47 +424,48 @@ public function merchants(Request $request)
 
         return $walletId;
     }
-public function register(Request $request)
-{
-    $data = $this->validateProfile($request);
-    $data = $this->cleanImageFields($data);
 
-    $data['role'] = 'client';
-    $data['wallet_id'] = $this->generateWalletId();
-    $data['password'] = Hash::make($request->password);
-    $data['balance'] = 0;
-    $data['status'] = 'active';
-    $data['is_active'] = true;
-    $data['is_verified'] = false;
-    $data['is_online'] = true;
-    $data['last_seen_at'] = now();
+    public function register(Request $request)
+    {
+        $data = $this->validateProfile($request);
+        $data = $this->cleanImageFields($data);
 
-    foreach (['photo', 'aadhaar_photo', 'upi_qr'] as $field) {
-        if ($request->hasFile($field)) {
-            $folder = match ($field) {
-                'photo' => 'users/photos',
-                'aadhaar_photo' => 'users/aadhaar',
-                'upi_qr' => 'users/upi_qr',
-            };
+        $data['role']        = 'client';
+        $data['wallet_id']   = $this->generateWalletId();
+        $data['password']    = Hash::make($request->password);
+        $data['balance']     = 0;
+        $data['status']      = 'active';
+        $data['is_active']   = true;
+        $data['is_verified'] = false;
+        $data['is_online']   = true;
+        $data['last_seen_at'] = now();
 
-            $data[$field] = $request->file($field)->store($folder, 'public');
+        foreach (['photo', 'aadhaar_photo', 'upi_qr'] as $field) {
+            if ($request->hasFile($field)) {
+                $folder = match ($field) {
+                    'photo'         => 'users/photos',
+                    'aadhaar_photo' => 'users/aadhaar',
+                    'upi_qr'        => 'users/upi_qr',
+                };
+
+                $data[$field] = $request->file($field)->store($folder, 'public');
+            }
         }
+
+        $user  = User::create($data);
+        $token = $user->createToken('mobile-token')->plainTextToken;
+
+        return response()->json([
+            'success' => true,
+            'token'   => $token,
+            'user'    => $user->fresh(),
+        ]);
     }
-
-    $user = User::create($data);
-    $token = $user->createToken('mobile-token')->plainTextToken;
-
-    return response()->json([
-        'success' => true,
-        'token' => $token,
-        'user' => $user->fresh(),
-    ]);
-}
 
     private function validateProfile(Request $request, ?int $userId = null, bool $update = false): array
     {
         return $request->validate([
-            'name' => [$update ? 'sometimes' : 'required', 'string', 'max:255'],
+            'name'          => [$update ? 'sometimes' : 'required', 'string', 'max:255'],
             'original_name' => 'nullable|string|max:255',
 
             'email' => [
@@ -479,21 +483,21 @@ public function register(Request $request)
 
             'address' => 'nullable|string|max:255',
             'country' => 'nullable|string|max:100',
-            'state' => 'nullable|string|max:100',
+            'state'   => 'nullable|string|max:100',
 
-            'aadhaar' => 'nullable|string|max:50',
+            'aadhaar'       => 'nullable|string|max:50',
             'aadhaar_photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:10240',
 
-            'bank_name' => 'nullable|string|max:100',
-            'branch' => 'nullable|string|max:100',
+            'bank_name'      => 'nullable|string|max:100',
+            'branch'         => 'nullable|string|max:100',
             'account_number' => 'nullable|string|max:100',
-            'account_type' => 'nullable|string|max:100',
-            'ifsc' => 'nullable|string|max:100',
+            'account_type'   => 'nullable|string|max:100',
+            'ifsc'           => 'nullable|string|max:100',
 
             'upi_name' => 'nullable|string|max:100',
-            'upi_id' => 'nullable|string|max:100',
+            'upi_id'   => 'nullable|string|max:100',
 
-            'photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:10240',
+            'photo'  => 'nullable|image|mimes:jpg,jpeg,png,webp|max:10240',
             'upi_qr' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:10240',
 
             'password' => $update ? 'nullable|min:6' : 'required|min:6',
@@ -513,7 +517,7 @@ public function register(Request $request)
         }
 
         return response()->json([
-            'success' => true,
+            'success'  => true,
             'requests' => $query->latest()->get(),
         ]);
     }
@@ -553,13 +557,8 @@ public function register(Request $request)
                     abort(422, 'This request is already processed.');
                 }
 
-                $client = User::where('id', $lockedRequest->user_id)
-                    ->lockForUpdate()
-                    ->firstOrFail();
-
-                $merchant = User::where('id', $merchantUser->id)
-                    ->lockForUpdate()
-                    ->firstOrFail();
+                $client   = User::where('id', $lockedRequest->user_id)->lockForUpdate()->firstOrFail();
+                $merchant = User::where('id', $merchantUser->id)->lockForUpdate()->firstOrFail();
 
                 $amount = round((float) $lockedRequest->amount, 2);
 
@@ -568,14 +567,14 @@ public function register(Request $request)
                         abort(422, 'Merchant has insufficient USD balance.');
                     }
 
-                    $client->balance = round((float) $client->balance + $amount, 2);
+                    $client->balance   = round((float) $client->balance + $amount, 2);
                     $merchant->balance = round((float) $merchant->balance - $amount, 2);
                 } elseif ($lockedRequest->type === 'withdrawal') {
                     if ((float) $client->balance < $amount) {
                         abort(422, 'Client has insufficient USD balance.');
                     }
 
-                    $client->balance = round((float) $client->balance - $amount, 2);
+                    $client->balance   = round((float) $client->balance - $amount, 2);
                     $merchant->balance = round((float) $merchant->balance + $amount, 2);
                 } else {
                     abort(422, 'Invalid request type.');
@@ -585,7 +584,7 @@ public function register(Request $request)
                 $merchant->save();
 
                 $lockedRequest->update([
-                    'status' => 'approved',
+                    'status'      => 'approved',
                     'approved_by' => $merchant->id,
                     'approved_at' => now(),
                 ]);
@@ -595,7 +594,7 @@ public function register(Request $request)
                 'success' => true,
                 'message' => 'Request approved successfully.',
                 'request' => $walletRequest->fresh(['user', 'merchant']),
-                'user' => $request->user()->fresh(),
+                'user'    => $request->user()->fresh(),
             ]);
         } catch (\Throwable $e) {
             return response()->json([
@@ -631,7 +630,7 @@ public function register(Request $request)
         }
 
         $walletRequest->update([
-            'status' => 'rejected',
+            'status'      => 'rejected',
             'approved_by' => $merchant->id,
             'approved_at' => now(),
         ]);
@@ -642,14 +641,26 @@ public function register(Request $request)
             'request' => $walletRequest->fresh(['user', 'merchant']),
         ]);
     }
-    private function cleanImageFields(array $data): array
-{
-    foreach (['photo', 'aadhaar_photo', 'upi_qr'] as $field) {
-        if (array_key_exists($field, $data) && ($data[$field] === '0' || $data[$field] === 0 || $data[$field] === '')) {
-            unset($data[$field]);
-        }
-    }
 
-    return $data;
-}
+    // -----------------------------------------------------------------------
+    // FIX: Also unset null values — not just '0', 0, ''.
+    //
+    // When a Flutter profile-update request omits an image field entirely,
+    // Laravel validation returns null for that nullable field.  The previous
+    // version did not strip null, so $user->update() would overwrite an
+    // existing storage path with NULL.
+    // -----------------------------------------------------------------------
+    private function cleanImageFields(array $data): array
+    {
+        foreach (['photo', 'aadhaar_photo', 'upi_qr'] as $field) {
+            if (array_key_exists($field, $data)) {
+                $value = $data[$field];
+                if ($value === null || $value === '0' || $value === 0 || $value === '') {
+                    unset($data[$field]);
+                }
+            }
+        }
+
+        return $data;
+    }
 }
