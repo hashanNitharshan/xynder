@@ -93,38 +93,38 @@ class AuthController extends Controller
 
         return response()->json(['success' => true]);
     }
+public function merchants(Request $request)
+{
+    $merchants = User::where('role', 'merchant')
+        ->where('status', 'active')
+        ->where('is_active', true)
+        ->where('is_verified', true)
+        ->select([
+            'id',
+            'name',
+            'email',
+            'phone',
+            'photo',
+            'upi_qr',
+            'is_online',
+            'last_seen_at',
+            'bank_name',
+            'branch',
+            'account_number',
+            'account_type',
+            'ifsc',
+            'upi_name',
+            'upi_id',
+        ])
+        ->orderByDesc('is_online')
+        ->latest()
+        ->get();
 
-    public function merchants(Request $request)
-    {
-        $merchants = User::where('role', 'merchant')
-            ->where('status', 'active')
-            ->where('is_active', true)
-            ->where('is_verified', true)
-            ->where('is_online', true)
-            ->select([
-                'id',
-                'name',
-                'email',
-                'phone',
-                'is_online',
-                'last_seen_at',
-                'bank_name',
-                'branch',
-                'account_number',
-                'account_type',
-                'ifsc',
-                'upi_name',
-                'upi_id',
-                'upi_qr',
-            ])
-            ->latest()
-            ->get();
-
-        return response()->json([
-            'success' => true,
-            'merchants' => $merchants,
-        ]);
-    }
+    return response()->json([
+        'success' => true,
+        'merchants' => $merchants,
+    ]);
+}
 
     public function createRequest(Request $request)
     {

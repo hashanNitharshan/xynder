@@ -31,18 +31,7 @@ class User extends Authenticatable
         'is_verified'  => 'boolean',
     ];
 
-    // ── Builds: https://wallet.bitxnow.com/storage/users/photos/xxx.jpg ──────
-    // Uses config('app.url') directly — no Storage facade, zero IDE warnings.
-
-    private function storageUrl(?string $path): ?string
-    {
-        if (! $path) {
-            return null;
-        }
-        // Strip any accidental trailing slash from APP_URL in .env
-        $base = rtrim(config('app.url'), '/');
-        return $base . '/storage/' . ltrim($path, '/');
-    }
+   
 
     public function getPhotoUrlAttribute(): ?string
     {
@@ -58,4 +47,21 @@ class User extends Authenticatable
     {
         return $this->storageUrl($this->aadhaar_photo);
     }
+
+
+
+
+
+    private function storageUrl(?string $path): ?string
+{
+    if (! $path) {
+        return null;
+    }
+
+    if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+        return $path;
+    }
+
+    return asset('storage/' . ltrim($path, '/'));
+}
 }
