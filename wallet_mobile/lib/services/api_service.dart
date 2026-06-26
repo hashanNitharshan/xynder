@@ -14,8 +14,7 @@ class ApiService {
   }
 
   static String get baseUrl => "$host/api";
-
- static String fixUrl(dynamic url) {
+static String fixUrl(dynamic url) {
   if (url == null) return "";
 
   String value = url.toString().trim();
@@ -26,6 +25,8 @@ class ApiService {
   value = value.replaceAll("http://127.0.0.1:8000", host);
   value = value.replaceAll("http://localhost:8000", host);
   value = value.replaceAll("http://10.0.2.2:8000", host);
+
+  value = value.replaceAll("/api/storage/", "/storage/");
 
   if (value.startsWith("http://") || value.startsWith("https://")) {
     return value;
@@ -40,16 +41,15 @@ class ApiService {
   }
 
   if (value.startsWith("/api/storage/")) {
-    return "$host$value";
+    return "$host${value.replaceFirst("/api/storage/", "/storage/")}";
   }
 
   if (value.startsWith("api/storage/")) {
-    return "$host/$value";
+    return "$host/${value.replaceFirst("api/storage/", "storage/")}";
   }
 
   return "$host/storage/$value";
 }
-
   // ── Token ────────────────────────────────────────────────────────────
 
   static Future<void> saveToken(String token) async {

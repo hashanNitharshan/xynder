@@ -10,21 +10,18 @@ class WebProfileController extends Controller
     public function clientIndex(Request $request)
     {
         abort_unless($request->user()->role === 'client', 403);
-
         return $this->index($request, 'client.profile');
     }
 
     public function merchantIndex(Request $request)
     {
         abort_unless($request->user()->role === 'merchant', 403);
-
         return $this->index($request, 'merchant.profile');
     }
 
     private function index(Request $request, string $view)
     {
         $user = $request->user()->fresh();
-
         return view($view, compact('user'));
     }
 
@@ -58,7 +55,7 @@ class WebProfileController extends Controller
 
         foreach (['photo', 'aadhaar_photo', 'upi_qr'] as $field) {
             if ($request->hasFile($field)) {
-                if ($user->{$field}) {
+                if (!empty($user->{$field})) {
                     Storage::disk('public')->delete($user->{$field});
                 }
 
@@ -72,7 +69,8 @@ class WebProfileController extends Controller
             }
         }
 
-        $user->update($data);
+        $user->fill($data);
+        $user->save();
 
         return back()->with('success', 'Profile updated successfully.');
     }

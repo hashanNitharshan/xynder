@@ -24,14 +24,12 @@ class User extends Authenticatable
     protected $appends = ['photo_url', 'upi_qr_url', 'aadhaar_photo_url'];
 
     protected $casts = [
-        'is_active'    => 'boolean',
-        'is_online'    => 'boolean',
+        'is_active' => 'boolean',
+        'is_online' => 'boolean',
         'last_seen_at' => 'datetime',
-        'balance'      => 'decimal:2',
-        'is_verified'  => 'boolean',
+        'balance' => 'decimal:2',
+        'is_verified' => 'boolean',
     ];
-
-   
 
     public function getPhotoUrlAttribute(): ?string
     {
@@ -48,20 +46,21 @@ class User extends Authenticatable
         return $this->storageUrl($this->aadhaar_photo);
     }
 
+    private function storageUrl(?string $path): ?string
+    {
+        if (!$path || $path === '0' || trim($path) === '') {
+            return null;
+        }
 
+        $path = str_replace('\\', '/', trim($path));
 
-private function storageUrl(?string $path): ?string
-{
-    if (! $path || $path === '0' || trim($path) === '') {
-        return null;
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return str_replace('/api/storage/', '/storage/', $path);
+        }
+
+        $path = preg_replace('#^/?api/storage/#', '', $path);
+        $path = preg_replace('#^/?storage/#', '', $path);
+
+        return url('/storage/' . ltrim($path, '/'));
     }
-
-    $path = str_replace('\\', '/', trim($path));
-
-    if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
-        return $path;
-    }
-
-    return asset('storage/' . ltrim($path, '/'));
-}
 }
