@@ -16,7 +16,7 @@ Route::get('/version', function () {
         'success'      => true,
         'version'      => '1.0.2',
         'apk_url'      => 'https://wallet.bitxnow.com/apk/wallet-mobile.apk',
-        'force_update' => true,   // ← TRUE = user cannot skip update
+        'force_update' => false,
     ]);
 });
 

@@ -69,12 +69,7 @@ class _LoginScreenState extends State<LoginScreen>
 
     anim.forward();
 
-    // ✅ Check for update on login screen
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(const Duration(seconds: 1), () {
-        if (mounted) UpdateService.checkForUpdate(context);
-      });
-    });
+   
   }
 
   @override

@@ -4,7 +4,7 @@ X/
 │   │   ├── Http/
 │   │   │   ├── Controllers/
 │   │   │   │   ├── Admin/
-│   │   │   │   │   ├── ChatController.php
+│   │   │   │   │   ├── ChatController.php                  # UPDATED - attachment URL uses /storage
 │   │   │   │   │   ├── ConfigController.php
 │   │   │   │   │   ├── SettingController.php
 │   │   │   │   │   ├── SupportTicketController.php
@@ -13,10 +13,10 @@ X/
 │   │   │   │   │   └── WalletTransferController.php
 │   │   │   │   │
 │   │   │   │   ├── Api/
-│   │   │   │   │   ├── AuthController.php
-│   │   │   │   │   ├── ChatController.php
+│   │   │   │   │   ├── AuthController.php                   # UPDATED - mobile profile upload support
+│   │   │   │   │   ├── ChatController.php                   # UPDATED - attachment_url uses /storage
 │   │   │   │   │   ├── ConfigController.php
-│   │   │   │   │   ├── StorageController.php
+│   │   │   │   │   ├── StorageController.php                # OLD /api/storage fallback
 │   │   │   │   │   └── SupportTicketController.php
 │   │   │   │   │
 │   │   │   │   ├── Auth/
@@ -34,34 +34,36 @@ X/
 │   │   │   │   ├── HistoryController.php
 │   │   │   │   ├── WalletTransferController.php
 │   │   │   │   ├── WebChatController.php
+│   │   │   │   ├── WebProfileController.php                 # NEW / UPDATED - client + merchant profile upload
 │   │   │   │   └── WebSettingsController.php
 │   │   │   │
 │   │   │   └── Middleware/
-│   │   │       └── AdminOnly.php
+│   │   │       ├── AdminOnly.php
+│   │   │       └── HandleCors.php / Laravel HandleCors       # ADDED in bootstrap/app.php
 │   │   │
 │   │   ├── Models/
-│   │   │   ├── ChatMessage.php
+│   │   │   ├── ChatMessage.php                              # UPDATED - /api/storage converted to /storage
 │   │   │   ├── Conversation.php
 │   │   │   ├── SupportTicket.php
 │   │   │   ├── SystemConfig.php
-│   │   │   ├── User.php
-│   │   │   ├── WalletRequest.php
+│   │   │   ├── User.php                                     # UPDATED - photo_url, aadhaar_photo_url, upi_qr_url
+│   │   │   ├── WalletRequest.php                            # UPDATED - payment_slip_url uses /storage
 │   │   │   └── WalletTransfer.php
 │   │   │
 │   │   └── Providers/
 │   │       └── AppServiceProvider.php
 │   │
 │   ├── bootstrap/
-│   │   ├── app.php                              # UPDATED - HandleCors middleware added
+│   │   ├── app.php                                          # UPDATED - CORS middleware added
 │   │   └── providers.php
 │   │
 │   ├── config/
 │   │   ├── app.php
 │   │   ├── auth.php
 │   │   ├── cache.php
-│   │   ├── cors.php                             # UPDATED - allowed_origins set to ['*']
+│   │   ├── cors.php                                         # UPDATED - allowed_origins ['*']
 │   │   ├── database.php
-│   │   ├── filesystems.php
+│   │   ├── filesystems.php                                  # UPDATED - public disk + storage link
 │   │   ├── logging.php
 │   │   ├── mail.php
 │   │   ├── queue.php
@@ -105,9 +107,9 @@ X/
 │   │
 │   ├── public/
 │   │   ├── apk/
-│   │   │   └── wallet-mobile.apk                # UPLOADED - release APK hosted here
+│   │   │   └── wallet-mobile.apk                            # RELEASE APK hosted here
 │   │   │
-│   │   ├── storage/
+│   │   ├── storage/                                         # SYMLINK to storage/app/public
 │   │   ├── index.php
 │   │   └── robots.txt
 │   │
@@ -133,7 +135,7 @@ X/
 │   │       │   │   ├── form.blade.php
 │   │       │   │   └── index.blade.php
 │   │       │   ├── wallet_requests/
-│   │       │   │   └── index.blade.php
+│   │       │   │   └── index.blade.php                       # UPDATED slip image URL
 │   │       │   └── wallet_transfers/
 │   │       │       └── index.blade.php
 │   │       │
@@ -148,7 +150,8 @@ X/
 │   │       │   ├── chats.blade.php
 │   │       │   ├── chat_show.blade.php
 │   │       │   ├── history.blade.php
-│   │       │   └── settings.blade.php
+│   │       │   ├── profile.blade.php                         # NEW / UPDATED profile page
+│   │       │   └── settings.blade.php                        # UPDATED profile image URL
 │   │       │
 │   │       ├── merchant/
 │   │       │   ├── dashboard.blade.php
@@ -157,14 +160,15 @@ X/
 │   │       │   ├── chats.blade.php
 │   │       │   ├── chat_show.blade.php
 │   │       │   ├── history.blade.php
-│   │       │   └── settings.blade.php
+│   │       │   ├── profile.blade.php                         # NEW / UPDATED profile page
+│   │       │   └── settings.blade.php                        # UPDATED profile image URL
 │   │       │
 │   │       ├── shared/
 │   │       │   ├── chats_index.blade.php
 │   │       │   ├── chat_show.blade.php
 │   │       │   ├── dark_dashboard.blade.php
 │   │       │   ├── history.blade.php
-│   │       │   ├── settings.blade.php
+│   │       │   ├── settings.blade.php                        # UPDATED profile image URL
 │   │       │   └── transfers.blade.php
 │   │       │
 │   │       ├── dashboards/
@@ -173,30 +177,32 @@ X/
 │   │       │   └── merchant.blade.php
 │   │       │
 │   │       ├── layouts/
-│   │       │   └── admin.blade.php
+│   │       │   └── admin.blade.php                           # UPDATED sidebar/topbar profile photo URL
 │   │       │
 │   │       └── welcome.blade.php
 │   │
 │   ├── routes/
-│   │   ├── api.php                              # UPDATED - OPTIONS + /version endpoint + force_update
+│   │   ├── api.php                                           # UPDATED OPTIONS + /version + /storage route
 │   │   ├── console.php
-│   │   └── web.php
+│   │   └── web.php                                           # UPDATED client/merchant profile routes
 │   │
 │   ├── storage/
 │   │   ├── app/
 │   │   │   └── public/
 │   │   │       ├── users/
-│   │   │       │   ├── photos/
-│   │   │       │   ├── aadhaar/
-│   │   │       │   └── upi_qr/
+│   │   │       │   ├── photos/                               # profile photos saved here
+│   │   │       │   ├── aadhaar/                              # aadhaar photos saved here
+│   │   │       │   └── upi_qr/                               # UPI QR images saved here
 │   │   │       ├── wallet/
-│   │   │       │   └── slips/
-│   │   │       └── chat_attachments/
+│   │   │       │   └── slips/                                # payment slips saved here
+│   │   │       └── chat_attachments/                         # chat files/images saved here
+│   │   │
 │   │   ├── framework/
 │   │   │   ├── cache/
 │   │   │   ├── sessions/
 │   │   │   ├── testing/
 │   │   │   └── views/
+│   │   │
 │   │   └── logs/
 │   │       └── laravel.log
 │   │
@@ -219,6 +225,12 @@ X/
 │   ├── README.md
 │   └── vite.config.js
 │
+├── cloudpanel-nginx/
+│   └── wallet.bitxnow.com.conf                              # UPDATED
+│       ├── root backend/public                              # FIXED from wrong public root
+│       └── location ^~ /storage/                            # FINAL FIX
+│           └── alias backend/storage/app/public/
+│
 └── wallet_mobile/
     ├── assets/
     │   └── images/
@@ -229,22 +241,22 @@ X/
     │   │
     │   ├── screens/
     │   │   ├── admin_dashboard.dart
-    │   │   ├── auth_gate.dart                   # UPDATED - removed duplicate initState, renamed XynderLogo
+    │   │   ├── auth_gate.dart                               # UPDATED removed duplicate initState
     │   │   ├── chat_screen.dart
     │   │   ├── chat_users_screen.dart
     │   │   ├── client_dashboard.dart
-    │   │   ├── login_screen.dart                # UPDATED - added UpdateService check + XynderLogo class
+    │   │   ├── login_screen.dart                            # UPDATED UpdateService check + XynderLogo
     │   │   ├── merchant_dashboard.dart
     │   │   ├── merchant_requests_screen.dart
-    │   │   ├── profile_screen.dart
+    │   │   ├── profile_screen.dart                          # USES ApiService.fixUrl()
     │   │   ├── register_screen.dart
     │   │   ├── request_screen.dart
     │   │   ├── transaction_detail_screen.dart
     │   │   └── wallet_transfer_screen.dart
     │   │
     │   ├── services/
-    │   │   ├── api_service.dart
-    │   │   └── update_service.dart              # NEW - auto update + force update + download + install
+    │   │   ├── api_service.dart                             # UPDATED fixUrl /storage path
+    │   │   └── update_service.dart                          # NEW auto update + force update + download + install
     │   │
     │   ├── utils/
     │   │   ├── tv_iframe_registry.dart
@@ -266,15 +278,15 @@ X/
     │   ├── app/
     │   │   ├── src/
     │   │   │   └── main/
-    │   │   │       └── AndroidManifest.xml      # UPDATED - INTERNET + INSTALL_PACKAGES permissions
-    │   │   └── build.gradle                     # UPDATED - lint disabled, minify off
+    │   │   │       └── AndroidManifest.xml                  # UPDATED INTERNET + INSTALL_PACKAGES
+    │   │   └── build.gradle                                 # UPDATED lint disabled, minify off
     │   │
     │   ├── gradle/
     │   │   └── wrapper/
-    │   │       └── gradle-wrapper.properties    # UPDATED - gradle-8.13-bin.zip
+    │   │       └── gradle-wrapper.properties                # UPDATED gradle-8.13-bin.zip
     │   │
     │   ├── build.gradle
-    │   ├── gradle.properties                    # UPDATED - JAVA_HOME set to JDK 17
+    │   ├── gradle.properties                                # UPDATED JAVA_HOME JDK 17
     │   └── settings.gradle
     │
     ├── ios/
@@ -309,9 +321,8 @@ X/
     │
     ├── .flutter-plugins-dependencies
     ├── .gitignore
-    ├── pubspec.yaml                             # UPDATED - added 5 new packages
+    ├── pubspec.yaml                                         # UPDATED added packages
     └── README.md
-
 
 ========================================
 CHANGED FILES SUMMARY
