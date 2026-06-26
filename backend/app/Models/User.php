@@ -50,13 +50,13 @@ class User extends Authenticatable
 
 
 
-
-
-    private function storageUrl(?string $path): ?string
+private function storageUrl(?string $path): ?string
 {
-    if (! $path) {
+    if (! $path || $path === '0' || trim($path) === '') {
         return null;
     }
+
+    $path = str_replace('\\', '/', trim($path));
 
     if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
         return $path;

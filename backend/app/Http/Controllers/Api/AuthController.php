@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 class AuthController extends Controller
 {
@@ -348,38 +349,43 @@ public function merchants(Request $request)
         ]);
     }
 
-    public function updateProfile(Request $request)
-    {
-        $user = $request->user();
+  public function updateProfile(Request $request)
+{
+    $user = $request->user();
 
-        if (! $user->is_active || $user->status !== 'active') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Your account has been blocked.',
-            ], 403);
-        }
-
-        $data = $this->validateProfile($request, $user->id, true);
-
-        if ($request->hasFile('photo')) {
-            $data['photo'] = $request->file('photo')->store('users/photos', 'public');
-        }
-
-        if ($request->hasFile('aadhaar_photo')) {
-            $data['aadhaar_photo'] = $request->file('aadhaar_photo')->store('users/aadhaar', 'public');
-        }
-
-        if ($request->hasFile('upi_qr')) {
-            $data['upi_qr'] = $request->file('upi_qr')->store('users/upi_qr', 'public');
-        }
-
-        $user->update($data);
-
+    if (! $user->is_active || $user->status !== 'active') {
         return response()->json([
-            'success' => true,
-            'user' => $user->fresh(),
-        ]);
+            'success' => false,
+            'message' => 'Your account has been blocked.',
+        ], 403);
     }
+
+    $data = $this->validateProfile($request, $user->id, true);
+    $data = $this->cleanImageFields($data);
+
+    foreach (['photo', 'aadhaar_photo', 'upi_qr'] as $field) {
+        if ($request->hasFile($field)) {
+            if ($user->{$field} && $user->{$field} !== '0') {
+                Storage::disk('public')->delete($user->{$field});
+            }
+
+            $folder = match ($field) {
+                'photo' => 'users/photos',
+                'aadhaar_photo' => 'users/aadhaar',
+                'upi_qr' => 'users/upi_qr',
+            };
+
+            $data[$field] = $request->file($field)->store($folder, 'public');
+        }
+    }
+
+    $user->update($data);
+
+    return response()->json([
+        'success' => true,
+        'user' => $user->fresh(),
+    ]);
+}
 
     public function changePassword(Request $request)
     {
@@ -415,42 +421,42 @@ public function merchants(Request $request)
 
         return $walletId;
     }
+public function register(Request $request)
+{
+    $data = $this->validateProfile($request);
+    $data = $this->cleanImageFields($data);
 
-    public function register(Request $request)
-    {
-        $data = $this->validateProfile($request);
+    $data['role'] = 'client';
+    $data['wallet_id'] = $this->generateWalletId();
+    $data['password'] = Hash::make($request->password);
+    $data['balance'] = 0;
+    $data['status'] = 'active';
+    $data['is_active'] = true;
+    $data['is_verified'] = false;
+    $data['is_online'] = true;
+    $data['last_seen_at'] = now();
 
-        $data['role'] = 'client';
-        $data['wallet_id'] = $this->generateWalletId();
-        $data['password'] = Hash::make($request->password);
-        $data['balance'] = 0;
-        $data['status'] = 'active';
-        $data['is_active'] = true;
-        $data['is_verified'] = false;
-        $data['is_online'] = true;
-        $data['last_seen_at'] = now();
+    foreach (['photo', 'aadhaar_photo', 'upi_qr'] as $field) {
+        if ($request->hasFile($field)) {
+            $folder = match ($field) {
+                'photo' => 'users/photos',
+                'aadhaar_photo' => 'users/aadhaar',
+                'upi_qr' => 'users/upi_qr',
+            };
 
-        if ($request->hasFile('photo')) {
-            $data['photo'] = $request->file('photo')->store('users/photos', 'public');
+            $data[$field] = $request->file($field)->store($folder, 'public');
         }
-
-        if ($request->hasFile('aadhaar_photo')) {
-            $data['aadhaar_photo'] = $request->file('aadhaar_photo')->store('users/aadhaar', 'public');
-        }
-
-        if ($request->hasFile('upi_qr')) {
-            $data['upi_qr'] = $request->file('upi_qr')->store('users/upi_qr', 'public');
-        }
-
-        $user = User::create($data);
-        $token = $user->createToken('mobile-token')->plainTextToken;
-
-        return response()->json([
-            'success' => true,
-            'token' => $token,
-            'user' => $user->fresh(),
-        ]);
     }
+
+    $user = User::create($data);
+    $token = $user->createToken('mobile-token')->plainTextToken;
+
+    return response()->json([
+        'success' => true,
+        'token' => $token,
+        'user' => $user->fresh(),
+    ]);
+}
 
     private function validateProfile(Request $request, ?int $userId = null, bool $update = false): array
     {
@@ -636,4 +642,14 @@ public function merchants(Request $request)
             'request' => $walletRequest->fresh(['user', 'merchant']),
         ]);
     }
+    private function cleanImageFields(array $data): array
+{
+    foreach (['photo', 'aadhaar_photo', 'upi_qr'] as $field) {
+        if (array_key_exists($field, $data) && ($data[$field] === '0' || $data[$field] === 0 || $data[$field] === '')) {
+            unset($data[$field]);
+        }
+    }
+
+    return $data;
+}
 }
