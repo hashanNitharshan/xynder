@@ -706,7 +706,7 @@ class _UpdateScreenState extends State<UpdateScreen>
                 ],
               ),
               const SizedBox(height: 10),
-              _changeItem('Performance improvements and bug fixes'),
+              _changeItem('Performance improvements'),
               _changeItem('Improved security & stability'),
               _changeItem('Latest feature updates'),
             ],
