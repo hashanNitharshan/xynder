@@ -32,12 +32,6 @@ class _C {
     end: Alignment.bottomRight,
     colors: [Color(0xff1a0a00), Color(0xff2d1200), Color(0xff1a0800)],
   );
-
-  static const gradientGlow = RadialGradient(
-    center: Alignment(-0.2, -0.6),
-    radius: 1.2,
-    colors: [Color(0x55FF4500), Color(0x22FF8C00), Color(0x00000000)],
-  );
 }
 
 class RequestScreen extends StatefulWidget {
@@ -102,23 +96,39 @@ class _RequestScreenState extends State<RequestScreen>
 
   double get _balance => _toD(_user?["balance"]);
   double get _amount => double.tryParse(_amountCtrl.text.trim()) ?? 0;
+
   double get _usdRate => _toD(_config?["usd_rate"]);
   double get _inrRate => _toD(_config?["inr_rate"]);
   double get _fee => _toD(_config?["xynder_fee"]);
   double get _netFee => _toD(_config?["network_fee"]);
-  double get _converted => _amount * _inrRate;
-  double get _total => _converted + _fee + _netFee;
+
   bool get _isSell => type == "withdrawal";
 
-  bool get _isVerified =>
-      _user?["is_verified"] == true ||
-      _user?["is_verified"] == 1 ||
-      _user?["is_verified"]?.toString() == "1";
+  double get _totalFee => _fee + _netFee;
+  double get _converted => _amount * _inrRate;
+
+ double get _total {
+  if (_isSell) {
+    return _converted - _totalFee; // Sell
+  }
+
+  return _converted + _totalFee; // Buy
+}
+
+  bool get _isVerified {
+    final v = _user?["is_verified"];
+
+    return v == true ||
+        v == 1 ||
+        v?.toString() == "1" ||
+        v?.toString().toLowerCase() == "true";
+  }
 
   bool _isOnlineMerchant(dynamic m) {
     return m["is_online"] == true ||
         m["is_online"] == 1 ||
-        m["is_online"]?.toString() == "1";
+        m["is_online"]?.toString() == "1" ||
+        m["is_online"]?.toString().toLowerCase() == "true";
   }
 
   Future<void> _loadPage() async {
@@ -146,6 +156,11 @@ class _RequestScreenState extends State<RequestScreen>
       return;
     }
 
+    if (_isSell && _total <= 0) {
+      _snack("Amount is too small after fees", ok: false);
+      return;
+    }
+
     if (_isSell && _balance < _amount) {
       _snack("Insufficient USD balance", ok: false);
       return;
@@ -160,7 +175,9 @@ class _RequestScreenState extends State<RequestScreen>
 
     final data = await ApiService.merchants();
 
-    if (mounted) setState(() => _merchantLoading = false);
+    if (mounted) {
+      setState(() => _merchantLoading = false);
+    }
 
     if (data["success"] != true) {
       _snack(data["message"] ?? "Failed to load merchants", ok: false);
@@ -168,7 +185,6 @@ class _RequestScreenState extends State<RequestScreen>
     }
 
     final allMerchants = data["merchants"] ?? [];
-
     _merchants = allMerchants.where((m) => _isOnlineMerchant(m)).toList();
 
     if (_merchants.isEmpty) {

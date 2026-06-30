@@ -942,11 +942,20 @@
     const receiveLabel = document.getElementById('receiveLabel');
     const rateLine = document.getElementById('rateLine');
 
-    function calc(){
-        const usd = parseFloat(amount.value) || 0;
-        const total = (usd * INR_RATE) + TOTAL_FEES;
-        totalDisp.textContent = total.toFixed(2);
+function calc(){
+    const usd = parseFloat(amount.value) || 0;
+    const converted = usd * INR_RATE;
+
+    let total = 0;
+
+    if(typeHidden.value === 'deposit'){
+        total = converted + TOTAL_FEES; // Buy: 10000 + 200 = 10200
+    }else{
+        total = converted - TOTAL_FEES; // Sell: 10000 - 200 = 9800
     }
+
+    totalDisp.textContent = total.toFixed(2);
+}
 
     function setType(type){
         typeHidden.value = type;

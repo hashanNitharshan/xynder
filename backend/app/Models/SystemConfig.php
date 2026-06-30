@@ -24,6 +24,15 @@ class SystemConfig extends Model
 
     public static function current(): self
     {
+        $config = self::whereDate('effective_date', '<=', today())
+            ->latest('effective_date')
+            ->latest('id')
+            ->first();
+
+        if ($config) {
+            return $config;
+        }
+
         return self::latest('effective_date')->latest('id')->first()
             ?? self::create([
                 'usd_rate' => 1,

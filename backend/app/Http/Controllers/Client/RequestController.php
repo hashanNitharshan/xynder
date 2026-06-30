@@ -32,7 +32,7 @@ class RequestController extends Controller
         return view('client.requests', compact('requests', 'config', 'merchants'));
     }
 
-   public function store(Request $request)
+  public function store(Request $request)
 {
     $user = $request->user();
 
@@ -77,8 +77,22 @@ class RequestController extends Controller
     $config = SystemConfig::current();
 
     $convertedAmount = round($amount * (float) $config->inr_rate, 2);
-    $fee = round((float) $config->xynder_fee + (float) $config->network_fee, 2);
+
+    $xynderFee = round((float) $config->xynder_fee, 2);
+    $networkFee = round((float) $config->network_fee, 2);
+    $fee = round($xynderFee + $networkFee, 2);
+
+   if ($data['type'] === 'deposit') {
+    // Buy USD: client pays INR + fees
     $totalAmount = round($convertedAmount + $fee, 2);
+} else {
+    // Sell USD: client receives INR - fees
+    $totalAmount = round($convertedAmount - $fee, 2);
+}
+
+   if ($data['type'] === 'withdrawal' && $totalAmount <= 0) {
+        return back()->withErrors(['amount' => 'Amount is too small after fees.'])->withInput();
+    }
 
     $walletRequest = WalletRequest::create([
         'user_id' => $user->id,
@@ -87,8 +101,8 @@ class RequestController extends Controller
         'amount' => $amount,
         'usd_rate' => $config->usd_rate,
         'inr_rate' => $config->inr_rate,
-        'xynder_fee' => $config->xynder_fee,
-        'network_fee' => $config->network_fee,
+        'xynder_fee' => $xynderFee,
+        'network_fee' => $networkFee,
         'converted_amount' => $convertedAmount,
         'fee' => $fee,
         'total_amount' => $totalAmount,
