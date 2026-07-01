@@ -595,6 +595,8 @@
     white-space:nowrap;
 }
 .tr-table tr:hover td{background:#30363a}
+.tr-click-row{cursor:pointer;transition:.18s}
+.tr-click-row:hover td{background:#30363a}
 .tr-ref{font-family:monospace;color:#9fa5aa}
 .tr-type{
     display:inline-flex;
@@ -678,17 +680,14 @@
 
     <section class="tr-hero">
         <div class="tr-content">
-            <div class="tr-eyebrow">Xynder Wallet</div>
+           
 
             <h1 class="tr-title">
                 Secure Wallet
                 <span>USD Transfer</span>
             </h1>
 
-            <div class="tr-subtitle">
-                Send USD instantly to verified Xynder users using wallet ID lookup.
-                Check receiver details first, confirm amount, and track every transfer in your history.
-            </div>
+          
 
             <a href="#transferBox" class="tr-main-btn">
                 <i class="ti ti-send"></i>
@@ -1007,7 +1006,9 @@
                             $receiverName = $t->receiver->name ?? '—';
                         @endphp
 
-                        <tr data-type="{{ $isSent ? 'sent' : 'received' }}">
+                     <tr class="tr-click-row"
+    data-type="{{ $isSent ? 'sent' : 'received' }}"
+    onclick="window.location='{{ route($isMerchant ? 'merchant.chats.transfer' : 'client.chats.transfer', $t) }}'">
                             <td>
                                 <span class="tr-ref">
                                     {{ $t->transaction_no ?? 'TRA'.str_pad($t->id, 9, '0', STR_PAD_LEFT) }}

@@ -365,17 +365,14 @@
 
     <section class="hs-hero">
         <div class="hs-hero-inner">
-            <div class="hs-eyebrow">Xynder Wallet Admin</div>
+          
 
             <h1 class="hs-title-main">
                 Help &
                 <span>Support Tickets</span>
             </h1>
 
-            <div class="hs-subtitle-main">
-                Review client and merchant support messages, search tickets,
-                filter by status, and update ticket progress from one admin panel.
-            </div>
+        
         </div>
     </section>
 
@@ -383,13 +380,7 @@
 
         <section class="hs-card">
             <div class="hs-card-head">
-                <div>
-                    <h2 class="hs-title">
-                        <i class="ti ti-lifebuoy"></i>
-                        Help & Support Messages
-                    </h2>
-                    <div class="hs-subtitle">Manage user support tickets and update status.</div>
-                </div>
+                
             </div>
 
             <form id="hsFilterForm" method="GET" action="{{ route('admin.support-tickets.index') }}" class="hs-filters">

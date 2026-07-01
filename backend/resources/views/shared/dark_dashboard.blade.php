@@ -66,13 +66,6 @@
 
     $buyCount = $latestRequests->where('type', 'deposit')->count();
     $sellCount = $latestRequests->where('type', 'withdrawal')->count();
-    $recent5 = $latestRequests->sortByDesc('created_at')->take(5);
-
-    $profileRoute = $isMerchant ? route('merchant.profile') : route('client.profile');
-    $requestRoute = $isMerchant ? route('merchant.requests') : route('client.requests');
-    $transferRoute = $isMerchant ? route('merchant.transfers') : route('client.transfers');
-    $chatRoute = $isMerchant ? route('merchant.chats') : route('client.chats');
-    $historyRoute = $isMerchant ? route('merchant.history') : route('client.history');
 @endphp
 
 <style>
@@ -94,725 +87,101 @@
 
 *{box-sizing:border-box}
 
-.dash-page{
-    margin:-24px;
-    min-height:100vh;
-    background:var(--dark);
-    color:var(--text);
-    font-family:Inter,Arial,sans-serif;
-    padding-bottom:60px;
-}
+.dash-page{margin:-24px;min-height:100vh;background:var(--dark);color:var(--text);font-family:Inter,Arial,sans-serif;padding-bottom:60px}
 
-.dash-hero{
-    position:relative;
-    min-height:330px;
-    padding:65px 85px 120px;
-    background:var(--hero);
-    overflow:hidden;
-}
-
-.dash-hero::after{
-    content:"";
-    position:absolute;
-    inset:0;
-    opacity:.08;
-    background-image:linear-gradient(120deg,transparent 20%,rgba(255,255,255,.18) 21%,transparent 22%);
-    background-size:260px 260px;
-}
-
-.dash-hero-content{
-    position:relative;
-    z-index:2;
-    max-width:680px;
-}
-
-.dash-eyebrow{
-    color:var(--red);
-    font-size:12px;
-    font-weight:900;
-    letter-spacing:.14em;
-    text-transform:uppercase;
-    margin-bottom:14px;
-}
-
-.dash-title{
-    font-size:48px;
-    line-height:1.15;
-    font-weight:900;
-    margin:0 0 20px;
-}
-
+.dash-hero{position:relative;min-height:300px;padding:58px 85px 105px;background:var(--hero);overflow:hidden}
+.dash-hero::after{content:"";position:absolute;inset:0;opacity:.08;background-image:linear-gradient(120deg,transparent 20%,rgba(255,255,255,.18) 21%,transparent 22%);background-size:260px 260px}
+.dash-hero-content{position:relative;z-index:2;max-width:680px}
+.dash-eyebrow{color:var(--red);font-size:12px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;margin-bottom:14px}
+.dash-title{font-size:46px;line-height:1.15;font-weight:900;margin:0 0 16px}
 .dash-title span{color:var(--red)}
+.dash-sub{color:#b8bdc2;font-size:15px;line-height:1.7;font-weight:700}
 
-.dash-sub{
-    color:#b8bdc2;
-    font-size:15px;
-    line-height:1.7;
-    font-weight:700;
-}
+.dash-wrap{position:relative;z-index:5;margin:-65px 85px 0;display:grid;grid-template-columns:300px 1fr;gap:22px;align-items:start}
+.dash-side{display:flex;flex-direction:column;gap:18px}
+.dash-main{min-width:0;display:flex;flex-direction:column;gap:22px}
 
-.dash-wrap{
-    position:relative;
-    z-index:5;
-    margin:-70px 85px 0;
-    display:grid;
-    grid-template-columns:300px 1fr;
-    gap:22px;
-    align-items:start;
-}
+.dash-card{background:var(--box);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.dash-profile{border:1.5px solid var(--red);box-shadow:0 18px 40px rgba(0,0,0,.28);padding:26px 22px;text-align:center}
 
-.dash-side{
-    display:flex;
-    flex-direction:column;
-    gap:18px;
-}
+.dash-avatar{width:82px;height:82px;margin:0 auto 14px;border-radius:50%;background:var(--red);padding:4px}
+.dash-avatar img,.dash-avatar-inner{width:100%;height:100%;border-radius:50%;object-fit:cover}
+.dash-avatar-inner{background:#1f2428;display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:900;color:#fff}
 
-.dash-card{
-    background:var(--box);
-    border:1px solid var(--line);
-    border-radius:6px;
-    overflow:hidden;
-}
+.dash-profile h3{font-size:20px;font-weight:900;margin:0 0 5px;color:#fff}
+.dash-role{color:#9fa5aa;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.08em}
 
-.dash-profile{
-    border:1.5px solid var(--red);
-    box-shadow:0 18px 40px rgba(0,0,0,.28);
-    padding:26px 22px;
-    text-align:center;
-}
+.dash-wallet{margin-top:15px;background:#1f2428;border:1px solid var(--line);border-radius:4px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.dash-wallet small{display:block;color:#747b82;font-size:10px;font-weight:900;text-transform:uppercase;margin-bottom:3px}
+.dash-wallet span{font-family:monospace;color:#fff;font-size:13px}
+.dash-copy{border:0;background:var(--red);color:#fff;border-radius:4px;padding:7px 10px;cursor:pointer;font-weight:900}
 
-.dash-avatar{
-    width:82px;
-    height:82px;
-    margin:0 auto 14px;
-    border-radius:50%;
-    background:var(--red);
-    padding:4px;
-}
-
-.dash-avatar-inner{
-    width:100%;
-    height:100%;
-    border-radius:50%;
-    background:#1f2428;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:32px;
-    font-weight:900;
-    color:#fff;
-}
-
-.dash-profile h3{
-    font-size:20px;
-    font-weight:900;
-    margin:0 0 5px;
-}
-
-.dash-role{
-    color:#9fa5aa;
-    font-size:12px;
-    font-weight:900;
-    text-transform:uppercase;
-    letter-spacing:.08em;
-}
-
-.dash-wallet{
-    margin-top:15px;
-    background:#1f2428;
-    border:1px solid var(--line);
-    border-radius:4px;
-    padding:12px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:10px;
-}
-
-.dash-wallet small{
-    display:block;
-    color:#747b82;
-    font-size:10px;
-    font-weight:900;
-    text-transform:uppercase;
-    margin-bottom:3px;
-}
-
-.dash-wallet span{
-    font-family:monospace;
-    color:#fff;
-    font-size:13px;
-}
-
-.dash-copy{
-    border:0;
-    background:var(--red);
-    color:#fff;
-    border-radius:4px;
-    padding:7px 10px;
-    cursor:pointer;
-    font-weight:900;
-}
-
-.dash-badge{
-    display:inline-flex;
-    align-items:center;
-    gap:6px;
-    margin-top:13px;
-    padding:6px 12px;
-    border-radius:20px;
-    font-size:11px;
-    font-weight:900;
-}
-
+.dash-badge{display:inline-flex;align-items:center;gap:6px;margin-top:13px;padding:6px 12px;border-radius:20px;font-size:11px;font-weight:900}
 .dash-badge.ok{background:#0d2b1e;color:var(--green)}
 .dash-badge.pending{background:#3b2a09;color:var(--gold)}
 
-.dash-section-title{
-    padding:18px 20px;
-    border-bottom:1px solid var(--line);
-    font-size:15px;
-    font-weight:900;
-    display:flex;
-    align-items:center;
-    gap:9px;
-}
-
+.dash-section-title{padding:18px 20px;border-bottom:1px solid var(--line);font-size:15px;font-weight:900;display:flex;align-items:center;gap:9px}
 .dash-section-title i{color:var(--red)}
 
-.dash-bs{
-    padding:8px 20px 18px;
-}
-
-.dash-bs-row{
-    display:flex;
-    justify-content:space-between;
-    gap:14px;
-    padding:13px 0;
-    border-bottom:1px solid var(--line);
-}
-
+.dash-bs{padding:8px 20px 18px}
+.dash-bs-row{display:flex;justify-content:space-between;gap:14px;padding:13px 0;border-bottom:1px solid var(--line)}
 .dash-bs-row:last-child{border-bottom:0}
+.dash-bs-row span{color:#9fa5aa;font-size:13px;font-weight:800}
+.dash-bs-row strong{color:#fff;font-size:13px;font-weight:900;text-align:right}
 
-.dash-bs-row span{
-    color:#9fa5aa;
-    font-size:13px;
-    font-weight:800;
-}
-
-.dash-bs-row strong{
-    color:#fff;
-    font-size:13px;
-    font-weight:900;
-    text-align:right;
-}
-
-.dash-main{
-    min-width:0;
-    display:flex;
-    flex-direction:column;
-    gap:22px;
-}
-
-.dash-kpis{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:16px;
-}
-
-.dash-kpi{
-    background:var(--box);
-    border:1px solid var(--line);
-    border-radius:6px;
-    padding:20px;
-    transition:.15s;
-}
-
-.dash-kpi:hover{
-    border-color:var(--red);
-    background:#30363a;
-}
-
-.dash-kpi-top{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:15px;
-}
-
-.dash-kpi-icon{
-    width:44px;
-    height:44px;
-    border-radius:50%;
-    background:#3a1018;
-    color:var(--red);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:22px;
-}
-
-.dash-trend{
-    padding:5px 9px;
-    border-radius:20px;
-    font-size:11px;
-    font-weight:900;
-}
-
+.dash-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.dash-kpi{background:var(--box);border:1px solid var(--line);border-radius:6px;padding:20px;transition:.15s}
+.dash-kpi:hover{border-color:var(--red);background:#30363a}
+.dash-kpi-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
+.dash-kpi-icon{width:44px;height:44px;border-radius:50%;background:#3a1018;color:var(--red);display:flex;align-items:center;justify-content:center;font-size:22px}
+.dash-trend{padding:5px 9px;border-radius:20px;font-size:11px;font-weight:900}
 .dash-trend.green{background:#0d2b1e;color:var(--green)}
 .dash-trend.gold{background:#3b2a09;color:var(--gold)}
 .dash-trend.gray{background:#1f2428;color:#9fa5aa}
+.dash-kpi small{color:#9fa5aa;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em}
+.dash-kpi b{display:block;margin-top:7px;font-size:27px;font-weight:900}
+.dash-kpi p{margin-top:6px;color:#747b82;font-size:12px;font-weight:700}
 
-.dash-kpi small{
-    color:#9fa5aa;
-    font-size:11px;
-    font-weight:900;
-    text-transform:uppercase;
-    letter-spacing:.08em;
-}
+.dash-wallet-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.dash-wcard{min-height:140px;border-radius:6px;padding:22px;background:var(--box);border:1px solid var(--line);position:relative;overflow:hidden}
+.dash-wcard::after{content:"";position:absolute;right:-50px;top:-50px;width:150px;height:150px;border-radius:50%;background:rgba(232,25,44,.14)}
+.dash-wcard-top{position:relative;z-index:2;display:flex;justify-content:space-between;gap:10px;margin-bottom:18px}
+.dash-wcard-type{color:#9fa5aa;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em}
+.dash-wcard-pill{background:#3a1018;color:#ff6b7b;border-radius:20px;padding:4px 9px;font-size:10px;font-weight:900}
+.dash-wcard-val{position:relative;z-index:2;font-size:25px;font-weight:900;color:#fff}
+.dash-wcard-label{position:relative;z-index:2;color:#aeb4ba;margin-top:5px;font-size:12px;font-weight:700}
 
-.dash-kpi b{
-    display:block;
-    margin-top:7px;
-    font-size:27px;
-    font-weight:900;
-}
+.dash-chart{background:var(--box);border:1px solid var(--line);border-radius:6px;padding:24px}
+.dash-chart-head{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:18px}
+.dash-chart-head h2{font-size:18px;font-weight:900;margin:0}
+.dash-tabs{display:flex;background:#1f2428;border:1px solid var(--line);border-radius:4px;padding:4px}
+.dash-tab{border:0;background:transparent;color:#9fa5aa;padding:8px 15px;border-radius:3px;font-size:12px;font-weight:900;cursor:pointer}
+.dash-tab.active{background:var(--red);color:#fff}
 
-.dash-kpi p{
-    margin-top:6px;
-    color:#747b82;
-    font-size:12px;
-    font-weight:700;
-}
+.dash-chart-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+.dash-chart-stat{background:#1f2428;border:1px solid var(--line);border-radius:4px;padding:14px}
+.dash-chart-stat small{color:#9fa5aa;font-size:11px;font-weight:900;text-transform:uppercase}
+.dash-chart-stat b{display:block;margin-top:6px;font-size:20px;font-weight:900}
+.dash-chart-box{height:250px;position:relative}
 
-.dash-wallet-cards{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:16px;
-}
+.dash-bottom{display:grid;grid-template-columns:1fr;gap:18px}
+.dash-donut{background:var(--box);border:1px solid var(--line);border-radius:6px;padding:22px}
+.dash-donut-grid{display:grid;grid-template-columns:260px 1fr;gap:20px;align-items:center}
+.dash-donut-wrap{position:relative;display:flex;justify-content:center;margin:14px 0}
+.dash-donut-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.dash-donut-center b{font-size:24px;font-weight:900}
+.dash-donut-center small{display:block;color:#9fa5aa;font-size:11px;font-weight:900}
+.dash-legend{display:flex;flex-direction:column;gap:12px}
+.dash-legend-row{display:flex;justify-content:space-between;gap:10px;color:#aeb4ba;font-size:13px;font-weight:800;background:#1f2428;border:1px solid var(--line);border-radius:4px;padding:12px 14px}
+.dash-legend-key{display:flex;align-items:center;gap:8px}
+.dash-dot{width:10px;height:10px;border-radius:50%}
 
-.dash-wcard{
-    min-height:140px;
-    border-radius:6px;
-    padding:22px;
-    background:var(--box);
-    border:1px solid var(--line);
-    position:relative;
-    overflow:hidden;
-}
-
-.dash-wcard::after{
-    content:"";
-    position:absolute;
-    right:-50px;
-    top:-50px;
-    width:150px;
-    height:150px;
-    border-radius:50%;
-    background:rgba(232,25,44,.14);
-}
-
-.dash-wcard-top{
-    position:relative;
-    z-index:2;
-    display:flex;
-    justify-content:space-between;
-    gap:10px;
-    margin-bottom:18px;
-}
-
-.dash-wcard-type{
-    color:#9fa5aa;
-    font-size:11px;
-    font-weight:900;
-    text-transform:uppercase;
-    letter-spacing:.08em;
-}
-
-.dash-wcard-pill{
-    background:#3a1018;
-    color:#ff6b7b;
-    border-radius:20px;
-    padding:4px 9px;
-    font-size:10px;
-    font-weight:900;
-}
-
-.dash-wcard-val{
-    position:relative;
-    z-index:2;
-    font-size:25px;
-    font-weight:900;
-    color:#fff;
-}
-
-.dash-wcard-label{
-    position:relative;
-    z-index:2;
-    color:#aeb4ba;
-    margin-top:5px;
-    font-size:12px;
-    font-weight:700;
-}
-
-.dash-chart{
-    background:var(--box);
-    border:1px solid var(--line);
-    border-radius:6px;
-    padding:24px;
-}
-
-.dash-chart-head{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    gap:15px;
-    margin-bottom:18px;
-}
-
-.dash-chart-head h2{
-    font-size:18px;
-    font-weight:900;
-    margin:0;
-}
-
-.dash-tabs{
-    display:flex;
-    background:#1f2428;
-    border:1px solid var(--line);
-    border-radius:4px;
-    padding:4px;
-}
-
-.dash-tab{
-    border:0;
-    background:transparent;
-    color:#9fa5aa;
-    padding:8px 15px;
-    border-radius:3px;
-    font-size:12px;
-    font-weight:900;
-    cursor:pointer;
-}
-
-.dash-tab.active{
-    background:var(--red);
-    color:#fff;
-}
-
-.dash-chart-stats{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:12px;
-    margin-bottom:18px;
-}
-
-.dash-chart-stat{
-    background:#1f2428;
-    border:1px solid var(--line);
-    border-radius:4px;
-    padding:14px;
-}
-
-.dash-chart-stat small{
-    color:#9fa5aa;
-    font-size:11px;
-    font-weight:900;
-    text-transform:uppercase;
-}
-
-.dash-chart-stat b{
-    display:block;
-    margin-top:6px;
-    font-size:20px;
-    font-weight:900;
-}
-
-.dash-chart-box{
-    height:250px;
-    position:relative;
-}
-
-.dash-bottom{
-    display:grid;
-    grid-template-columns:1fr 330px;
-    gap:18px;
-}
-
-.dash-table-box{
-    background:var(--box);
-    border:1px solid var(--line);
-    border-radius:6px;
-    overflow:hidden;
-}
-
-.dash-table-head{
-    padding:18px 20px;
-    border-bottom:1px solid var(--line);
-    display:flex;
-    justify-content:space-between;
-    gap:12px;
-    align-items:center;
-}
-
-.dash-table-head h2{
-    margin:0;
-    font-size:18px;
-    font-weight:900;
-}
-
-.dash-table-wrap{overflow-x:auto}
-
-.dash-table{
-    width:100%;
-    min-width:850px;
-    border-collapse:collapse;
-}
-
-.dash-table th{
-    background:#24292d;
-    color:#9fa5aa;
-    text-transform:uppercase;
-    font-size:11px;
-    text-align:left;
-    padding:14px 16px;
-}
-
-.dash-table td{
-    padding:15px 16px;
-    border-top:1px solid #3a4147;
-    color:#c9ced3;
-    font-size:13px;
-    font-weight:700;
-    white-space:nowrap;
-}
-
-.dash-table tr:hover td{background:#30363a}
-
-.dash-ref{
-    font-family:monospace;
-    color:#9fa5aa;
-}
-
-.dash-person{
-    display:flex;
-    align-items:center;
-    gap:9px;
-}
-
-.dash-person-av{
-    width:30px;
-    height:30px;
-    border-radius:50%;
-    background:var(--red);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    color:#fff;
-    font-size:12px;
-    font-weight:900;
-}
-
-.dash-type{
-    display:inline-flex;
-    align-items:center;
-    gap:7px;
-    font-weight:900;
-}
-
-.dash-type.buy{color:var(--green)}
-.dash-type.sell{color:#ff6b7b}
-
-.dash-status{
-    display:inline-block;
-    padding:6px 10px;
-    border-radius:20px;
-    font-size:11px;
-    font-weight:900;
-}
-
-.dash-status.approved{background:#0d2b1e;color:var(--green)}
-.dash-status.pending{background:#3b2a09;color:var(--gold)}
-.dash-status.rejected{background:#3a1018;color:#ff6b7b}
-
-.dash-right-col{
-    display:flex;
-    flex-direction:column;
-    gap:18px;
-}
-
-.dash-donut{
-    background:var(--box);
-    border:1px solid var(--line);
-    border-radius:6px;
-    padding:22px;
-}
-
-.dash-donut-wrap{
-    position:relative;
-    display:flex;
-    justify-content:center;
-    margin:14px 0 18px;
-}
-
-.dash-donut-center{
-    position:absolute;
-    top:50%;
-    left:50%;
-    transform:translate(-50%,-50%);
-    text-align:center;
-}
-
-.dash-donut-center b{
-    font-size:24px;
-    font-weight:900;
-}
-
-.dash-donut-center small{
-    display:block;
-    color:#9fa5aa;
-    font-size:11px;
-    font-weight:900;
-}
-
-.dash-legend{
-    display:flex;
-    flex-direction:column;
-    gap:10px;
-}
-
-.dash-legend-row{
-    display:flex;
-    justify-content:space-between;
-    gap:10px;
-    color:#aeb4ba;
-    font-size:13px;
-    font-weight:800;
-}
-
-.dash-legend-key{
-    display:flex;
-    align-items:center;
-    gap:8px;
-}
-
-.dash-dot{
-    width:10px;
-    height:10px;
-    border-radius:50%;
-}
-
-.dash-quick{
-    background:var(--box);
-    border:1px solid var(--line);
-    border-radius:6px;
-    padding:22px;
-}
-
-.dash-quick-grid{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:10px;
-}
-
-.dash-quick-btn{
-    background:#1f2428;
-    border:1px solid var(--line);
-    border-radius:4px;
-    padding:15px 10px;
-    color:#fff;
-    text-decoration:none;
-    text-align:center;
-    font-weight:900;
-    font-size:12px;
-}
-
-.dash-quick-btn i{
-    display:block;
-    color:var(--red);
-    font-size:24px;
-    margin-bottom:7px;
-}
-
-.dash-quick-btn:hover{
-    background:#30363a;
-    border-color:var(--red);
-}
-
-.dash-activity-list{
-    max-height:290px;
-    overflow-y:auto;
-    scrollbar-width:none;
-    -ms-overflow-style:none;
-}
-
-.dash-activity-list::-webkit-scrollbar{display:none}
-
-.dash-act{
-    display:flex;
-    align-items:center;
-    gap:11px;
-    padding:13px 20px;
-    border-bottom:1px solid var(--line);
-}
-
-.dash-act:last-child{border-bottom:0}
-
-.dash-act-icon{
-    width:36px;
-    height:36px;
-    border-radius:50%;
-    background:#3a1018;
-    color:#ff6b7b;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    flex-shrink:0;
-}
-
-.dash-act-body{
-    flex:1;
-    min-width:0;
-}
-
-.dash-act-body b{
-    display:block;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-    font-size:13px;
-}
-
-.dash-act-body small{
-    color:#9fa5aa;
-    font-size:11px;
-}
-
-.dash-act-amt{
-    font-size:13px;
-    font-weight:900;
-    white-space:nowrap;
-}
-
-.dash-notice{
-    background:#3b2a09;
-    border:1px solid rgba(255,201,51,.35);
-    border-radius:6px;
-    color:#ffe7a3;
-    padding:15px 18px;
-    font-weight:800;
-    display:flex;
-    align-items:center;
-    gap:10px;
-}
+.dash-notice{background:#3b2a09;border:1px solid rgba(255,201,51,.35);border-radius:6px;color:#ffe7a3;padding:15px 18px;font-weight:800;display:flex;align-items:center;gap:10px}
 
 @media(max-width:1200px){
     .dash-wrap{grid-template-columns:1fr}
     .dash-side{display:grid;grid-template-columns:repeat(2,1fr)}
-    .dash-side .dash-card:last-child{grid-column:1/-1}
     .dash-kpis{grid-template-columns:repeat(2,1fr)}
-    .dash-bottom{grid-template-columns:1fr}
-    .dash-right-col{display:grid;grid-template-columns:1fr 1fr}
 }
 
 @media(max-width:800px){
@@ -825,7 +194,7 @@
     .dash-wallet-cards{grid-template-columns:1fr}
     .dash-chart-head{flex-direction:column;align-items:flex-start}
     .dash-chart-stats{grid-template-columns:1fr}
-    .dash-right-col{grid-template-columns:1fr}
+    .dash-donut-grid{grid-template-columns:1fr}
 }
 </style>
 
@@ -840,10 +209,7 @@
                 <span>{{ $name }}</span>
             </h1>
 
-            <div class="dash-sub">
-                Your {{ strtolower($roleLabel) }} dashboard overview with wallet balance, buy/sell requests,
-                recent activity, transaction breakdown, and quick actions.
-            </div>
+           
         </div>
     </section>
 
@@ -898,7 +264,12 @@
                     </div>
 
                     <div class="dash-bs-row">
-                        <span>USD Volume</span>
+                        <span>Total Requests</span>
+                        <strong>{{ $totalCount }}</strong>
+                    </div>
+
+                    <div class="dash-bs-row">
+                        <span>USD Account</span>
                         <strong>${{ number_format((float)$totalUsd, 2) }}</strong>
                     </div>
 
@@ -909,48 +280,13 @@
 
                     <div class="dash-bs-row">
                         <span>Approved</span>
-                        <strong style="color:var(--green)">{{ $approvedCount }} txns</strong>
+                        <strong style="color:var(--green)">{{ $approvedCount }}</strong>
                     </div>
 
                     <div class="dash-bs-row">
                         <span>Pending</span>
-                        <strong style="color:var(--gold)">{{ $pendingCount }} txns</strong>
+                        <strong style="color:var(--gold)">{{ $pendingCount }}</strong>
                     </div>
-                </div>
-            </div>
-
-            <div class="dash-card">
-                <div class="dash-section-title">
-                    <i class="ti ti-clock"></i>
-                    Recent Activity
-                </div>
-
-                <div class="dash-activity-list">
-                    @forelse($recent5 as $act)
-                        @php
-                            $actPerson = $isMerchant ? ($act->user->name ?? 'Client') : ($act->merchant->name ?? 'Merchant');
-                            $isBuy = $act->type === 'deposit';
-                        @endphp
-
-                        <div class="dash-act">
-                            <div class="dash-act-icon" style="{{ !$isBuy ? 'background:#0d2b1e;color:var(--green)' : '' }}">
-                                <i class="ti {{ $isBuy ? 'ti-trending-up' : 'ti-trending-down' }}"></i>
-                            </div>
-
-                            <div class="dash-act-body">
-                                <b>{{ $actPerson }}</b>
-                                <small>{{ $isBuy ? 'Buy USD' : 'Sell USD' }} · {{ $act->created_at?->diffForHumans() }}</small>
-                            </div>
-
-                            <div class="dash-act-amt" style="color:{{ $isBuy ? '#ff6b7b' : '#0ecb81' }}">
-                                {{ $isBuy ? '-' : '+' }}${{ number_format((float)($act->amount ?? 0), 2) }}
-                            </div>
-                        </div>
-                    @empty
-                        <div style="padding:30px;text-align:center;color:#9fa5aa;font-weight:800;">
-                            No recent activity.
-                        </div>
-                    @endforelse
                 </div>
             </div>
 
@@ -971,12 +307,22 @@
 
                 <div class="dash-kpi">
                     <div class="dash-kpi-top">
-                        <div class="dash-kpi-icon"><i class="ti ti-currency-dollar"></i></div>
-                        <div class="dash-trend green">Active</div>
+                        <div class="dash-kpi-icon"><i class="ti ti-receipt"></i></div>
+                        <div class="dash-trend gray">All Time</div>
                     </div>
-                    <small>USD Volume</small>
-                    <b>${{ number_format((float)$totalUsd, 2) }}</b>
+                    <small>Total Requests</small>
+                    <b>{{ $totalCount }}</b>
                     <p>{{ $approvedCount }} approved requests</p>
+                </div>
+
+                <div class="dash-kpi">
+                    <div class="dash-kpi-top">
+                        <div class="dash-kpi-icon"><i class="ti ti-currency-dollar"></i></div>
+                        <div class="dash-trend green">USD</div>
+                    </div>
+                    <small>USD Account</small>
+                    <b>${{ number_format((float)$totalUsd, 2) }}</b>
+                    <p>Total USD transacted</p>
                 </div>
 
                 <div class="dash-kpi">
@@ -988,17 +334,7 @@
                     </div>
                     <small>INR Volume</small>
                     <b>₹{{ number_format((float)$totalInr, 0) }}</b>
-                    <p>Total transacted</p>
-                </div>
-
-                <div class="dash-kpi">
-                    <div class="dash-kpi-top">
-                        <div class="dash-kpi-icon"><i class="ti ti-receipt"></i></div>
-                        <div class="dash-trend gray">All Time</div>
-                    </div>
-                    <small>Total Requests</small>
-                    <b>{{ $totalCount }}</b>
-                    <p>{{ $rejectedCount }} rejected requests</p>
+                    <p>Total INR volume</p>
                 </div>
             </section>
 
@@ -1015,7 +351,7 @@
                 <div class="dash-wcard">
                     <div class="dash-wcard-top">
                         <div class="dash-wcard-type">USD Account</div>
-                        <div class="dash-wcard-pill">{{ $user->is_verified ? 'Verified' : 'Pending' }}</div>
+                        <div class="dash-wcard-pill">{{ ($user->is_verified ?? false) ? 'Verified' : 'Pending' }}</div>
                     </div>
                     <div class="dash-wcard-val">${{ number_format((float)$totalUsd, 2) }}</div>
                     <div class="dash-wcard-label">Total USD transacted</div>
@@ -1071,92 +407,15 @@
             </section>
 
             <section class="dash-bottom">
-
-                <div class="dash-table-box">
-                    <div class="dash-table-head">
-                        <h2>{{ $isMerchant ? 'Customer Requests' : 'Wallet Requests' }}</h2>
+                <div class="dash-donut">
+                    <div class="dash-section-title" style="padding:0 0 16px;border-bottom:0;">
+                        <i class="ti ti-chart-donut"></i>
+                        Request Breakdown
                     </div>
 
-                    <div class="dash-table-wrap">
-                        <table class="dash-table">
-                            <thead>
-                                <tr>
-                                    <th>Ref</th>
-                                    <th>{{ $isMerchant ? 'Client' : 'Merchant' }}</th>
-                                    <th>Type</th>
-                                    <th>USD Amount</th>
-                                    <th>INR Total</th>
-                                    <th>Status</th>
-                                    <th>Date</th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                @forelse($latestRequests as $req)
-                                    @php
-                                        $pName = $isMerchant ? ($req->user->name ?? 'Client') : ($req->merchant->name ?? 'Merchant');
-                                        $isBuy = $req->type === 'deposit';
-                                    @endphp
-
-                                    <tr>
-                                        <td>
-                                            <span class="dash-ref">
-                                                {{ $req->transaction_no ?? 'TNS'.str_pad($req->id, 7, '0', STR_PAD_LEFT) }}
-                                            </span>
-                                        </td>
-
-                                        <td>
-                                            <div class="dash-person">
-                                                <div class="dash-person-av">{{ strtoupper(substr($pName, 0, 1)) }}</div>
-                                                <span>{{ $pName }}</span>
-                                            </div>
-                                        </td>
-
-                                        <td>
-                                            <span class="dash-type {{ $isBuy ? 'buy' : 'sell' }}">
-                                                <i class="ti {{ $isBuy ? 'ti-trending-up' : 'ti-trending-down' }}"></i>
-                                                {{ $isBuy ? 'BUY' : 'SELL' }}
-                                            </span>
-                                        </td>
-
-                                        <td style="color:{{ $isBuy ? '#ff6b7b' : '#0ecb81' }}">
-                                            ${{ number_format((float)($req->amount ?? 0), 2) }}
-                                        </td>
-
-                                        <td>₹{{ number_format((float)($req->total_amount ?? 0), 2) }}</td>
-
-                                        <td>
-                                            <span class="dash-status {{ $req->status }}">
-                                                {{ strtoupper($req->status ?? '-') }}
-                                            </span>
-                                        </td>
-
-                                        <td style="color:#9fa5aa;">
-                                            {{ $req->created_at?->format('d M, H:i') }}
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="7" style="text-align:center;padding:35px;color:#9fa5aa;font-weight:800;">
-                                            No transactions found.
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="dash-right-col">
-
-                    <div class="dash-donut">
-                        <div class="dash-section-title" style="padding:0 0 16px;border-bottom:0;">
-                            <i class="ti ti-chart-donut"></i>
-                            Request Breakdown
-                        </div>
-
+                    <div class="dash-donut-grid">
                         <div class="dash-donut-wrap">
-                            <canvas id="dashDonut" width="170" height="170"></canvas>
+                            <canvas id="dashDonut" width="190" height="190"></canvas>
 
                             <div class="dash-donut-center">
                                 <b>{{ $totalCount }}</b>
@@ -1191,38 +450,7 @@
                             </div>
                         </div>
                     </div>
-
-                    <div class="dash-quick">
-                        <div class="dash-section-title" style="padding:0 0 16px;border-bottom:0;">
-                            <i class="ti ti-bolt"></i>
-                            Quick Actions
-                        </div>
-
-                        <div class="dash-quick-grid">
-                            <a href="{{ $requestRoute }}" class="dash-quick-btn">
-                                <i class="ti ti-credit-card"></i>
-                                Requests
-                            </a>
-
-                            <a href="{{ $transferRoute }}" class="dash-quick-btn">
-                                <i class="ti ti-arrows-transfer-up"></i>
-                                Transfer
-                            </a>
-
-                            <a href="{{ $chatRoute }}" class="dash-quick-btn">
-                                <i class="ti ti-message-2"></i>
-                                Chat
-                            </a>
-
-                            <a href="{{ $historyRoute }}" class="dash-quick-btn">
-                                <i class="ti ti-history"></i>
-                                History
-                            </a>
-                        </div>
-                    </div>
-
                 </div>
-
             </section>
 
             @if(!($user->is_verified ?? false))
@@ -1234,58 +462,6 @@
 
         </main>
     </div>
-
-    @if(session('popup_transaction'))
-        @php $popup = session('popup_transaction'); @endphp
-
-        <div id="dashSuccessModal"
-             style="position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:99999;display:flex;align-items:center;justify-content:center;">
-            <div style="width:min(430px,92vw);background:#2b2f32;border:1px solid #3b4248;border-radius:7px;padding:26px;text-align:center;color:white;box-shadow:0 30px 80px rgba(0,0,0,.45);">
-                <div style="width:70px;height:70px;border-radius:50%;margin:0 auto 16px;background:#0d2b1e;color:#0ecb81;display:flex;align-items:center;justify-content:center;font-size:36px;">
-                    <i class="ti ti-circle-check"></i>
-                </div>
-
-                <h2 style="font-size:22px;font-weight:900;margin-bottom:8px;">
-                    {{ $popup['title'] ?? 'Transaction Completed' }}
-                </h2>
-
-                <p style="color:#aeb4ba;margin-bottom:18px;">
-                    Transaction created successfully. You can open chat for this transaction now.
-                </p>
-
-                <div style="background:#1f2428;border:1px solid #3b4248;border-radius:4px;padding:14px;margin-bottom:18px;text-align:left;">
-                    <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-                        <span style="color:#9fa5aa;font-weight:800;">Transaction No</span>
-                        <b>{{ $popup['no'] ?? '—' }}</b>
-                    </div>
-
-                    <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-                        <span style="color:#9fa5aa;font-weight:800;">Amount</span>
-                        <b>${{ $popup['amount'] ?? '0.00' }}</b>
-                    </div>
-
-                    <div style="display:flex;justify-content:space-between;">
-                        <span style="color:#9fa5aa;font-weight:800;">Status</span>
-                        <b style="color:#0ecb81;">{{ $popup['status'] ?? 'PENDING' }}</b>
-                    </div>
-                </div>
-
-                <div style="display:flex;gap:10px;">
-                    <button type="button"
-                            onclick="document.getElementById('dashSuccessModal').remove()"
-                            style="flex:1;padding:13px;border-radius:4px;border:1px solid #3b4248;background:#1f2428;color:white;font-weight:900;cursor:pointer;">
-                        Close
-                    </button>
-
-                    <a href="{{ $popup['chat_url'] ?? '#' }}"
-                       style="flex:1;padding:13px;border-radius:4px;background:#e8192c;color:white;font-weight:900;text-decoration:none;">
-                        Open Chat
-                    </a>
-                </div>
-            </div>
-        </div>
-    @endif
-
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>

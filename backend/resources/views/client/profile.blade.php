@@ -74,11 +74,9 @@ $upiQr = $user->upi_qr_url;
     <div class="xprof-page">
         <section class="xprof-hero">
             <div class="xprof-hero-content">
-                <div class="xprof-eyebrow">Xynder Wallet</div>
+               
                 <h1 class="xprof-title">My <span>Profile</span></h1>
-                <div class="xprof-sub">
-                    Update your personal details, KYC document, bank information, and UPI payment details.
-                </div>
+              
             </div>
         </section>
 
@@ -210,10 +208,7 @@ $upiQr = $user->upi_qr_url;
             </section>
 
             <section class="xprof-save">
-                <div>
-                    <h3>Save Profile Changes</h3>
-                    <p>Update your latest profile, bank, KYC, and UPI details.</p>
-                </div>
+               
 
                 <button type="submit" class="xprof-save-btn">
                     <i class="ti ti-device-floppy"></i>

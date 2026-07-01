@@ -508,9 +508,7 @@ details[open] .settings-arrow{
                 <span>Settings</span>
             </h1>
 
-            <div class="settings-sub">
-                Manage your profile, payment methods, password, support tickets and account session.
-            </div>
+          
         </div>
     </section>
 

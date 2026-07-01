@@ -1,4 +1,3 @@
-
 @extends('layouts.admin', ['title' => 'Clients & Merchants'])
 
 @push('styles')
@@ -7,7 +6,6 @@
 <style>
 :root{
     --dark:#101518;
-    --hero:#2b2f32;
     --box:#2b2f32;
     --panel:#24292d;
     --input:#1f2428;
@@ -23,266 +21,242 @@
 
 *{box-sizing:border-box}
 
-.um-page{
+.ad-page{
     margin:-24px;
     min-height:100vh;
     background:var(--dark);
     color:var(--text);
     font-family:Inter,Arial,sans-serif;
-    padding-bottom:60px;
+    padding:24px;
 }
 
-.um-hero{
-    background:var(--hero);
-    padding:65px 85px 120px;
-    position:relative;
-    overflow:hidden;
-}
-
-.um-hero::after{
-    content:"";
-    position:absolute;
-    inset:0;
-    opacity:.07;
-    background-image:linear-gradient(120deg,transparent 20%,rgba(255,255,255,.18) 21%,transparent 22%);
-    background-size:260px 260px;
-}
-
-.um-hero-inner{
-    position:relative;
-    z-index:2;
-    max-width:680px;
-}
-
-.um-eyebrow{
-    color:var(--red);
-    font-size:12px;
-    font-weight:900;
-    letter-spacing:.14em;
-    text-transform:uppercase;
-    margin-bottom:14px;
-}
-
-.um-title{
-    font-size:46px;
-    line-height:1.12;
-    font-weight:900;
-    margin:0 0 18px;
-}
-
-.um-title span{
-    color:var(--red);
-    display:block;
-}
-
-.um-subtitle{
-    color:#b8bdc2;
-    font-size:15px;
-    line-height:1.7;
-    font-weight:700;
-    max-width:570px;
-}
-
-.um-wrap{
-    position:relative;
-    z-index:5;
-    margin:-82px 85px 0;
-}
-
-.um-stats{
+.ad-kpis{
     display:grid;
     grid-template-columns:repeat(4,1fr);
-    gap:18px;
-    margin-bottom:26px;
+    gap:14px;
+    margin-bottom:18px;
 }
 
-.um-stat{
+.ad-kpi{
     background:var(--box);
     border:1px solid var(--line);
     border-radius:6px;
     padding:20px;
-    display:flex;
-    align-items:center;
-    gap:14px;
-    min-height:105px;
+    min-height:118px;
+    position:relative;
+    overflow:hidden;
 }
 
-.um-stat-icon{
-    width:46px;
-    height:46px;
+.ad-kpi::after{
+    content:"";
+    position:absolute;
+    right:-38px;
+    top:-38px;
+    width:115px;
+    height:115px;
+    border-radius:50%;
+    background:rgba(232,25,44,.12);
+}
+
+.ad-kpi-icon{
+    width:42px;
+    height:42px;
     border-radius:50%;
     background:#3a1018;
     color:var(--red);
     display:flex;
     align-items:center;
     justify-content:center;
-    font-size:24px;
-    flex-shrink:0;
+    font-size:22px;
+    margin-bottom:14px;
 }
 
-.um-stat-num{
-    font-size:26px;
-    font-weight:900;
-}
-
-.um-stat-label{
+.ad-kpi-label{
     color:var(--muted);
     font-size:12px;
     font-weight:900;
     text-transform:uppercase;
-    letter-spacing:.05em;
-    margin-top:3px;
+    letter-spacing:.06em;
 }
 
-.um-card{
+.ad-kpi-value{
+    font-size:28px;
+    font-weight:900;
+    margin-top:6px;
+}
+
+.ad-kpi-note{
+    color:var(--muted2);
+    font-size:12px;
+    margin-top:4px;
+    font-weight:700;
+}
+
+.ad-card{
     background:var(--box);
     border:1.5px solid var(--red);
     border-radius:7px;
     overflow:hidden;
-    box-shadow:0 18px 40px rgba(0,0,0,.28);
+    width:100%;
 }
 
-.um-card-head{
+.ad-head{
     background:var(--panel);
     border-bottom:1px solid var(--line);
+    padding:16px;
     display:flex;
-    justify-content:space-between;
     align-items:center;
+    justify-content:space-between;
     gap:12px;
-    padding:18px 22px;
     flex-wrap:wrap;
 }
 
-.um-tabs{
+.ad-title{
+    margin:0;
+    font-size:22px;
+    font-weight:900;
+}
+
+.ad-tabs{
     display:flex;
-    gap:0;
     background:var(--input);
     border:1px solid var(--line);
     border-radius:5px;
     overflow:hidden;
 }
 
-.um-tab{
-    padding:11px 22px;
+.ad-tab{
+    padding:11px 18px;
+    color:var(--muted);
     font-size:13px;
     font-weight:900;
-    color:var(--muted);
     text-decoration:none;
     border-right:1px solid var(--line);
 }
 
-.um-tab:last-child{border-right:0}
+.ad-tab:last-child{border-right:0}
 
-.um-tab.active,
-.um-tab:hover{
+.ad-tab.active,
+.ad-tab:hover{
     background:rgba(232,25,44,.14);
     color:var(--red);
     box-shadow:inset 0 -3px 0 var(--red);
 }
 
-.um-btn{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    gap:7px;
+.ad-btn{
     border:0;
     border-radius:4px;
     padding:10px 14px;
     font-size:13px;
     font-weight:900;
-    cursor:pointer;
     text-decoration:none;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:7px;
     white-space:nowrap;
 }
 
-.um-btn-red{background:var(--red);color:#fff}
-.um-btn-red:hover{background:var(--red2);color:#fff}
-.um-btn-green{background:var(--green);color:#052e16}
-.um-btn-ghost{background:var(--input);color:#fff;border:1px solid var(--line)}
-.um-btn-ghost:hover{border-color:var(--red);color:#fff}
+.ad-btn-red{background:var(--red);color:#fff}
+.ad-btn-red:hover{background:var(--red2);color:#fff}
+.ad-btn-dark{background:var(--input);color:#fff;border:1px solid var(--line)}
+.ad-btn-dark:hover{border-color:var(--red);color:#fff}
 
-.um-filters{
-    display:flex;
+.ad-filters{
+    display:grid;
+    grid-template-columns:2fr 1fr 1fr auto;
     gap:10px;
-    padding:16px 22px;
-    background:var(--box);
+    padding:16px;
     border-bottom:1px solid var(--line);
-    flex-wrap:wrap;
 }
 
-.um-input,
-.um-select{
+.ad-input,
+.ad-select{
     height:42px;
+    width:100%;
     background:var(--input);
     border:1px solid var(--line);
     color:var(--text);
     border-radius:4px;
     padding:0 13px;
+    font-weight:800;
     outline:0;
-    font-weight:700;
 }
 
-.um-input:focus,
-.um-select:focus{
+.ad-input:focus,
+.ad-select:focus{
     border-color:var(--red);
     box-shadow:0 0 0 3px rgba(232,25,44,.12);
 }
 
-.um-input{width:310px}
-.um-select{width:150px}
-
-.um-table-wrap{overflow-x:auto}
-
-.um-table{
+.ad-table-wrap{
     width:100%;
-    min-width:1180px;
-    border-collapse:collapse;
+    overflow-x:hidden;
 }
 
-.um-table th{
+.ad-table{
+    width:100%;
+    border-collapse:collapse;
+    table-layout:fixed;
+}
+
+.ad-table th{
     background:var(--panel);
     color:var(--muted2);
-    padding:14px 16px;
-    font-size:11px;
+    padding:13px 10px;
+    font-size:10px;
     font-weight:900;
     text-transform:uppercase;
-    letter-spacing:.05em;
+    letter-spacing:.04em;
     text-align:left;
 }
 
-.um-table td{
-    padding:15px 16px;
+.ad-table td{
+    padding:16px 10px;
     border-top:1px solid var(--line);
     color:#c9ced3;
     font-size:13px;
-    font-weight:700;
+    font-weight:800;
     vertical-align:middle;
+    white-space:normal;
+    word-break:break-word;
 }
 
-.um-table tr:hover td{background:#30363a}
+.ad-table tr:hover td{
+    background:#30363a;
+}
 
-.um-user-cell{
+/* 7 columns now: User, Balance, Status, Bank/UPI, Online, Verify, Actions */
+.ad-table th:nth-child(1),.ad-table td:nth-child(1){width:30%}
+.ad-table th:nth-child(2),.ad-table td:nth-child(2){width:12%}
+.ad-table th:nth-child(3),.ad-table td:nth-child(3){width:10%}
+.ad-table th:nth-child(4),.ad-table td:nth-child(4){width:16%}
+.ad-table th:nth-child(5),.ad-table td:nth-child(5){width:12%}
+.ad-table th:nth-child(6),.ad-table td:nth-child(6){width:10%}
+.ad-table th:nth-child(7),.ad-table td:nth-child(7){width:10%}
+
+.ad-user{
     display:flex;
     align-items:center;
     gap:12px;
-    min-width:285px;
+    min-width:0;
 }
 
-.um-avatar,
-.um-avatar-placeholder{
-    width:44px;
-    height:44px;
+.ad-avatar,
+.ad-avatar-empty{
+    width:46px;
+    height:46px;
     border-radius:50%;
     flex-shrink:0;
 }
 
-.um-avatar{
+.ad-avatar{
     object-fit:cover;
     border:2px solid var(--line);
-    cursor:pointer;
 }
 
-.um-avatar-placeholder{
+.ad-avatar-empty{
     background:#3a1018;
     color:var(--red);
     display:flex;
@@ -292,924 +266,470 @@
     font-size:18px;
 }
 
-.um-user-name{
+.ad-name{
     color:#fff;
     font-weight:900;
     margin-bottom:4px;
-}
-
-.um-user-email{
-    font-size:12px;
-    color:var(--muted);
-    word-break:break-all;
-}
-
-.um-wallet-pill{
-    display:inline-flex;
-    align-items:center;
-    gap:5px;
-    margin-top:6px;
-    padding:4px 8px;
-    border-radius:20px;
-    background:#3a1018;
-    color:#ff9aaa;
-    font-size:11px;
-    font-weight:900;
-}
-
-.um-badge{
-    display:inline-flex;
-    align-items:center;
-    gap:6px;
-    padding:5px 10px;
-    border-radius:20px;
-    font-size:11px;
-    font-weight:900;
-    text-transform:uppercase;
+    overflow:hidden;
+    text-overflow:ellipsis;
     white-space:nowrap;
 }
 
-.um-badge-green{background:#0d2b1e;color:var(--green)}
-.um-badge-red{background:#3a1018;color:#ff6b7b}
-.um-badge-yellow{background:#3b2a09;color:var(--gold)}
-.um-badge-gray{background:var(--input);color:#d5dade;border:1px solid var(--line)}
-
-.um-actions{
-    display:flex;
-    gap:7px;
-    align-items:center;
-    flex-wrap:nowrap;
+.ad-email{
+    font-size:12px;
+    color:var(--muted);
+    font-weight:700;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
 }
 
-.um-actions form{margin:0}
+.ad-phone{
+    font-size:11px;
+    color:var(--muted);
+    font-weight:700;
+    margin-top:3px;
+    display:flex;
+    align-items:center;
+    gap:4px;
+}
 
-.um-icon-btn{
-    width:36px;
-    height:36px;
-    border-radius:4px;
-    border:1px solid var(--line);
+.ad-wallet{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    margin-top:6px;
+    background:#3a1018;
+    color:#ff9aaa;
+    border-radius:20px;
+    padding:3px 6px 3px 9px;
+    font-size:10px;
+    font-weight:800;
+    max-width:100%;
+}
+
+.ad-wallet span{
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+
+.ad-copy-btn{
+    background:rgba(255,255,255,.08);
+    border:0;
+    border-radius:50%;
+    width:20px;
+    height:20px;
+    flex-shrink:0;
     display:inline-flex;
     align-items:center;
     justify-content:center;
+    color:#ff9aaa;
     cursor:pointer;
-    color:#fff;
-    background:var(--input);
-    font-size:16px;
-}
-
-.um-icon-view{color:var(--gold)}
-.um-icon-edit{color:#fff}
-.um-icon-delete{color:#ff6b7b}
-.um-icon-verify{color:var(--green)}
-.um-icon-block{color:#ff6b7b}
-
-.um-icon-btn:hover{
-    border-color:var(--red);
-    transform:translateY(-1px);
-}
-
-.um-pagination{
-    padding:16px 22px;
-    border-top:1px solid var(--line);
-    background:var(--panel);
-}
-
-.um-empty{
-    text-align:center;
-    padding:45px;
-    color:var(--muted);
-    font-weight:800;
-}
-
-.um-modal-overlay{
-    display:none;
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,.78);
-    z-index:9999;
-    align-items:center;
-    justify-content:center;
-    padding:18px;
-}
-
-.um-modal-overlay.open{display:flex}
-
-.um-modal{
-    width:870px;
-    max-width:100%;
-    max-height:92vh;
-    overflow:auto;
-    background:var(--box);
-    border:1.5px solid var(--red);
-    border-radius:7px;
-}
-
-.um-modal-hdr{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:17px 22px;
-    border-bottom:1px solid var(--line);
-    position:sticky;
-    top:0;
-    background:var(--panel);
-    z-index:5;
-}
-
-.um-modal-title{
-    margin:0;
-    font-size:18px;
-    font-weight:900;
-    display:flex;
-    align-items:center;
-    gap:8px;
-}
-
-.um-modal-title i{color:var(--red)}
-
-.um-modal-close{
-    width:34px;
-    height:34px;
-    border:1px solid var(--line);
-    border-radius:4px;
-    background:var(--input);
-    color:#fff;
-    cursor:pointer;
-}
-
-.um-modal-body{padding:22px}
-
-.um-view-hero{
-    display:flex;
-    gap:15px;
-    align-items:center;
-    background:var(--panel);
-    border:1px solid var(--line);
-    border-radius:6px;
-    padding:16px;
-    margin-bottom:16px;
-}
-
-.um-view-hero img,
-.um-view-hero-placeholder{
-    width:76px;
-    height:76px;
-    border-radius:50%;
-    object-fit:cover;
-    border:3px solid var(--red);
-}
-
-.um-view-hero-placeholder{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:28px;
-    font-weight:900;
-    color:var(--red);
-    background:#3a1018;
-}
-
-.um-view-hero-name{
-    font-size:20px;
-    font-weight:900;
-}
-
-.um-view-hero-meta{
-    color:var(--muted);
-    font-size:13px;
-    margin-top:4px;
-}
-
-.um-detail-grid{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:10px;
-}
-
-.um-detail-item{
-    background:var(--panel);
-    border:1px solid var(--line);
-    border-radius:5px;
-    padding:12px;
-}
-
-.um-detail-lbl{
     font-size:11px;
-    color:var(--muted);
-    text-transform:uppercase;
+    padding:0;
+}
+
+.ad-copy-btn:hover{background:rgba(255,255,255,.18)}
+.ad-copy-btn.ad-copied{color:var(--green)}
+
+.ad-badge{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:5px;
+    padding:5px 9px;
+    border-radius:20px;
+    font-size:11px;
     font-weight:900;
-    margin-bottom:6px;
-}
-
-.um-detail-val{
-    font-size:13px;
-    color:#fff;
-    font-weight:800;
-    word-break:break-all;
-}
-
-.um-form-grid{
-    display:grid;
-    grid-template-columns:repeat(2,1fr);
-    gap:14px;
-}
-
-.um-form-section{
-    grid-column:1/-1;
-    color:var(--red);
     text-transform:uppercase;
-    font-size:12px;
-    font-weight:900;
-    letter-spacing:.08em;
-    border-bottom:1px solid var(--line);
-    padding:10px 0 8px;
+    white-space:normal;
 }
 
-.um-form-group{
+.ad-green{background:#0d2b1e;color:var(--green)}
+.ad-red{background:#3a1018;color:#ff6b7b}
+.ad-yellow{background:#3b2a09;color:var(--gold)}
+.ad-gray{background:var(--input);color:#d5dade;border:1px solid var(--line)}
+
+.ad-actions{
     display:flex;
-    flex-direction:column;
-    gap:7px;
+    gap:5px;
+    flex-wrap:wrap;
 }
 
-.um-form-group.full{grid-column:1/-1}
+.ad-actions form{margin:0}
 
-.um-form-label{
-    font-size:12px;
-    font-weight:900;
-    color:#c3c6ca;
-}
-
-.um-form-control{
-    height:42px;
+.ad-icon{
+    width:32px;
+    height:32px;
     border-radius:4px;
     border:1px solid var(--line);
     background:var(--input);
-    color:#fff;
-    padding:0 13px;
-    outline:0;
-    font-weight:700;
-}
-
-.um-form-control:focus{
-    border-color:var(--red);
-    box-shadow:0 0 0 3px rgba(232,25,44,.12);
-}
-
-.um-form-footer{
-    display:flex;
-    justify-content:flex-end;
-    gap:10px;
-    padding:16px 22px;
-    border-top:1px solid var(--line);
-    background:var(--panel);
-}
-
-.um-lightbox{
-    display:none;
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,.9);
-    z-index:10001;
+    display:inline-flex;
     align-items:center;
     justify-content:center;
-    flex-direction:column;
-}
-
-.um-lightbox.open{display:flex}
-
-.um-lightbox img{
-    max-width:90vw;
-    max-height:80vh;
-    border-radius:8px;
-    border:1px solid var(--line);
-}
-
-.um-lightbox-close{
-    position:absolute;
-    top:18px;
-    right:24px;
-    background:var(--red);
-    border:0;
-    color:white;
-    font-size:22px;
-    width:38px;
-    height:38px;
-    border-radius:4px;
+    color:#fff;
     cursor:pointer;
+    text-decoration:none;
 }
 
-@media(max-width:1100px){
-    .um-stats{grid-template-columns:repeat(2,1fr)}
-    .um-wrap{margin:-82px 24px 0}
+.ad-icon:hover{border-color:var(--red)}
+.ad-edit{color:#fff}
+.ad-good{color:var(--green)}
+.ad-bad{color:#ff6b7b}
+
+.ad-empty{
+    text-align:center;
+    padding:40px;
+    color:var(--muted);
+    font-weight:900;
+}
+
+.ad-pagination{
+    padding:16px;
+    background:var(--panel);
+    border-top:1px solid var(--line);
+}
+
+@media(max-width:1200px){
+    .ad-table,
+    .ad-table thead,
+    .ad-table tbody,
+    .ad-table th,
+    .ad-table td,
+    .ad-table tr{
+        display:block;
+        width:100% !important;
+    }
+
+    .ad-table thead{display:none}
+
+    .ad-table tr{
+        background:var(--panel);
+        border:1px solid var(--line);
+        border-radius:7px;
+        margin:12px;
+        padding:14px;
+    }
+
+    .ad-table td{
+        border-top:0;
+        padding:9px 0;
+    }
+
+    .ad-table td::before{
+        content:attr(data-label);
+        display:block;
+        color:var(--muted2);
+        font-size:10px;
+        font-weight:900;
+        text-transform:uppercase;
+        margin-bottom:5px;
+    }
+
+    .ad-table td:first-child::before{display:none}
 }
 
 @media(max-width:768px){
-    .um-page{margin:-16px}
-    .um-hero{padding:45px 24px 110px}
-    .um-title{font-size:34px}
-    .um-wrap{margin:-76px 18px 0}
-    .um-stats{grid-template-columns:1fr}
-    .um-detail-grid,.um-form-grid{grid-template-columns:1fr}
-    .um-input,.um-select{width:100%}
-    .um-card-head{align-items:flex-start}
+    .ad-page{margin:-16px;padding:14px}
+    .ad-kpis{grid-template-columns:1fr}
+    .ad-filters{grid-template-columns:1fr}
+    .ad-head{align-items:flex-start}
+    .ad-tabs{width:100%}
+    .ad-tab{flex:1;text-align:center}
 }
 </style>
 @endpush
 
 @section('content')
 
-<div class="um-page">
+<div class="ad-page">
 
-    <section class="um-hero">
-        <div class="um-hero-inner">
-            <div class="um-eyebrow">Xynder Wallet Admin</div>
-
-            <h1 class="um-title">
-                Clients &
-                <span>Merchants</span>
-            </h1>
-
-            <div class="um-subtitle">
-                Manage clients and merchants, wallet balances, KYC verification,
-                online status, banking details, and account access from one panel.
-            </div>
+    <div class="ad-kpis">
+        <div class="ad-kpi">
+            <div class="ad-kpi-icon"><i class="ti ti-user"></i></div>
+            <div class="ad-kpi-label">Total Clients</div>
+            <div class="ad-kpi-value">{{ $stats['clients'] ?? 0 }}</div>
+            <div class="ad-kpi-note">Registered clients</div>
         </div>
-    </section>
 
-    <main class="um-wrap">
+        <div class="ad-kpi">
+            <div class="ad-kpi-icon"><i class="ti ti-building-store"></i></div>
+            <div class="ad-kpi-label">Total Merchants</div>
+            <div class="ad-kpi-value">{{ $stats['merchants'] ?? 0 }}</div>
+            <div class="ad-kpi-note">Registered merchants</div>
+        </div>
 
-        <section class="um-stats">
-            <div class="um-stat">
-                <div class="um-stat-icon"><i class="ti ti-user"></i></div>
-                <div>
-                    <div class="um-stat-num">{{ $stats['clients'] ?? 0 }}</div>
-                    <div class="um-stat-label">Total Clients</div>
-                </div>
-            </div>
+        <div class="ad-kpi">
+            <div class="ad-kpi-icon"><i class="ti ti-circle-check"></i></div>
+            <div class="ad-kpi-label">Active Users</div>
+            <div class="ad-kpi-value">{{ $stats['active'] ?? 0 }}</div>
+            <div class="ad-kpi-note">Active accounts</div>
+        </div>
 
-            <div class="um-stat">
-                <div class="um-stat-icon"><i class="ti ti-building-store"></i></div>
-                <div>
-                    <div class="um-stat-num">{{ $stats['merchants'] ?? 0 }}</div>
-                    <div class="um-stat-label">Total Merchants</div>
-                </div>
-            </div>
+        <div class="ad-kpi">
+            <div class="ad-kpi-icon"><i class="ti ti-wifi"></i></div>
+            <div class="ad-kpi-label">Online Now</div>
+            <div class="ad-kpi-value">{{ $stats['online'] ?? 0 }}</div>
+            <div class="ad-kpi-note">Live users</div>
+        </div>
+    </div>
 
-            <div class="um-stat">
-                <div class="um-stat-icon"><i class="ti ti-circle-check"></i></div>
-                <div>
-                    <div class="um-stat-num">{{ $stats['active'] ?? 0 }}</div>
-                    <div class="um-stat-label">Active Users</div>
-                </div>
-            </div>
+    <section class="ad-card">
+        <div class="ad-head">
+            <h2 class="ad-title">Clients & Merchants</h2>
 
-            <div class="um-stat">
-                <div class="um-stat-icon"><i class="ti ti-wifi"></i></div>
-                <div>
-                    <div class="um-stat-num">{{ $stats['online'] ?? 0 }}</div>
-                    <div class="um-stat-label">Online Now</div>
-                </div>
-            </div>
-        </section>
+            <div class="ad-tabs">
+                <a href="{{ route('admin.users.index', ['type' => 'client']) }}"
+                   class="ad-tab {{ $type === 'client' ? 'active' : '' }}">
+                    Clients
+                </a>
 
-        <section class="um-card">
-            <div class="um-card-head">
-                <div class="um-tabs">
-                    <a href="{{ route('admin.users.index', ['type' => 'client']) }}"
-                       class="um-tab {{ $type === 'client' ? 'active' : '' }}">
-                        <i class="ti ti-user"></i> Clients
-                    </a>
-
-                    <a href="{{ route('admin.users.index', ['type' => 'merchant']) }}"
-                       class="um-tab {{ $type === 'merchant' ? 'active' : '' }}">
-                        <i class="ti ti-building-store"></i> Merchants
-                    </a>
-                </div>
-
-                <a href="{{ route('admin.users.create') }}" class="um-btn um-btn-red">
-                    <i class="ti ti-user-plus"></i>
-                    Add User
+                <a href="{{ route('admin.users.index', ['type' => 'merchant']) }}"
+                   class="ad-tab {{ $type === 'merchant' ? 'active' : '' }}">
+                    Merchants
                 </a>
             </div>
 
-            <form id="umFilterForm" method="GET" action="{{ route('admin.users.index') }}" class="um-filters">
-                <input type="hidden" name="type" value="{{ $type }}">
+            <a href="{{ route('admin.users.create') }}" class="ad-btn ad-btn-red">
+                <i class="ti ti-user-plus"></i>
+                Add User
+            </a>
+        </div>
 
-                <input id="umSearch"
-                       type="text"
-                       name="search"
-                       value="{{ request('search') }}"
-                       class="um-input"
-                       placeholder="Search name, email, phone, wallet ID">
+        <form id="adFilterForm" method="GET" action="{{ route('admin.users.index') }}" class="ad-filters">
+            <input type="hidden" name="type" value="{{ $type }}">
 
-                <select name="status" class="um-select um-auto-filter">
-                    <option value="">All Status</option>
-                    <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
-                    <option value="blocked" {{ request('status') === 'blocked' ? 'selected' : '' }}>Blocked</option>
-                </select>
+            <input id="adSearch"
+                   class="ad-input"
+                   type="text"
+                   name="search"
+                   value="{{ request('search') }}"
+                   placeholder="Search name, email, phone, wallet ID">
 
-                <select name="online" class="um-select um-auto-filter">
-                    <option value="">All Online</option>
-                    <option value="1" {{ request('online') === '1' ? 'selected' : '' }}>Online</option>
-                    <option value="0" {{ request('online') === '0' ? 'selected' : '' }}>Offline</option>
-                </select>
+            <select name="status" class="ad-select ad-auto-filter">
+                <option value="">All Status</option>
+                <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
+                <option value="blocked" {{ request('status') === 'blocked' ? 'selected' : '' }}>Blocked</option>
+            </select>
 
-                <a href="{{ route('admin.users.index', ['type' => $type]) }}" class="um-btn um-btn-ghost">
-                    <i class="ti ti-refresh"></i>
-                    Reset
-                </a>
-            </form>
+            <select name="online" class="ad-select ad-auto-filter">
+                <option value="">All Online</option>
+                <option value="1" {{ request('online') === '1' ? 'selected' : '' }}>Online</option>
+                <option value="0" {{ request('online') === '0' ? 'selected' : '' }}>Offline</option>
+            </select>
 
-            <div class="um-table-wrap">
-                <table class="um-table">
-                    <thead>
-                        <tr>
-                            <th>User / Email / Wallet</th>
-                            <th>Role</th>
-                            <th>Phone</th>
-                            <th>Balance</th>
-                            <th>Status</th>
-                            <th>Bank / UPI</th>
-                            <th>Online</th>
-                            <th>Verification</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
+            <a href="{{ route('admin.users.index', ['type' => $type]) }}" class="ad-btn ad-btn-dark">
+                <i class="ti ti-refresh"></i>
+                Reset
+            </a>
+        </form>
 
-                    <tbody>
-                    @forelse($users as $user)
-                        <tr>
-                            <td>
-                                <div class="um-user-cell">
-                                    @if($user->photo)
-                                        <img src="{{ asset('storage/'.$user->photo) }}"
-                                             class="um-avatar"
-                                             onclick="umOpenLightbox('{{ asset('storage/'.$user->photo) }}')"
-                                             alt="{{ $user->name }}">
-                                    @else
-                                        <div class="um-avatar-placeholder">
-                                            {{ strtoupper(substr($user->name, 0, 1)) }}
-                                        </div>
-                                    @endif
+        <div class="ad-table-wrap">
+            <table class="ad-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Balance</th>
+                        <th>Status</th>
+                        <th>Bank / UPI</th>
+                        <th>Online</th>
+                        <th>Verify</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
 
-                                    <div>
-                                        <div class="um-user-name">{{ $user->name }}</div>
-                                        <div class="um-user-email">{{ $user->email }}</div>
-
-                                        <div class="um-wallet-pill">
-                                            <i class="ti ti-wallet"></i>
-                                            Wallet ID: {{ $user->wallet_id ?? 'N/A' }}
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-
-                            <td>
-                                @if($user->role === 'merchant')
-                                    <span class="um-badge um-badge-yellow">
-                                        <i class="ti ti-building-store"></i> Merchant
-                                    </span>
+                <tbody>
+                @forelse($users as $user)
+                    <tr>
+                        <td data-label="User">
+                            <div class="ad-user">
+                                @if($user->photo)
+                                    <img src="{{ asset('storage/'.$user->photo) }}"
+                                         class="ad-avatar"
+                                         alt="{{ $user->name }}">
                                 @else
-                                    <span class="um-badge um-badge-gray">
-                                        <i class="ti ti-user"></i> Client
-                                    </span>
-                                @endif
-                            </td>
-
-                            <td>{{ $user->phone ?? '—' }}</td>
-
-                            <td>
-                                <strong>LKR {{ number_format((float)($user->balance ?? 0), 2) }}</strong>
-                            </td>
-
-                            <td>
-                                @if(($user->status ?? 'active') === 'active')
-                                    <span class="um-badge um-badge-green">Active</span>
-                                @else
-                                    <span class="um-badge um-badge-red">Blocked</span>
-                                @endif
-                            </td>
-
-                            <td>
-                                <div style="font-size:12px;line-height:1.7;">
-                                    <strong>{{ $user->bank_name ?? '—' }}</strong>
-
-                                    @if($user->account_number)
-                                        <div style="color:var(--muted);">Acc: {{ $user->account_number }}</div>
-                                    @endif
-
-                                    @if($user->upi_id)
-                                        <div style="color:var(--muted);">UPI: {{ $user->upi_id }}</div>
-                                    @endif
-                                </div>
-                            </td>
-
-                            <td>
-                                @if($user->is_online)
-                                    <span class="um-badge um-badge-green">
-                                        <i class="ti ti-circle-filled"></i> Online
-                                    </span>
-                                @else
-                                    <span class="um-badge um-badge-gray">
-                                        <i class="ti ti-circle"></i> Offline
-                                    </span>
-                                @endif
-
-                                @if($user->last_seen_at)
-                                    <div style="font-size:10px;color:var(--muted);margin-top:5px;">
-                                        {{ $user->last_seen_at->format('d M, h:i A') }}
+                                    <div class="ad-avatar-empty">
+                                        {{ strtoupper(substr($user->name, 0, 1)) }}
                                     </div>
                                 @endif
-                            </td>
 
-                            <td>
-                                @if($user->is_verified)
-                                    <span class="um-badge um-badge-green">Verified</span>
-                                @else
-                                    <span class="um-badge um-badge-yellow">Not Verified</span>
-                                @endif
-                            </td>
+                                <div style="min-width:0;width:100%;">
+                                    <div class="ad-name">{{ $user->name }}</div>
+                                    <div class="ad-email">{{ $user->email }}</div>
 
-                            <td>
-                                <div class="um-actions">
-                                    <button type="button"
-                                            class="um-icon-btn um-icon-view"
-                                            title="View"
-                                            onclick="umOpenModal('umView{{ $user->id }}')">
-                                        <i class="ti ti-eye"></i>
-                                    </button>
+                                    <div class="ad-wallet">
+                                        <span>Wallet ID: {{ $user->wallet_id ?? 'N/A' }}</span>
+                                        @if($user->wallet_id)
+                                            <button type="button"
+                                                    class="ad-copy-btn"
+                                                    title="Copy wallet ID"
+                                                    data-copy="{{ $user->wallet_id }}">
+                                                <i class="ti ti-copy"></i>
+                                            </button>
+                                        @endif
+                                    </div>
 
-                                    <button type="button"
-                                            class="um-icon-btn um-icon-edit"
-                                            title="Edit"
-                                            onclick="umOpenModal('umEdit{{ $user->id }}')">
-                                        <i class="ti ti-edit"></i>
-                                    </button>
-
-                                    <form method="POST" action="{{ route('admin.users.toggle-verification', $user) }}">
-                                        @csrf
-                                        <button type="submit"
-                                                class="um-icon-btn {{ $user->is_verified ? 'um-icon-block' : 'um-icon-verify' }}"
-                                                title="{{ $user->is_verified ? 'Unverify' : 'Verify' }}"
-                                                onclick="return confirm('{{ $user->is_verified ? 'Mark as unverified?' : 'Verify this user?' }}')">
-                                            <i class="ti {{ $user->is_verified ? 'ti-x' : 'ti-check' }}"></i>
-                                        </button>
-                                    </form>
-
-                                    <form method="POST" action="{{ route('admin.users.toggle-status', $user) }}">
-                                        @csrf
-                                        <button type="submit"
-                                                class="um-icon-btn {{ ($user->status ?? 'active') === 'active' ? 'um-icon-block' : 'um-icon-verify' }}"
-                                                title="{{ ($user->status ?? 'active') === 'active' ? 'Block' : 'Activate' }}"
-                                                onclick="return confirm('{{ ($user->status ?? 'active') === 'active' ? 'Block this user?' : 'Activate this user?' }}')">
-                                            <i class="ti {{ ($user->status ?? 'active') === 'active' ? 'ti-ban' : 'ti-circle-check' }}"></i>
-                                        </button>
-                                    </form>
-
-                                    <form method="POST"
-                                          action="{{ route('admin.users.destroy', $user) }}"
-                                          onsubmit="return confirm('Delete {{ $user->name }}? This cannot be undone.')">
-                                        @csrf
-                                        @method('DELETE')
-
-                                        <button type="submit"
-                                                class="um-icon-btn um-icon-delete"
-                                                title="Delete">
-                                            <i class="ti ti-trash"></i>
-                                        </button>
-                                    </form>
+                                    <div class="ad-phone">
+                                        <i class="ti ti-phone"></i>
+                                        {{ $user->phone ?? '—' }}
+                                    </div>
                                 </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="9">
-                                <div class="um-empty">No {{ $type }}s found.</div>
-                            </td>
-                        </tr>
-                    @endforelse
-                    </tbody>
-                </table>
-            </div>
+                            </div>
+                        </td>
 
-            <div class="um-pagination">
-                {{ $users->appends(request()->query())->links() }}
-            </div>
-        </section>
+                        <td data-label="Balance">
+                            LKR {{ number_format((float)($user->balance ?? 0), 2) }}
+                        </td>
 
-        @foreach($users as $user)
-            <div class="um-modal-overlay" id="umView{{ $user->id }}">
-                <div class="um-modal">
-                    <div class="um-modal-hdr">
-                        <h2 class="um-modal-title">
-                            <i class="ti ti-eye"></i>
-                            User Details
-                        </h2>
-
-                        <button type="button" class="um-modal-close" onclick="umCloseModal('umView{{ $user->id }}')">
-                            <i class="ti ti-x"></i>
-                        </button>
-                    </div>
-
-                    <div class="um-modal-body">
-                        <div class="um-view-hero">
-                            @if($user->photo)
-                                <img src="{{ asset('storage/'.$user->photo) }}"
-                                     onclick="umOpenLightbox('{{ asset('storage/'.$user->photo) }}')"
-                                     alt="{{ $user->name }}">
+                        <td data-label="Status">
+                            @if(($user->status ?? 'active') === 'active')
+                                <span class="ad-badge ad-green">Active</span>
                             @else
-                                <div class="um-view-hero-placeholder">
-                                    {{ strtoupper(substr($user->name, 0, 1)) }}
-                                </div>
+                                <span class="ad-badge ad-red">Blocked</span>
+                            @endif
+                        </td>
+
+                        <td data-label="Bank / UPI">
+                            <strong>{{ $user->bank_name ?? '—' }}</strong>
+
+                            @if($user->account_number)
+                                <br>
+                                <span style="color:var(--muted);">
+                                    Acc: {{ $user->account_number }}
+                                </span>
                             @endif
 
-                            <div>
-                                <div class="um-view-hero-name">{{ $user->name }}</div>
-                                <div class="um-view-hero-meta">{{ $user->email }}</div>
+                            @if($user->upi_id)
+                                <br>
+                                <span style="color:var(--muted);">
+                                    UPI: {{ $user->upi_id }}
+                                </span>
+                            @endif
+                        </td>
 
-                                <div class="um-wallet-pill">
-                                    <i class="ti ti-wallet"></i>
-                                    Wallet ID: {{ $user->wallet_id ?? 'N/A' }}
+                        <td data-label="Online">
+                            @if($user->is_online)
+                                <span class="ad-badge ad-green">
+                                    <i class="ti ti-circle-filled"></i>
+                                    Online
+                                </span>
+                            @else
+                                <span class="ad-badge ad-gray">
+                                    <i class="ti ti-circle"></i>
+                                    Offline
+                                </span>
+                            @endif
+
+                            @if($user->last_seen_at)
+                                <div style="font-size:10px;color:var(--muted);margin-top:5px;">
+                                    {{ $user->last_seen_at->format('d M, h:i A') }}
                                 </div>
+                            @endif
+                        </td>
+
+                        <td data-label="Verify">
+                            @if($user->is_verified)
+                                <span class="ad-badge ad-green">Verified</span>
+                            @else
+                                <span class="ad-badge ad-yellow">Not Verified</span>
+                            @endif
+                        </td>
+
+                        <td data-label="Actions">
+                            <div class="ad-actions">
+                                <a href="{{ route('admin.users.edit', $user) }}"
+                                   class="ad-icon ad-edit"
+                                   title="Edit">
+                                    <i class="ti ti-edit"></i>
+                                </a>
+
+                                <form method="POST" action="{{ route('admin.users.toggle-verification', $user) }}">
+                                    @csrf
+                                    <button type="submit"
+                                            class="ad-icon {{ $user->is_verified ? 'ad-bad' : 'ad-good' }}"
+                                            title="{{ $user->is_verified ? 'Unverify' : 'Verify' }}"
+                                            onclick="return confirm('{{ $user->is_verified ? 'Mark as unverified?' : 'Verify this user?' }}')">
+                                        <i class="ti {{ $user->is_verified ? 'ti-x' : 'ti-check' }}"></i>
+                                    </button>
+                                </form>
+
+                                <form method="POST" action="{{ route('admin.users.toggle-status', $user) }}">
+                                    @csrf
+                                    <button type="submit"
+                                            class="ad-icon {{ ($user->status ?? 'active') === 'active' ? 'ad-bad' : 'ad-good' }}"
+                                            title="{{ ($user->status ?? 'active') === 'active' ? 'Block' : 'Activate' }}"
+                                            onclick="return confirm('{{ ($user->status ?? 'active') === 'active' ? 'Block this user?' : 'Activate this user?' }}')">
+                                        <i class="ti {{ ($user->status ?? 'active') === 'active' ? 'ti-ban' : 'ti-circle-check' }}"></i>
+                                    </button>
+                                </form>
+
+                                <form method="POST"
+                                      action="{{ route('admin.users.destroy', $user) }}"
+                                      onsubmit="return confirm('Delete {{ $user->name }}? This cannot be undone.')">
+                                    @csrf
+                                    @method('DELETE')
+
+                                    <button type="submit" class="ad-icon ad-bad" title="Delete">
+                                        <i class="ti ti-trash"></i>
+                                    </button>
+                                </form>
                             </div>
-                        </div>
-
-                        <div class="um-detail-grid">
-                            <div class="um-detail-item"><div class="um-detail-lbl">Name</div><div class="um-detail-val">{{ $user->name }}</div></div>
-                            <div class="um-detail-item"><div class="um-detail-lbl">Email</div><div class="um-detail-val">{{ $user->email }}</div></div>
-                            <div class="um-detail-item"><div class="um-detail-lbl">Wallet ID</div><div class="um-detail-val">{{ $user->wallet_id ?? 'N/A' }}</div></div>
-                            <div class="um-detail-item"><div class="um-detail-lbl">Role</div><div class="um-detail-val">{{ ucfirst($user->role) }}</div></div>
-                            <div class="um-detail-item"><div class="um-detail-lbl">Phone</div><div class="um-detail-val">{{ $user->phone ?? '—' }}</div></div>
-                            <div class="um-detail-item"><div class="um-detail-lbl">Balance</div><div class="um-detail-val">LKR {{ number_format((float)($user->balance ?? 0), 2) }}</div></div>
-                            <div class="um-detail-item"><div class="um-detail-lbl">Status</div><div class="um-detail-val">{{ ucfirst($user->status ?? 'active') }}</div></div>
-                            <div class="um-detail-item"><div class="um-detail-lbl">Verification</div><div class="um-detail-val">{{ $user->is_verified ? 'Verified' : 'Not Verified' }}</div></div>
-                            <div class="um-detail-item"><div class="um-detail-lbl">Online</div><div class="um-detail-val">{{ $user->is_online ? 'Online' : 'Offline' }}</div></div>
-                            <div class="um-detail-item"><div class="um-detail-lbl">Country</div><div class="um-detail-val">{{ $user->country ?? '—' }}</div></div>
-                            <div class="um-detail-item"><div class="um-detail-lbl">State</div><div class="um-detail-val">{{ $user->state ?? '—' }}</div></div>
-                            <div class="um-detail-item"><div class="um-detail-lbl">Address</div><div class="um-detail-val">{{ $user->address ?? '—' }}</div></div>
-                            <div class="um-detail-item"><div class="um-detail-lbl">Bank</div><div class="um-detail-val">{{ $user->bank_name ?? '—' }}</div></div>
-                            <div class="um-detail-item"><div class="um-detail-lbl">Account Number</div><div class="um-detail-val">{{ $user->account_number ?? '—' }}</div></div>
-                            <div class="um-detail-item"><div class="um-detail-lbl">UPI ID</div><div class="um-detail-val">{{ $user->upi_id ?? '—' }}</div></div>
-                        </div>
-                    </div>
-
-                    <div class="um-form-footer">
-                        <button type="button" class="um-btn um-btn-ghost" onclick="umCloseModal('umView{{ $user->id }}')">
-                            Close
-                        </button>
-
-                        <button type="button"
-                                class="um-btn um-btn-red"
-                                onclick="umCloseModal('umView{{ $user->id }}'); umOpenModal('umEdit{{ $user->id }}')">
-                            <i class="ti ti-edit"></i>
-                            Edit
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="um-modal-overlay" id="umEdit{{ $user->id }}">
-                <div class="um-modal">
-                    <div class="um-modal-hdr">
-                        <h2 class="um-modal-title">
-                            <i class="ti ti-user-edit"></i>
-                            Edit User
-                        </h2>
-
-                        <button type="button" class="um-modal-close" onclick="umCloseModal('umEdit{{ $user->id }}')">
-                            <i class="ti ti-x"></i>
-                        </button>
-                    </div>
-
-                    <form method="POST" action="{{ route('admin.users.update', $user) }}" enctype="multipart/form-data">
-                        @csrf
-                        @method('PUT')
-
-                        <div class="um-modal-body">
-                            <div class="um-form-grid">
-                                <div class="um-form-section">Basic Information</div>
-
-                                <div class="um-form-group">
-                                    <label class="um-form-label">Name *</label>
-                                    <input type="text" name="name" value="{{ old('name', $user->name) }}" class="um-form-control" required>
-                                </div>
-
-                                <div class="um-form-group">
-                                    <label class="um-form-label">Email *</label>
-                                    <input type="email" name="email" value="{{ old('email', $user->email) }}" class="um-form-control" required>
-                                </div>
-
-                                <div class="um-form-group">
-                                    <label class="um-form-label">Wallet ID</label>
-                                    <input type="text" value="{{ $user->wallet_id }}" class="um-form-control" readonly>
-                                </div>
-
-                                <div class="um-form-group">
-                                    <label class="um-form-label">Phone</label>
-                                    <input type="text" name="phone" value="{{ old('phone', $user->phone) }}" class="um-form-control">
-                                </div>
-
-                                <div class="um-form-group">
-                                    <label class="um-form-label">Password</label>
-                                    <input type="password" name="password" class="um-form-control" placeholder="Leave blank to keep old password">
-                                </div>
-
-                                <div class="um-form-group">
-                                    <label class="um-form-label">Role</label>
-                                    <select name="role" class="um-form-control">
-                                        <option value="client" {{ $user->role === 'client' ? 'selected' : '' }}>Client</option>
-                                        <option value="merchant" {{ $user->role === 'merchant' ? 'selected' : '' }}>Merchant</option>
-                                    </select>
-                                </div>
-
-                                <div class="um-form-group">
-                                    <label class="um-form-label">Status</label>
-                                    <select name="status" class="um-form-control">
-                                        <option value="active" {{ ($user->status ?? 'active') === 'active' ? 'selected' : '' }}>Active</option>
-                                        <option value="blocked" {{ ($user->status ?? 'active') === 'blocked' ? 'selected' : '' }}>Blocked</option>
-                                    </select>
-                                </div>
-
-                                <div class="um-form-group">
-                                    <label class="um-form-label">Balance</label>
-                                    <input type="number" step="0.01" name="balance" value="{{ old('balance', $user->balance) }}" class="um-form-control">
-                                </div>
-
-                                <div class="um-form-section">Address</div>
-
-                                <div class="um-form-group">
-                                    <label class="um-form-label">Country</label>
-                                    <input type="text" name="country" value="{{ old('country', $user->country) }}" class="um-form-control">
-                                </div>
-
-                                <div class="um-form-group">
-                                    <label class="um-form-label">State</label>
-                                    <input type="text" name="state" value="{{ old('state', $user->state) }}" class="um-form-control">
-                                </div>
-
-                                <div class="um-form-group full">
-                                    <label class="um-form-label">Address</label>
-                                    <input type="text" name="address" value="{{ old('address', $user->address) }}" class="um-form-control">
-                                </div>
-
-                                <div class="um-form-section">Bank / UPI</div>
-
-                                <div class="um-form-group">
-                                    <label class="um-form-label">Bank Name</label>
-                                    <input type="text" name="bank_name" value="{{ old('bank_name', $user->bank_name) }}" class="um-form-control">
-                                </div>
-
-                                <div class="um-form-group">
-                                    <label class="um-form-label">Branch</label>
-                                    <input type="text" name="branch" value="{{ old('branch', $user->branch) }}" class="um-form-control">
-                                </div>
-
-                                <div class="um-form-group">
-                                    <label class="um-form-label">Account Number</label>
-                                    <input type="text" name="account_number" value="{{ old('account_number', $user->account_number) }}" class="um-form-control">
-                                </div>
-
-                                <div class="um-form-group">
-                                    <label class="um-form-label">Account Type</label>
-                                    <input type="text" name="account_type" value="{{ old('account_type', $user->account_type) }}" class="um-form-control">
-                                </div>
-
-                                <div class="um-form-group">
-                                    <label class="um-form-label">IFSC</label>
-                                    <input type="text" name="ifsc" value="{{ old('ifsc', $user->ifsc) }}" class="um-form-control">
-                                </div>
-
-                                <div class="um-form-group">
-                                    <label class="um-form-label">UPI ID</label>
-                                    <input type="text" name="upi_id" value="{{ old('upi_id', $user->upi_id) }}" class="um-form-control">
-                                </div>
-
-                                <div class="um-form-section">Photos</div>
-
-                                <div class="um-form-group">
-                                    <label class="um-form-label">Profile Photo</label>
-                                    <input type="file" name="photo" class="um-form-control" accept="image/*" style="height:auto;padding:9px;">
-                                </div>
-
-                                <div class="um-form-group">
-                                    <label class="um-form-label">Aadhaar Photo</label>
-                                    <input type="file" name="aadhaar_photo" class="um-form-control" accept="image/*" style="height:auto;padding:9px;">
-                                </div>
-
-                                <div class="um-form-group">
-                                    <label class="um-form-label">UPI QR</label>
-                                    <input type="file" name="upi_qr" class="um-form-control" accept="image/*" style="height:auto;padding:9px;">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="um-form-footer">
-                            <button type="button" class="um-btn um-btn-ghost" onclick="umCloseModal('umEdit{{ $user->id }}')">
-                                Cancel
-                            </button>
-
-                            <button type="submit" class="um-btn um-btn-red">
-                                <i class="ti ti-device-floppy"></i>
-                                Save
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        @endforeach
-
-        <div class="um-lightbox" id="umLightbox" onclick="umCloseLightbox()">
-            <button type="button" class="um-lightbox-close" onclick="umCloseLightbox()">
-                <i class="ti ti-x"></i>
-            </button>
-            <img id="umLightboxImg" src="" alt="">
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="7">
+                            <div class="ad-empty">No {{ $type }}s found.</div>
+                        </td>
+                    </tr>
+                @endforelse
+                </tbody>
+            </table>
         </div>
 
-    </main>
+        <div class="ad-pagination">
+            {{ $users->appends(request()->query())->links() }}
+        </div>
+    </section>
 </div>
 
 <script>
-function umOpenModal(id) {
-    document.querySelectorAll('.um-modal-overlay.open').forEach(function(modal) {
-        modal.classList.remove('open');
-    });
-
-    var modal = document.getElementById(id);
-
-    if (modal) {
-        modal.classList.add('open');
-        document.body.style.overflow = 'hidden';
-    }
-}
-
-function umCloseModal(id) {
-    var modal = document.getElementById(id);
-
-    if (modal) {
-        modal.classList.remove('open');
-        document.body.style.overflow = '';
-    }
-}
-
-document.querySelectorAll('.um-modal-overlay').forEach(function(overlay) {
-    overlay.addEventListener('click', function(e) {
-        if (e.target === overlay) {
-            overlay.classList.remove('open');
-            document.body.style.overflow = '';
-        }
+document.querySelectorAll('.ad-auto-filter').forEach(function(el){
+    el.addEventListener('change',function(){
+        document.getElementById('adFilterForm').submit();
     });
 });
 
-function umOpenLightbox(src) {
-    var lightbox = document.getElementById('umLightbox');
-    var img = document.getElementById('umLightboxImg');
+let adSearchTimer=null;
+const adSearch=document.getElementById('adSearch');
 
-    if (lightbox && img) {
-        img.src = src;
-        lightbox.classList.add('open');
-        document.body.style.overflow = 'hidden';
-    }
+if(adSearch){
+    adSearch.addEventListener('keyup',function(){
+        clearTimeout(adSearchTimer);
+
+        adSearchTimer=setTimeout(function(){
+            document.getElementById('adFilterForm').submit();
+        },500);
+    });
 }
 
-function umCloseLightbox() {
-    var lightbox = document.getElementById('umLightbox');
+document.querySelectorAll('.ad-copy-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+        const value = btn.getAttribute('data-copy');
 
-    if (lightbox) {
-        lightbox.classList.remove('open');
-        document.body.style.overflow = '';
-    }
-}
+        navigator.clipboard.writeText(value).then(function(){
+            const icon = btn.querySelector('i');
+            btn.classList.add('ad-copied');
+            icon.className = 'ti ti-check';
 
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        document.querySelectorAll('.um-modal-overlay.open').forEach(function(modal) {
-            modal.classList.remove('open');
+            setTimeout(function(){
+                btn.classList.remove('ad-copied');
+                icon.className = 'ti ti-copy';
+            }, 1200);
         });
-
-        umCloseLightbox();
-        document.body.style.overflow = '';
-    }
-});
-
-document.querySelectorAll('.um-auto-filter').forEach(function(el) {
-    el.addEventListener('change', function() {
-        document.getElementById('umFilterForm').submit();
     });
 });
-
-var umSearchInput = document.getElementById('umSearch');
-var umSearchTimer = null;
-
-if (umSearchInput) {
-    umSearchInput.addEventListener('keyup', function() {
-        clearTimeout(umSearchTimer);
-
-        umSearchTimer = setTimeout(function() {
-            document.getElementById('umFilterForm').submit();
-        }, 500);
-    });
-}
 </script>
 
 @endsection
-

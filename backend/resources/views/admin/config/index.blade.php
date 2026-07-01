@@ -312,17 +312,14 @@
 
     <section class="cfg-hero">
         <div class="cfg-hero-inner">
-            <div class="cfg-eyebrow">Xynder Wallet Admin</div>
+         
 
             <h1 class="cfg-title-main">
                 System
                 <span>Config</span>
             </h1>
 
-            <div class="cfg-subtitle">
-                Manage USD and INR exchange rates, Xynder transaction fee,
-                network fee, and effective date history for wallet requests.
-            </div>
+        
         </div>
     </section>
 

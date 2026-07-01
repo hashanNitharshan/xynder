@@ -66,11 +66,6 @@ class ChatController extends Controller
 
         $user = $request->user();
 
-        $conversation->load([
-            'walletRequest',
-            'walletTransfer',
-        ]);
-
         if (method_exists($conversation, 'lockIfExpired')) {
             $conversation->lockIfExpired();
         }
@@ -105,6 +100,12 @@ class ChatController extends Controller
     public function send(Request $request, Conversation $conversation)
     {
         $this->adminOnly();
+
+        if (method_exists($conversation, 'isLocked') && $conversation->isLocked()) {
+            return back()->withErrors([
+                'message' => 'This chat is locked.',
+            ]);
+        }
 
         $data = $request->validate([
             'message' => 'nullable|string|max:2000',
@@ -144,38 +145,48 @@ class ChatController extends Controller
     {
         $this->adminOnly();
 
-        $conversation = Conversation::firstOrCreate(
-            ['wallet_transfer_id' => $walletTransfer->id],
-            [
+        if (! $walletTransfer->sender_id || ! $walletTransfer->receiver_id) {
+            return back()->withErrors([
+                'transfer' => 'This transfer does not have both sender and receiver.',
+            ]);
+        }
+
+        $conversation = Conversation::where('wallet_transfer_id', $walletTransfer->id)->first();
+
+        if (! $conversation) {
+            $conversation = Conversation::create([
                 'user_one_id' => $walletTransfer->sender_id,
                 'user_two_id' => $walletTransfer->receiver_id,
+                'wallet_transfer_id' => $walletTransfer->id,
                 'wallet_request_id' => null,
-            ]
-        );
+            ]);
+        }
 
-        return redirect()->route('admin.chats.show', $conversation);
+        return redirect()->route('admin.chats.show', ['conversation' => $conversation->id]);
     }
 
     public function openRequest(WalletRequest $walletRequest)
     {
         $this->adminOnly();
 
-        if (! $walletRequest->merchant_id) {
+        if (! $walletRequest->user_id || ! $walletRequest->merchant_id) {
             return back()->withErrors([
-                'merchant_id' => 'This request has no merchant assigned.',
+                'request' => 'This request does not have both client and merchant.',
             ]);
         }
 
-        $conversation = Conversation::firstOrCreate(
-            ['wallet_request_id' => $walletRequest->id],
-            [
+        $conversation = Conversation::where('wallet_request_id', $walletRequest->id)->first();
+
+        if (! $conversation) {
+            $conversation = Conversation::create([
                 'user_one_id' => $walletRequest->user_id,
                 'user_two_id' => $walletRequest->merchant_id,
+                'wallet_request_id' => $walletRequest->id,
                 'wallet_transfer_id' => null,
-            ]
-        );
+            ]);
+        }
 
-        return redirect()->route('admin.chats.show', $conversation);
+        return redirect()->route('admin.chats.show', ['conversation' => $conversation->id]);
     }
 
     private function storeAttachment(Request $request): array

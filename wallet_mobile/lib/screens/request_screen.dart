@@ -263,13 +263,19 @@ class _RequestScreenState extends State<RequestScreen>
     );
   }
 
+  // Goes back to the Dashboard home page instead of just popping
+  // one route (fixes back button not returning to dashboard).
+  void _goBackToDashboard() {
+    Navigator.popUntil(context, (route) => route.isFirst);
+  }
+
   Widget _topBar() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => Navigator.pop(context),
+            onTap: _goBackToDashboard,
             child: Container(
               width: 44,
               height: 44,
@@ -291,7 +297,7 @@ class _RequestScreenState extends State<RequestScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Wallet Request",
+                  "P2P Request",
                   style: TextStyle(
                     color: _C.textPrimary,
                     fontSize: 22,
@@ -342,133 +348,101 @@ class _RequestScreenState extends State<RequestScreen>
     );
   }
 
-  Widget _balanceHero() {
+  // ═══════════════════════════════════════════
+  //  SMALL BALANCE STRIP (Sell only, replaces big hero card)
+  // ═══════════════════════════════════════════
+  Widget _smallBalanceStrip() {
+    if (!_isSell) return const SizedBox.shrink();
+
     return FadeTransition(
       opacity: _fade,
       child: SlideTransition(
         position: _slide,
         child: Container(
-          margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-          padding: const EdgeInsets.all(24),
+          margin: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
           decoration: BoxDecoration(
             gradient: _C.gradientCard,
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(18),
             border: Border.all(color: const Color(0xff3a1500)),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
-              Row(
-                children: [
-                  ShaderMask(
-                    shaderCallback: (b) => _C.gradientAccent.createShader(b),
-                    child: const Text(
-                      "XYNDER WALLET",
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  gradient: _C.gradientAccent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.account_balance_wallet_rounded,
+                  color: Colors.black,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Available USD Balance",
                       style: TextStyle(
+                        color: Colors.white.withOpacity(0.45),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      "\$${_balance.toStringAsFixed(2)}",
+                      style: const TextStyle(
                         color: Colors.white,
+                        fontSize: 18,
                         fontWeight: FontWeight.w900,
-                        letterSpacing: 2,
-                        fontSize: 13,
                       ),
                     ),
+                  ],
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: _isVerified
+                      ? _C.green.withOpacity(0.14)
+                      : _C.amber.withOpacity(0.14),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: _isVerified
+                        ? _C.green.withOpacity(0.3)
+                        : _C.amber.withOpacity(0.3),
                   ),
-                  const Spacer(),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: _isVerified
-                          ? _C.green.withOpacity(0.14)
-                          : _C.amber.withOpacity(0.14),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: _isVerified
-                            ? _C.green.withOpacity(0.3)
-                            : _C.amber.withOpacity(0.3),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      _isVerified
+                          ? Icons.verified_rounded
+                          : Icons.warning_amber_rounded,
+                      size: 12,
+                      color: _isVerified ? _C.green : _C.amber,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      _isVerified ? "VERIFIED" : "UNVERIFIED",
+                      style: TextStyle(
+                        color: _isVerified ? _C.green : _C.amber,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w900,
                       ),
                     ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          _isVerified
-                              ? Icons.verified_rounded
-                              : Icons.warning_amber_rounded,
-                          size: 12,
-                          color: _isVerified ? _C.green : _C.amber,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          _isVerified ? "VERIFIED" : "UNVERIFIED",
-                          style: TextStyle(
-                            color: _isVerified ? _C.green : _C.amber,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 28),
-              Text(
-                "Available USD Balance",
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.45),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
+                  ],
                 ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                "\$${_balance.toStringAsFixed(2)}",
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 36,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  _rateChip("USD Rate", "\$${_usdRate.toStringAsFixed(2)}",
-                      _C.orange),
-                  const SizedBox(width: 10),
-                  _rateChip(
-                      "INR Rate", "₹${_inrRate.toStringAsFixed(2)}", _C.amber),
-                ],
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _rateChip(String label, String value, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white.withOpacity(0.07)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label,
-                style: const TextStyle(color: Colors.white38, fontSize: 10)),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.w900,
-                fontSize: 15,
-              ),
-            ),
-          ],
         ),
       ),
     );
@@ -524,60 +498,6 @@ class _RequestScreenState extends State<RequestScreen>
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _feeGrid() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
-      child: GridView.count(
-        crossAxisCount: 2,
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-        childAspectRatio: 1.7,
-        children: [
-          _feeBox("USD Value", "\$${_usdRate.toStringAsFixed(2)}", _C.orange,
-              Icons.monetization_on_rounded),
-          _feeBox("INR Rate", "₹${_inrRate.toStringAsFixed(2)}", _C.amber,
-              Icons.currency_rupee_rounded),
-          _feeBox("Xynder Fee", "₹${_fee.toStringAsFixed(2)}", _C.blue,
-              Icons.receipt_rounded),
-          _feeBox("Network Fee", "₹${_netFee.toStringAsFixed(2)}", _C.green,
-              Icons.wifi_tethering_rounded),
-        ],
-      ),
-    );
-  }
-
-  Widget _feeBox(String title, String value, Color color, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      decoration: BoxDecoration(
-        color: _C.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _C.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: color, size: 18),
-          const Spacer(),
-          Text(title,
-              style: const TextStyle(color: _C.textSecondary, fontSize: 10)),
-          const SizedBox(height: 3),
-          Text(
-            value,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: color,
-              fontSize: 14,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -680,6 +600,7 @@ class _RequestScreenState extends State<RequestScreen>
           _summaryRow("Type", _isSell ? "SELL USD" : "BUY USD",
               color: _isSell ? _C.red : _C.green),
           _summaryRow("USD Amount", "\$${_amount.toStringAsFixed(2)}"),
+          _summaryRow("USD Rate", "\$${_usdRate.toStringAsFixed(2)}"),
           _summaryRow("Converted INR", "₹${_converted.toStringAsFixed(2)}"),
           _summaryRow("Xynder Fee", "₹${_fee.toStringAsFixed(2)}"),
           _summaryRow("Network Fee", "₹${_netFee.toStringAsFixed(2)}"),
@@ -1086,9 +1007,8 @@ class _RequestScreenState extends State<RequestScreen>
             child: Column(
               children: [
                 _topBar(),
-                _balanceHero(),
+                _smallBalanceStrip(),
                 _typeSelector(),
-                _feeGrid(),
                 _formCard(),
               ],
             ),

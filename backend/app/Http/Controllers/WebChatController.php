@@ -7,9 +7,67 @@ use App\Models\Conversation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use App\Models\WalletRequest;
+use App\Models\WalletTransfer;
 
 class WebChatController extends Controller
 {
+
+
+public function showByRequest(Request $request, WalletRequest $walletRequest)
+{
+    $user = $request->user();
+
+    abort_unless(in_array($user->role, ['client', 'merchant'], true), 403);
+
+    abort_unless(in_array($user->id, [
+        (int) $walletRequest->user_id,
+        (int) $walletRequest->merchant_id,
+    ], true), 403);
+
+    $conversation = Conversation::firstOrCreate(
+        ['wallet_request_id' => $walletRequest->id],
+        [
+            'user_one_id' => $walletRequest->user_id,
+            'user_two_id' => $walletRequest->merchant_id,
+            'wallet_transfer_id' => null,
+            'chat_started_at' => now(),
+        ]
+    );
+
+    return redirect()->route(
+        $user->role === 'merchant' ? 'merchant.chats.show' : 'client.chats.show',
+        $conversation
+    );
+}
+
+public function showByTransfer(Request $request, WalletTransfer $walletTransfer)
+{
+    $user = $request->user();
+
+    abort_unless(in_array($user->role, ['client', 'merchant'], true), 403);
+
+    abort_unless(in_array($user->id, [
+        (int) $walletTransfer->sender_id,
+        (int) $walletTransfer->receiver_id,
+    ], true), 403);
+
+    $conversation = Conversation::firstOrCreate(
+        ['wallet_transfer_id' => $walletTransfer->id],
+        [
+            'user_one_id' => $walletTransfer->sender_id,
+            'user_two_id' => $walletTransfer->receiver_id,
+            'wallet_request_id' => null,
+            'chat_started_at' => now(),
+        ]
+    );
+
+    return redirect()->route(
+        $user->role === 'merchant' ? 'merchant.chats.show' : 'client.chats.show',
+        $conversation
+    );
+}
+
     public function clientIndex(Request $request)
     {
         abort_unless($request->user()->role === 'client', 403);

@@ -539,6 +539,59 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
+
+  // ═══════════════════════════════════════════
+  //  NORMAL PROFILE PHOTO UPLOAD SECTION
+  // ═══════════════════════════════════════════
+  Widget _profilePhotoSection() {
+    final photoUrl = ApiService.fixUrl(user["photo_url"]);
+
+    return _sectionCard(
+      title: "Profile Photo",
+      icon: Icons.image_rounded,
+      children: [
+        if (photoUrl.isNotEmpty && photo == null)
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: _C.bg,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: _C.border),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: Image.network(
+                photoUrl,
+                height: 160,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) {
+                  return const Padding(
+                    padding: EdgeInsets.all(18),
+                    child: Text(
+                      "Profile photo not available",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: _C.textSecondary),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        if (photo != null) _selectedBox("New profile photo selected"),
+        _uploadButton(
+          title: photo == null
+              ? "Upload / Change Profile Photo"
+              : "New Profile Photo Selected",
+          icon: Icons.photo_camera_rounded,
+          onTap: pickPhoto,
+          selected: photo != null,
+        ),
+      ],
+    );
+  }
+
   // ═══════════════════════════════════════════
   //  SECTION CARD
   // ═══════════════════════════════════════════
@@ -806,7 +859,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               child: Column(
                 children: [
                   _topBar(),
-                  _profileHero(),
+                  _profilePhotoSection(),
 
                   _sectionCard(
                     title: "Personal Details",

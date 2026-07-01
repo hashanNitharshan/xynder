@@ -127,93 +127,109 @@ class AuthController extends Controller
             'merchants' => $merchants,
         ]);
     }
+public function createRequest(Request $request)
+{
+    $user = $request->user();
 
-    public function createRequest(Request $request)
-    {
-        $user = $request->user();
-
-        if ($user->role !== 'client') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Only clients can create wallet requests.',
-            ], 403);
-        }
-
-        if (! $user->is_active || $user->status !== 'active') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Your account has been blocked.',
-            ], 403);
-        }
-
-        if ($response = $this->ensureVerified($user)) {
-            return $response;
-        }
-
-        $data = $request->validate([
-            'type'        => 'required|in:deposit,withdrawal',
-            'amount'      => 'required|numeric|min:1',
-            'merchant_id' => 'required|exists:users,id',
-            'note'        => 'nullable|string|max:500',
-        ]);
-
-        $merchant = User::where('id', $data['merchant_id'])
-            ->where('role', 'merchant')
-            ->where('status', 'active')
-            ->where('is_active', true)
-            ->where('is_verified', true)
-            ->where('is_online', true)
-            ->first();
-
-        if (! $merchant) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Selected merchant is offline or not available.',
-            ], 422);
-        }
-
-        $amount = round((float) $data['amount'], 2);
-
-        if ($data['type'] === 'withdrawal' && (float) $user->balance < $amount) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Insufficient USD balance.',
-            ], 422);
-        }
-
-        $config = SystemConfig::current();
-
-        $convertedAmount = round($amount * (float) $config->inr_rate, 2);
-        $fee             = round((float) $config->xynder_fee + (float) $config->network_fee, 2);
-        $totalAmount     = round($convertedAmount + $fee, 2);
-
-        $walletRequest = WalletRequest::create([
-            'user_id'          => $user->id,
-            'merchant_id'      => $merchant->id,
-            'type'             => $data['type'],
-            'amount'           => $amount,
-            'usd_rate'         => $config->usd_rate,
-            'inr_rate'         => $config->inr_rate,
-            'xynder_fee'       => $config->xynder_fee,
-            'network_fee'      => $config->network_fee,
-            'converted_amount' => $convertedAmount,
-            'fee'              => $fee,
-            'total_amount'     => $totalAmount,
-            'note'             => $data['note'] ?? null,
-            'payment_slip'     => null,
-            'status'           => 'pending',
-        ]);
-
+    if ($user->role !== 'client') {
         return response()->json([
-            'success'    => true,
-            'message'    => $data['type'] === 'withdrawal'
-                ? 'Sell request submitted successfully.'
-                : 'Buy request submitted successfully.',
-            'request'    => $walletRequest->fresh(['merchant']),
-            'merchant'   => $merchant,
-            'request_id' => $walletRequest->id,
-        ]);
+            'success' => false,
+            'message' => 'Only clients can create wallet requests.',
+        ], 403);
     }
+
+    if (! $user->is_active || $user->status !== 'active') {
+        return response()->json([
+            'success' => false,
+            'message' => 'Your account has been blocked.',
+        ], 403);
+    }
+
+    if ($response = $this->ensureVerified($user)) {
+        return $response;
+    }
+
+    $data = $request->validate([
+        'type'        => 'required|in:deposit,withdrawal',
+        'amount'      => 'required|numeric|min:1',
+        'merchant_id' => 'required|exists:users,id',
+        'note'        => 'nullable|string|max:500',
+    ]);
+
+    $merchant = User::where('id', $data['merchant_id'])
+        ->where('role', 'merchant')
+        ->where('status', 'active')
+        ->where('is_active', true)
+        ->where('is_verified', true)
+        ->where('is_online', true)
+        ->first();
+
+    if (! $merchant) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Selected merchant is offline or not available.',
+        ], 422);
+    }
+
+    $amount = round((float) $data['amount'], 2);
+
+    if ($data['type'] === 'withdrawal' && (float) $user->balance < $amount) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Insufficient USD balance.',
+        ], 422);
+    }
+
+    $config = SystemConfig::current();
+
+    $convertedAmount = round($amount * (float) $config->inr_rate, 2);
+
+    $xynderFee = round((float) $config->xynder_fee, 2);
+    $networkFee = round((float) $config->network_fee, 2);
+    $fee = round($xynderFee + $networkFee, 2);
+
+    if ($data['type'] === 'deposit') {
+        // Buy USD: client pays INR + fees
+        $totalAmount = round($convertedAmount + $fee, 2);
+    } else {
+        // Sell USD: client receives INR - fees
+        $totalAmount = round($convertedAmount - $fee, 2);
+    }
+
+    if ($data['type'] === 'withdrawal' && $totalAmount <= 0) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Amount is too small after fees.',
+        ], 422);
+    }
+
+    $walletRequest = WalletRequest::create([
+        'user_id'          => $user->id,
+        'merchant_id'      => $merchant->id,
+        'type'             => $data['type'],
+        'amount'           => $amount,
+        'usd_rate'         => $config->usd_rate,
+        'inr_rate'         => $config->inr_rate,
+        'xynder_fee'       => $xynderFee,
+        'network_fee'      => $networkFee,
+        'converted_amount' => $convertedAmount,
+        'fee'              => $fee,
+        'total_amount'     => $totalAmount,
+        'note'             => $data['note'] ?? null,
+        'payment_slip'     => null,
+        'status'           => 'pending',
+    ]);
+
+    return response()->json([
+        'success'    => true,
+        'message'    => $data['type'] === 'withdrawal'
+            ? 'Sell request submitted successfully.'
+            : 'Buy request submitted successfully.',
+        'request'    => $walletRequest->fresh(['merchant']),
+        'merchant'   => $merchant,
+        'request_id' => $walletRequest->id,
+    ]);
+}
 
     public function walletLookup(Request $request)
     {

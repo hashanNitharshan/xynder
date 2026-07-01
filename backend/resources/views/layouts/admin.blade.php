@@ -730,11 +730,6 @@
                         Transfers
                     </a>
 
-                    <a href="{{ route('admin.chats.index') }}"
-                       class="nav-item {{ request()->routeIs('admin.chats.*') ? 'active' : '' }}">
-                        <i class="ti ti-message-2"></i>
-                        Transaction Chats
-                    </a>
                 </div>
 
                 <div class="nav-section">
@@ -768,11 +763,7 @@
                         Transfer
                     </a>
 
-                    <a href="{{ $chatRoute }}"
-                       class="nav-item {{ request()->url() === $chatRoute ? 'active' : '' }}">
-                        <i class="ti ti-message-2"></i>
-                        Chat
-                    </a>
+                 
 
                     <a href="{{ $historyRoute }}"
                        class="nav-item {{ request()->url() === $historyRoute ? 'active' : '' }}">

@@ -252,7 +252,7 @@ X/
     │   │   ├── register_screen.dart
     │   │   ├── request_screen.dart
     │   │   ├── transaction_detail_screen.dart
-    │   │   └── wallet_transfer_screen.dart
+    │   │   └── wallet_transfer_screen.dart,history_screen.dart,settings_screen.dart
     │   │
     │   ├── services/
     │   │   ├── api_service.dart                             # UPDATED fixUrl /storage path

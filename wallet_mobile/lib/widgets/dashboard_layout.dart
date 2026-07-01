@@ -7,10 +7,11 @@ import '../services/api_service.dart';
 import '../screens/login_screen.dart';
 import '../widgets/bottom_nav.dart';
 import '../screens/wallet_transfer_screen.dart';
-import '../screens/chat_users_screen.dart';
 import '../screens/merchant_requests_screen.dart';
-import 'pinwheel_loader.dart';
 import '../screens/transaction_detail_screen.dart';
+import '../screens/chat_screen.dart';
+import '../screens/history_screen.dart';
+import '../screens/settings_screen.dart';
 
 // ─────────────────────────────────────────────────────────────
 //  DESIGN TOKENS
@@ -536,36 +537,7 @@ class _DashboardLayoutState extends State<DashboardLayout>
     );
   }
 
-  // ═══════════════════════════════════════════
-  //  CARD ACTION BUTTONS  (Manage / Transfer)
-  // ═══════════════════════════════════════════
-  Widget _cardActions() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-      child: Row(
-        children: [
-          Expanded(
-            child: _outlineBtn(
-              icon: Icons.credit_card_rounded,
-              label: "Manage Card",
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => ProfileScreen(user: user)),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _solidBtn(
-              icon: Icons.send_rounded,
-              label: "Transfer",
-              onTap: () => setState(() => currentIndex = 2),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+ 
 
   Widget _outlineBtn(
       {required IconData icon,
@@ -625,203 +597,6 @@ class _DashboardLayoutState extends State<DashboardLayout>
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  // ═══════════════════════════════════════════
-  //  RECENT CONTACTS ROW
-  // ═══════════════════════════════════════════
-  Widget _recentContacts() {
-    // Extract unique counterpart users from transfers
-    final seen = <int>{};
-    final contacts = <Map>[];
-    for (final t in transfers) {
-      final r = Map<String, dynamic>.from(t);
-      final myId = int.tryParse(user["id"]?.toString() ?? "0") ?? 0;
-      final senderId = int.tryParse(r["sender_id"]?.toString() ?? "0") ?? 0;
-      final receiverId =
-          int.tryParse(r["receiver_id"]?.toString() ?? "0") ?? 0;
-      final otherId = senderId == myId ? receiverId : senderId;
-      if (!seen.contains(otherId) && otherId != 0) {
-        seen.add(otherId);
-        contacts.add(r);
-      }
-    }
-
-    final List<Color> avatarColors = [
-      const Color(0xffFF4500),
-      const Color(0xffFFB800),
-      const Color(0xff3b82f6),
-      const Color(0xff22c55e),
-      const Color(0xffa855f7),
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _sectionHeader("Recent Contacts",
-            action: "Manage", onAction: () => setState(() => currentIndex = 3)),
-        SizedBox(
-          height: 90,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.only(left: 20, right: 12),
-            children: [
-              // Add new
-              GestureDetector(
-                onTap: () => setState(() => currentIndex = 2),
-                child: Column(
-                  children: [
-                    Container(
-                      width: 52,
-                      height: 52,
-                      margin: const EdgeInsets.only(right: 14),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                            color: _C.border, width: 1.5,
-                            style: BorderStyle.solid),
-                        color: _C.surface,
-                      ),
-                      child: const Icon(Icons.add_rounded,
-                          color: Colors.white54, size: 22),
-                    ),
-                    const SizedBox(height: 6),
-                    const Text("Add new",
-                        style: TextStyle(
-                            color: _C.textSecondary,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500)),
-                  ],
-                ),
-              ),
-
-              if (contacts.isEmpty)
-                Center(
-                  child: Text("No transfers yet",
-                      style:
-                          TextStyle(color: _C.textSecondary, fontSize: 12)),
-                )
-              else
-                ...contacts.take(8).toList().asMap().entries.map((e) {
-                  final idx = e.key;
-                  final r = Map<String, dynamic>.from(e.value);
-                  final myId =
-                      int.tryParse(user["id"]?.toString() ?? "0") ?? 0;
-                  final senderId =
-                      int.tryParse(r["sender_id"]?.toString() ?? "0") ?? 0;
-                  final otherName = senderId == myId
-                      ? (r["receiver_name"]?.toString() ?? "User")
-                      : (r["sender_name"]?.toString() ?? "User");
-                  final initials = otherName.isNotEmpty
-                      ? otherName[0].toUpperCase()
-                      : "?";
-                  return GestureDetector(
-                    onTap: () => setState(() => currentIndex = 3),
-                    child: Column(
-                      children: [
-                        Container(
-                          width: 52,
-                          height: 52,
-                          margin: const EdgeInsets.only(right: 14),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: avatarColors[idx % avatarColors.length]
-                                .withOpacity(0.18),
-                            border: Border.all(
-                              color: avatarColors[idx % avatarColors.length]
-                                  .withOpacity(0.3),
-                            ),
-                          ),
-                          child: Center(
-                            child: Text(
-                              initials,
-                              style: TextStyle(
-                                color:
-                                    avatarColors[idx % avatarColors.length],
-                                fontWeight: FontWeight.w900,
-                                fontSize: 18,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          otherName.split(" ").first,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ═══════════════════════════════════════════
-  //  QUICK ACTIONS
-  // ═══════════════════════════════════════════
-  Widget _quickActions() {
-    final role = user["role"]?.toString().toLowerCase() ?? "";
-
-    final List<_Action> actions = [
-      _Action(Icons.swap_horiz_rounded, "Transfer", _C.orange,
-          () => setState(() => currentIndex = 2)),
-      _Action(Icons.trending_up_rounded, role == "merchant" ? "Requests" : "Buy/Sell",
-          _C.amber, () => setState(() => currentIndex = 1)),
-      _Action(Icons.chat_bubble_outline_rounded, "Chats", _C.blue,
-          () => setState(() => currentIndex = 3)),
-      _Action(Icons.history_rounded, "History", const Color(0xffa855f7),
-          () => setState(() => currentIndex = 4)),
-    ];
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 18),
-        decoration: BoxDecoration(
-          color: _C.surface,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: _C.border),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: actions.map((a) {
-            return GestureDetector(
-              onTap: a.onTap,
-              child: Column(
-                children: [
-                  Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: a.color.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Icon(a.icon, color: a.color, size: 22),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    a.label,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }).toList(),
         ),
       ),
     );
@@ -987,13 +762,36 @@ class _DashboardLayoutState extends State<DashboardLayout>
             const SizedBox(height: 8),
             _miniProgressBar("Wallet Transfers", _C.blue, transferRatio),
             const SizedBox(height: 8),
-            _miniProgressBar("Pending Requests", _C.amber, pendingRatio),
+            _miniProgressBar("P2P Request", _C.amber, pendingRatio),
           ],
         ),
       ),
     );
   }
-
+Widget _cardActions() {
+  return Padding(
+    padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+    child: Row(
+      children: [
+        Expanded(
+          child: _outlineBtn(
+            icon: Icons.account_balance_wallet_rounded,
+            label: "Request",
+            onTap: () => setState(() => currentIndex = 1),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _solidBtn(
+            icon: Icons.send_rounded,
+            label: "Transfer",
+            onTap: () => setState(() => currentIndex = 2),
+          ),
+        ),
+      ],
+    ),
+  );
+}
   Widget _statTile({
     required String title,
     required String value,
@@ -1044,8 +842,6 @@ class _DashboardLayoutState extends State<DashboardLayout>
       ),
     );
   }
-
-  
 
   Widget _miniProgressBar(String label, Color color, double value) {
     return Column(
@@ -1128,36 +924,8 @@ class _DashboardLayoutState extends State<DashboardLayout>
     );
   }
 
-  Widget _transactionList({bool includeTransfers = false}) {
-    final latest = _activityItems(includeTransfers: includeTransfers).take(60).toList();
-
-    if (latest.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-        child: Container(
-          height: 120,
-          decoration: BoxDecoration(
-            color: _C.surface,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: _C.border),
-          ),
-          child: const Center(
-            child: Text(
-              "No transactions yet",
-              style: TextStyle(color: _C.textSecondary, fontSize: 13),
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Column(
-      children: latest.map((wrap) => _transactionTile(wrap)).toList(),
-    );
-  }
-
   Widget _recentActivityBox() {
-    final latest = _activityItems(includeTransfers: false).take(40).toList();
+    final latest = _activityItems(includeTransfers: true).take(40).toList();
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
@@ -1194,7 +962,11 @@ class _DashboardLayoutState extends State<DashboardLayout>
     );
   }
 
-  List<Map<String, dynamic>> _activityItems({bool includeTransfers = false}) {
+  List<Map<String, dynamic>> _activityItems({
+    bool includeTransfers = false,
+    String query = "",
+    bool newestFirst = true,
+  }) {
     final allItems = <Map<String, dynamic>>[];
 
     for (final r in requests) {
@@ -1216,10 +988,31 @@ class _DashboardLayoutState extends State<DashboardLayout>
     allItems.sort((a, b) {
       final ad = a["data"]["created_at"]?.toString() ?? "";
       final bd = b["data"]["created_at"]?.toString() ?? "";
-      return bd.compareTo(ad);
+      return newestFirst ? bd.compareTo(ad) : ad.compareTo(bd);
     });
 
-    return allItems;
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) return allItems;
+
+    return allItems.where((wrap) {
+      final sourceType = wrap["source_type"].toString();
+      final r = Map<String, dynamic>.from(wrap["data"]);
+      final type = r["type"]?.toString().toLowerCase() ?? "";
+
+      final title = sourceType == "transfer"
+          ? "wallet transfer"
+          : (type == "withdrawal" ? "sell usd" : "buy usd");
+      final status = sourceType == "transfer"
+          ? "completed"
+          : (r["status"]?.toString().toLowerCase() ?? "pending");
+      final id = r["id"]?.toString().toLowerCase() ?? "";
+      final amount = r["amount"]?.toString().toLowerCase() ?? "";
+
+      return title.contains(q) ||
+          status.contains(q) ||
+          id.contains(q) ||
+          amount.contains(q);
+    }).toList();
   }
 
   Widget _transactionTile(
@@ -1244,19 +1037,10 @@ class _DashboardLayoutState extends State<DashboardLayout>
             ? "SELL USD"
             : "BUY USD";
 
+    final idText = r["id"]?.toString() ?? "-";
+
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => TransactionDetailScreen(
-              item: r,
-              sourceType: sourceType,
-              user: user,
-            ),
-          ),
-        );
-      },
+      onTap: () => _showTransactionOptions(r, sourceType),
       child: Container(
         margin: removeOuterMargin
             ? EdgeInsets.zero
@@ -1293,13 +1077,26 @@ class _DashboardLayoutState extends State<DashboardLayout>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      color: _C.textPrimary,
-                      fontWeight: FontWeight.w800,
-                      fontSize: compact ? 13 : 14,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          color: _C.textPrimary,
+                          fontWeight: FontWeight.w800,
+                          fontSize: compact ? 13 : 14,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        "#$idText",
+                        style: const TextStyle(
+                          color: _C.textMuted,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 3),
                   Text(
@@ -1347,8 +1144,165 @@ class _DashboardLayoutState extends State<DashboardLayout>
       ),
     );
   }
+  Map<String, dynamic> _otherUserForChat(
+    Map<String, dynamic> item,
+    String sourceType,
+  ) {
+    final myId = user["id"]?.toString() ?? "";
+
+    if (sourceType == "transfer") {
+      final senderId = item["sender_id"]?.toString() ?? "";
+      final isSender = senderId == myId;
+
+      return {
+        "id": isSender ? item["receiver_id"] : item["sender_id"],
+        "name": isSender
+            ? (item["receiver_name"] ?? item["receiver"]?["name"] ?? "Receiver")
+            : (item["sender_name"] ?? item["sender"]?["name"] ?? "Sender"),
+        "wallet_id": isSender
+            ? (item["receiver_wallet_id"] ?? item["receiver"]?["wallet_id"])
+            : (item["sender_wallet_id"] ?? item["sender"]?["wallet_id"]),
+        "photo_url": isSender
+            ? (item["receiver_photo_url"] ?? item["receiver"]?["photo_url"])
+            : (item["sender_photo_url"] ?? item["sender"]?["photo_url"]),
+        "role": "user",
+      };
+    }
+
+    return {
+      "id": item["merchant_id"] ?? item["merchant"]?["id"],
+      "name": item["merchant_name"] ?? item["merchant"]?["name"] ?? "Merchant",
+      "wallet_id": item["merchant_wallet_id"] ?? item["merchant"]?["wallet_id"],
+      "photo_url": item["merchant_photo_url"] ?? item["merchant"]?["photo_url"],
+      "role": "merchant",
+    };
+  }
+
+  Future<void> _showTransactionOptions(
+  Map<String, dynamic> item,
+  String sourceType,
+) async {
+  await showModalBottomSheet(
+    context: context,
+    backgroundColor: _C.surfaceAlt,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    ),
+    builder: (_) {
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "Transaction Options",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 18),
+
+              _optionTile(
+                icon: Icons.receipt_long_rounded,
+                title: "Summary / Receipt",
+                sub: "View transaction details",
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TransactionDetailScreen(
+                        item: item,
+                        sourceType: sourceType,
+                        user: user,
+                      ),
+                    ),
+                  );
+                },
+              ),
+
+              const SizedBox(height: 10),
+
+              _optionTile(
+                icon: Icons.chat_rounded,
+                title: "Chat",
+                sub: "Open transaction chat",
+                onTap: () {
+                  Navigator.pop(context);
+
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ChatScreen(
+                        chatType: sourceType,
+                        chatId: item["id"].toString(),
+                        otherUser: _otherUserForChat(item, sourceType),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+Widget _optionTile({
+  required IconData icon,
+  required String title,
+  required String sub,
+  required VoidCallback onTap,
+}) {
+  return GestureDetector(
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _C.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _C.border),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: _C.orange.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, color: _C.orange, size: 21),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800)),
+                Text(sub,
+                    style: const TextStyle(
+                        color: _C.textSecondary, fontSize: 12)),
+              ],
+            ),
+          ),
+          const Icon(Icons.arrow_forward_ios_rounded,
+              color: _C.textSecondary, size: 14),
+        ],
+      ),
+    ),
+  );
+}
   // ═══════════════════════════════════════════
-  //  HELPERS  // ═══════════════════════════════════════════
   //  HELPERS
   // ═══════════════════════════════════════════
   Widget _sectionHeader(String title,
@@ -1384,44 +1338,6 @@ class _DashboardLayoutState extends State<DashboardLayout>
     );
   }
 
-  void _showSnack(String msg, {bool success = true}) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      backgroundColor: success ? _C.green : _C.red,
-      content: Text(msg),
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    ));
-  }
-
-  Widget _dialogInput(TextEditingController ctrl, String label,
-      {bool obscure = false, int maxLines = 1}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: TextField(
-        controller: ctrl,
-        obscureText: obscure,
-        maxLines: maxLines,
-        style: const TextStyle(color: Colors.white),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: const TextStyle(color: _C.textSecondary),
-          filled: true,
-          fillColor: _C.bg,
-          border:
-              OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: _C.border),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: _C.orange),
-          ),
-        ),
-      ),
-    );
-  }
-
   // ═══════════════════════════════════════════
   //  HOME PAGE
   // ═══════════════════════════════════════════
@@ -1438,12 +1354,10 @@ class _DashboardLayoutState extends State<DashboardLayout>
             _heroCard(),
             _cardActions(),
             const SizedBox(height: 20),
-            _quickActions(),
-            _recentContacts(),
             _statsCard(),
             _sectionHeader("Recent Activity",
                 action: "See all",
-                onAction: () => setState(() => currentIndex = 4)),
+                onAction: () => setState(() => currentIndex = 3)),
             _recentActivityBox(),
             const SizedBox(height: 24),
           ],
@@ -1453,380 +1367,11 @@ class _DashboardLayoutState extends State<DashboardLayout>
   }
 
   // ═══════════════════════════════════════════
-  //  HISTORY PAGE
-  // ═══════════════════════════════════════════
-  Widget _historyPage() {
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          _topBar(),
-          _sectionHeader("Transaction History"),
-          _transactionList(includeTransfers: true),
-          const SizedBox(height: 24),
-        ],
-      ),
-    );
-  }
-
-  // ═══════════════════════════════════════════
-  //  SETTINGS PAGE
-  // ═══════════════════════════════════════════
-  Widget _settingsTile({
-    required IconData icon,
-    required String label,
-    required String sub,
-    required VoidCallback onTap,
-    Color color = _C.orange,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(20, 0, 20, 10),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: _C.surface,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: _C.border),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(13),
-              ),
-              child: Icon(icon, color: color, size: 20),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label,
-                      style: const TextStyle(
-                          color: _C.textPrimary,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14)),
-                  Text(sub,
-                      style: const TextStyle(
-                          color: _C.textSecondary, fontSize: 12)),
-                ],
-              ),
-            ),
-            const Icon(Icons.arrow_forward_ios_rounded,
-                color: _C.textSecondary, size: 14),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _showChangePassword() async {
-    final curr = TextEditingController();
-    final nw = TextEditingController();
-    final cf = TextEditingController();
-    bool loading = false;
-    await showDialog(
-      context: context,
-      builder: (_) => StatefulBuilder(builder: (ctx, set) {
-        return AlertDialog(
-          backgroundColor: _C.surfaceAlt,
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20)),
-          title: const Text("Change Password",
-              style: TextStyle(color: Colors.white)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _dialogInput(curr, "Current Password", obscure: true),
-              _dialogInput(nw, "New Password", obscure: true),
-              _dialogInput(cf, "Confirm Password", obscure: true),
-            ],
-          ),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text("Cancel")),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _C.orange,
-                foregroundColor: Colors.black,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: loading
-                  ? null
-                  : () async {
-                      set(() => loading = true);
-                      final res = await ApiService.changePassword(
-                        currentPassword: curr.text.trim(),
-                        newPassword: nw.text.trim(),
-                        confirmPassword: cf.text.trim(),
-                      );
-                      set(() => loading = false);
-                      if (!ctx.mounted) return;
-                      Navigator.pop(ctx);
-                      _showSnack(
-                        res["message"] ??
-                            (res["success"] == true
-                                ? "Password changed"
-                                : "Failed"),
-                        success: res["success"] == true,
-                      );
-                    },
-              child: loading
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.black))
-                  : const Text("Save"),
-            ),
-          ],
-        );
-      }),
-    );
-  }
-
-  Future<void> _showSupport() async {
-    final nameCtrl =
-        TextEditingController(text: user["name"]?.toString() ?? "");
-    final emailCtrl =
-        TextEditingController(text: user["email"]?.toString() ?? "");
-    final msgCtrl = TextEditingController();
-    bool loading = false;
-    List tickets = [];
-    final td = await ApiService.supportTickets();
-    if (td["success"] == true) tickets = td["tickets"] ?? [];
-
-    await showDialog(
-      context: context,
-      builder: (_) => StatefulBuilder(builder: (ctx, set) {
-        return AlertDialog(
-          backgroundColor: _C.surfaceAlt,
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20)),
-          title: const Text("Help & Support",
-              style: TextStyle(color: Colors.white)),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (tickets.isNotEmpty) ...[
-                    const Text("Your Tickets",
-                        style: TextStyle(
-                            color: Colors.white70,
-                            fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 8),
-                    ...tickets.take(3).map((t) {
-                      final ti = Map<String, dynamic>.from(t);
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: _C.bg,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: _C.border),
-                        ),
-                        child: Text(
-                          "${ti["message"]}\nStatus: ${ti["status"]}",
-                          style: const TextStyle(
-                              color: Colors.white70, fontSize: 12),
-                        ),
-                      );
-                    }),
-                    const SizedBox(height: 12),
-                  ],
-                  _dialogInput(nameCtrl, "Name"),
-                  _dialogInput(emailCtrl, "Email"),
-                  _dialogInput(msgCtrl, "Message", maxLines: 4),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text("Cancel")),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _C.orange,
-                foregroundColor: Colors.black,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: loading
-                  ? null
-                  : () async {
-                      set(() => loading = true);
-                      final res = await ApiService.createSupportTicket(
-                        name: nameCtrl.text.trim(),
-                        email: emailCtrl.text.trim(),
-                        message: msgCtrl.text.trim(),
-                      );
-                      set(() => loading = false);
-                      if (!ctx.mounted) return;
-                      Navigator.pop(ctx);
-                      _showSnack(
-                        res["message"] ??
-                            (res["success"] == true
-                                ? "Ticket submitted"
-                                : "Failed"),
-                        success: res["success"] == true,
-                      );
-                    },
-              child: loading
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.black))
-                  : const Text("Submit"),
-            ),
-          ],
-        );
-      }),
-    );
-  }
-
-  Widget _settingsPage() {
-    final photoUrl = ApiService.fixUrl(user["photo_url"]);
-    final name = user["name"]?.toString() ?? "User";
-    final email = user["email"]?.toString() ?? "";
-    final phone = user["phone"]?.toString() ?? "";
-
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          _topBar(),
-          _sectionHeader("Settings"),
-
-          // Profile card
-          GestureDetector(
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => ProfileScreen(user: user)),
-            ).then((_) => refreshProfile()),
-            child: Container(
-              margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                gradient: _C.gradientCard,
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(color: const Color(0xff3a1500)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: _C.orange, width: 2),
-                    ),
-                    child: CircleAvatar(
-                      radius: 30,
-                      backgroundColor: _C.surfaceAlt,
-                      backgroundImage: photoUrl.isNotEmpty
-                          ? NetworkImage(photoUrl)
-                          : null,
-                      child: photoUrl.isEmpty
-                          ? const Icon(Icons.person,
-                              color: Colors.white54, size: 28)
-                          : null,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(name,
-                            style: const TextStyle(
-                                color: _C.textPrimary,
-                                fontSize: 17,
-                                fontWeight: FontWeight.w800)),
-                        if (phone.isNotEmpty)
-                          Text(phone,
-                              style: const TextStyle(
-                                  color: _C.textSecondary, fontSize: 12)),
-                        if (email.isNotEmpty)
-                          Text(email,
-                              style: const TextStyle(
-                                  color: _C.textSecondary, fontSize: 12)),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(
-                              isVerified
-                                  ? Icons.verified_rounded
-                                  : Icons.warning_amber_rounded,
-                              color: isVerified ? _C.green : _C.amber,
-                              size: 14,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              isVerified ? "Verified" : "Unverified",
-                              style: TextStyle(
-                                color: isVerified ? _C.green : _C.amber,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(Icons.arrow_forward_ios_rounded,
-                      color: _C.textSecondary, size: 14),
-                ],
-              ),
-            ),
-          ),
-
-          _settingsTile(
-            icon: Icons.payment_rounded,
-            label: "Payment Methods",
-            sub: "Bank, UPI and card details",
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => ProfileScreen(user: user)),
-            ).then((_) => refreshProfile()),
-          ),
-          _settingsTile(
-            icon: Icons.lock_reset_rounded,
-            label: "Change Password",
-            sub: "Update your account password",
-            onTap: _showChangePassword,
-          ),
-          _settingsTile(
-            icon: Icons.support_agent_rounded,
-            label: "Help & Support",
-            sub: "Raise a support ticket",
-            onTap: _showSupport,
-          ),
-          _settingsTile(
-            icon: Icons.logout_rounded,
-            label: "Logout",
-            sub: "Sign out from your account",
-            color: _C.red,
-            onTap: logout,
-          ),
-          const SizedBox(height: 30),
-        ],
-      ),
-    );
-  }
-
-  // ═══════════════════════════════════════════
   //  BODY ROUTER
   // ═══════════════════════════════════════════
   Widget _body() {
     final role = user["role"]?.toString().toLowerCase() ?? "";
+
     switch (currentIndex) {
       case 0:
         return _homePage();
@@ -1837,11 +1382,9 @@ class _DashboardLayoutState extends State<DashboardLayout>
       case 2:
         return WalletTransferScreen(user: user, onSuccess: refreshProfile);
       case 3:
-        return const ChatUsersScreen();
-      case 4:
-        return _historyPage();
+        return HistoryScreen(user: user);
       default:
-        return _settingsPage();
+        return SettingsScreen(user: user, onProfileUpdated: refreshProfile);
     }
   }
 
@@ -1855,19 +1398,12 @@ class _DashboardLayoutState extends State<DashboardLayout>
       body: SafeArea(child: _body()),
       bottomNavigationBar: BottomNav(
         currentIndex: currentIndex,
-        onTap: (i) => setState(() => currentIndex = i),
+        onTap: (i) => BottomNav.handleTap(
+          context,
+          i,
+          setState: (tab) => setState(() => currentIndex = tab),
+        ),
       ),
     );
   }
-}
-
-// ─────────────────────────────────────────────────────────────
-//  HELPERS
-// ─────────────────────────────────────────────────────────────
-class _Action {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-  _Action(this.icon, this.label, this.color, this.onTap);
 }

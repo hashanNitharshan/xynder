@@ -500,16 +500,14 @@ details[open] .client-arrow{
 
     <section class="client-set-hero">
         <div class="client-set-content">
-            <div class="client-set-eyebrow">Xynder Wallet</div>
+       
 
             <h1 class="client-set-title">
                 Client
                 <span>Settings</span>
             </h1>
 
-            <div class="client-set-sub">
-                Manage your profile, payment methods, password, support tickets, and account session.
-            </div>
+          
         </div>
     </section>
 

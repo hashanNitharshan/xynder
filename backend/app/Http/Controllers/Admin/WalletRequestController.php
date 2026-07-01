@@ -57,11 +57,12 @@ class WalletRequestController extends Controller
         $requests = $query->latest()->paginate(30)->withQueryString();
 
         $stats = [
-            'pending' => WalletRequest::where('status', 'pending')->count(),
-            'approved' => WalletRequest::where('status', 'approved')->count(),
-            'rejected' => WalletRequest::where('status', 'rejected')->count(),
-            'total_volume' => WalletRequest::where('status', 'approved')->sum('total_amount'),
-        ];
+    'pending' => WalletRequest::where('status', 'pending')->count(),
+    'approved' => WalletRequest::where('status', 'approved')->count(),
+    'rejected' => WalletRequest::where('status', 'rejected')->count(),
+    'closed' => WalletRequest::where('status', 'closed')->count(),
+    'total_volume' => WalletRequest::where('status', 'approved')->sum('total_amount'),
+];
 
         return view('admin.wallet_requests.index', compact('requests', 'stats'));
     }
@@ -143,4 +144,22 @@ class WalletRequestController extends Controller
 
         return back()->with('success', 'Request rejected successfully.');
     }
+
+
+    public function close(WalletRequest $walletRequest)
+{
+    $this->adminOnly();
+
+    if ($walletRequest->status !== 'pending') {
+        return back()->withErrors('Only pending requests can be closed.');
+    }
+
+    $walletRequest->update([
+        'status' => 'closed',
+        'approved_by' => Auth::id(),
+        'approved_at' => now(),
+    ]);
+
+    return back()->with('success', 'Request closed successfully.');
+}
 }

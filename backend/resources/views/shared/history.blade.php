@@ -427,17 +427,14 @@
 
     <section class="hist-hero">
         <div class="hist-hero-content">
-            <div class="hist-eyebrow">Xynder Wallet</div>
+           
 
             <h1 class="hist-title">
                 Transaction
                 <span>History</span>
             </h1>
 
-            <div class="hist-sub">
-                View all wallet requests and wallet transfers in one clean timeline.
-                Track transaction status, sender, receiver, merchant details, and full USD volume.
-            </div>
+          
         </div>
     </section>
 

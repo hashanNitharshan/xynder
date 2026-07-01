@@ -219,6 +219,12 @@ Future<void> sendTransfer() async {
   }
 }
 
+  // Goes back to the Dashboard home page instead of just popping
+  // one route (this screen is shown as a dashboard tab, not pushed).
+  void _goBackToDashboard() {
+    Navigator.popUntil(context, (route) => route.isFirst);
+  }
+
   // ═══════════════════════════════════════════
   //  TOP BAR
   // ═══════════════════════════════════════════
@@ -228,7 +234,7 @@ Future<void> sendTransfer() async {
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => Navigator.maybePop(context),
+            onTap: _goBackToDashboard,
             child: Container(
               width: 44,
               height: 44,
@@ -299,181 +305,6 @@ Future<void> sendTransfer() async {
               ),
             ),
         ],
-      ),
-    );
-  }
-
-  // ═══════════════════════════════════════════
-  //  HERO WALLET CARD
-  // ═══════════════════════════════════════════
-  Widget _walletHero() {
-    final walletId = widget.user["wallet_id"]?.toString() ?? "Not created";
-    final balance = toDouble(widget.user["balance"]);
-
-    return FadeTransition(
-      opacity: _fade,
-      child: SlideTransition(
-        position: _slide,
-        child: Container(
-          margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            gradient: _C.gradientCard,
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: const Color(0xff3a1500)),
-          ),
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(28),
-                    gradient: _C.gradientGlow,
-                  ),
-                ),
-              ),
-              Positioned(
-                top: -50,
-                right: -50,
-                child: Container(
-                  width: 160,
-                  height: 160,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: _C.orange.withOpacity(0.05),
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: -30,
-                right: 70,
-                child: Container(
-                  width: 90,
-                  height: 90,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: _C.amber.withOpacity(0.05),
-                  ),
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      ShaderMask(
-                        shaderCallback: (b) => _C.gradientAccent.createShader(b),
-                        child: const Text(
-                          "XYNDER TRANSFER",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 2,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                      const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isVerified
-                              ? _C.amber.withOpacity(0.14)
-                              : _C.red.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: isVerified
-                                ? _C.amber.withOpacity(0.30)
-                                : _C.red.withOpacity(0.30),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              isVerified
-                                  ? Icons.verified_rounded
-                                  : Icons.warning_amber_rounded,
-                              color: isVerified ? _C.amber : _C.red,
-                              size: 12,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              isVerified ? "VERIFIED" : "UNVERIFIED",
-                              style: TextStyle(
-                                color: isVerified ? _C.amber : _C.red,
-                                fontSize: 9,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 28),
-                  Text(
-                    "Available USD Balance",
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.45),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    "\$${balance.toStringAsFixed(3)}",
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 36,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -0.8,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.white.withOpacity(0.07)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "My Wallet ID",
-                          style: TextStyle(
-                            color: Colors.white38,
-                            fontSize: 10,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          walletId,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: _C.amber,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 15,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -937,7 +768,6 @@ void _showSuccessDialog({
           child: Column(
             children: [
               _topBar(),
-              _walletHero(),
               _transferForm(),
             ],
           ),

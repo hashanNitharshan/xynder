@@ -23,7 +23,7 @@ class WalletRequest extends Model
         'payment_slip',
         'approved_by',
         'approved_at',
-         'transaction_no',
+        'transaction_no',
     ];
 
     protected $appends = ['payment_slip_url'];
@@ -45,15 +45,21 @@ class WalletRequest extends Model
 
     public function getPaymentSlipUrlAttribute(): ?string
     {
-        return $this->payment_slip ? url('/api/storage/' . $this->payment_slip) : null;
+        return $this->payment_slip ? url('/storage/' . $this->payment_slip) : null;
     }
+
+    public function getIsClosedAttribute(): bool
+    {
+        return $this->status === 'closed';
+    }
+
     protected static function booted(): void
-{
-    static::created(function ($request) {
-        if (!$request->transaction_no) {
-            $request->transaction_no = 'TNS' . str_pad($request->id, 9, '0', STR_PAD_LEFT);
-            $request->saveQuietly();
-        }
-    });
-}
+    {
+        static::created(function ($request) {
+            if (! $request->transaction_no) {
+                $request->transaction_no = 'TNS' . str_pad($request->id, 9, '0', STR_PAD_LEFT);
+                $request->saveQuietly();
+            }
+        });
+    }
 }

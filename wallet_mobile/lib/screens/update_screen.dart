@@ -8,12 +8,12 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../services/api_service.dart';
-import '../services/update_service.dart'; // for markVersionSkipped()
-import 'login_screen.dart';              // XynderLogo
+import '../services/update_service.dart';
+import 'login_screen.dart';
 
 /// Works in two modes:
 ///   Mode 1 — Called by UpdateService: all params supplied, no extra fetch.
-///   Mode 2 — Called from nav bar:     no params, fetches /version itself.
+///   Mode 2 — Called from Settings:    no params, fetches /version itself.
 class UpdateScreen extends StatefulWidget {
   final String? currentVersion;
   final String? serverVersion;
@@ -35,7 +35,6 @@ class UpdateScreen extends StatefulWidget {
 class _UpdateScreenState extends State<UpdateScreen>
     with SingleTickerProviderStateMixin {
 
-  // ── Design tokens ──────────────────────────────────────────────────────────
   static const _bg      = Color(0xff0a0a0a);
   static const _surface = Color(0xff141414);
   static const _border  = Color(0xff2a2a2a);
@@ -60,30 +59,25 @@ class _UpdateScreenState extends State<UpdateScreen>
     colors: [Color(0x55FF4500), Color(0x22FF8C00), Color(0x00000000)],
   );
 
-  // ── Version data ───────────────────────────────────────────────────────────
   String _currentVer = '';
   String _serverVer  = '';
   String _apkUrl     = '';
   bool   _forceUpdt  = false;
 
-  // ── Screen state ───────────────────────────────────────────────────────────
   bool _fetching = false;
   bool _fetchErr = false;
   bool _upToDate = false;
 
-  // ── Download state ─────────────────────────────────────────────────────────
   double _progress    = 0;
   bool   _downloading = false;
   bool   _hasError    = false;
   bool   _installed   = false;
   String _status      = '';
 
-  // ── Animation ──────────────────────────────────────────────────────────────
   late AnimationController _animCtrl;
   late Animation<double>   _fade;
   late Animation<Offset>   _slide;
 
-  // ── Init ───────────────────────────────────────────────────────────────────
   @override
   void initState() {
     super.initState();
@@ -105,7 +99,7 @@ class _UpdateScreenState extends State<UpdateScreen>
       _forceUpdt  = widget.forceUpdate;
       _animCtrl.forward();
     } else {
-      // Mode 2: nav bar — fetch ourselves
+      // Mode 2: Settings — fetch ourselves
       _fetchVersionInfo();
     }
   }
@@ -116,7 +110,6 @@ class _UpdateScreenState extends State<UpdateScreen>
     super.dispose();
   }
 
-  // ── Network ────────────────────────────────────────────────────────────────
   Future<void> _fetchVersionInfo() async {
     setState(() { _fetching = true; _fetchErr = false; _upToDate = false; });
 
@@ -135,14 +128,18 @@ class _UpdateScreenState extends State<UpdateScreen>
 
       if (data['success'] == true) {
         final sv = data['version']?.toString() ?? '0.0.0';
+        final isNewer = UpdateService.isNewer(sv, _currentVer);
+
         setState(() {
           _serverVer = sv;
           _apkUrl    = data['apk_url']?.toString() ?? '';
           _forceUpdt = data['force_update'] == true;
           _fetching  = false;
-          // NOTE: When opened from nav bar, skip prefs are NOT checked —
-          // the user explicitly wants to see what's available.
-          _upToDate  = !UpdateService.isNewer(sv, _currentVer);
+          // Treat as "up to date" if server isn't newer than installed.
+          // This naturally covers the post-install case: once the user
+          // actually opens the newly installed APK, PackageInfo reports
+          // the new version, so server is no longer "newer" → up to date.
+          _upToDate  = !isNewer;
         });
       } else {
         setState(() { _fetching = false; _fetchErr = true; });
@@ -154,15 +151,11 @@ class _UpdateScreenState extends State<UpdateScreen>
     _animCtrl..reset()..forward();
   }
 
-  // ── Dismiss (Later) ────────────────────────────────────────────────────────
-  /// Saves this version to SharedPreferences so UpdateService won't
-  /// show the auto-check screen again for the same version.
   Future<void> _dismissUpdate() async {
     await UpdateService.markVersionSkipped(_serverVer);
     if (mounted) Navigator.pop(context);
   }
 
-  // ── Download + Install ─────────────────────────────────────────────────────
   Future<void> _downloadAndInstall() async {
     setState(() {
       _downloading = true;
@@ -213,8 +206,10 @@ class _UpdateScreenState extends State<UpdateScreen>
       if (result.type != ResultType.done) {
         _setError('Install failed: ${result.message}');
       } else {
-        // ✅ Clear skip record — after install the app restarts fresh.
-        await UpdateService.clearSkip();
+        // Mark this server version as handled so neither the auto-check
+        // nor the Settings button nags about it again before the user
+        // actually opens the newly installed APK.
+        await UpdateService.markVersionSkipped(_serverVer);
         setState(() {
           _installed   = true;
           _downloading = false;
@@ -235,7 +230,6 @@ class _UpdateScreenState extends State<UpdateScreen>
         _progress    = 0;
       });
 
-  // ── Widgets ────────────────────────────────────────────────────────────────
   Widget _glowBall(double size, double opacity, Color color) => Container(
         width: size, height: size,
         decoration: BoxDecoration(
@@ -379,7 +373,6 @@ class _UpdateScreenState extends State<UpdateScreen>
     );
   }
 
-  // ── Progress box ───────────────────────────────────────────────────────────
   Widget _statusBox() {
     final iconData  = _hasError
         ? Icons.error_outline_rounded
@@ -455,8 +448,6 @@ class _UpdateScreenState extends State<UpdateScreen>
       ],
     );
   }
-
-  // ── Content states ─────────────────────────────────────────────────────────
 
   Widget _loadingBody() => const SizedBox(
         height: 260,
@@ -545,7 +536,6 @@ class _UpdateScreenState extends State<UpdateScreen>
 
   Widget _updateBody() => Column(
         children: [
-          // Badge
           Container(
             padding:
                 const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
@@ -584,8 +574,6 @@ class _UpdateScreenState extends State<UpdateScreen>
             ),
           ),
           const SizedBox(height: 16),
-
-          // Heading
           ShaderMask(
             shaderCallback: (b) => _gradientAccent.createShader(b),
             child: const Text('New Version Ready',
@@ -604,8 +592,6 @@ class _UpdateScreenState extends State<UpdateScreen>
             style: const TextStyle(color: _muted, fontSize: 13, height: 1.6),
           ),
           const SizedBox(height: 28),
-
-          // Versions
           Row(
             children: [
               _versionChip(
@@ -625,8 +611,6 @@ class _UpdateScreenState extends State<UpdateScreen>
           const SizedBox(height: 24),
           _divider(),
           const SizedBox(height: 24),
-
-          // What's new
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(14),
@@ -651,21 +635,17 @@ class _UpdateScreenState extends State<UpdateScreen>
                   ],
                 ),
                 const SizedBox(height: 10),
-                _bullet('Performance improvements and bug fixes'),
+                _bullet('Performance improvements'),
                 _bullet('Improved security & stability'),
                 _bullet('Latest feature updates'),
               ],
             ),
           ),
           const SizedBox(height: 20),
-
-          // Progress
           if (_downloading || _hasError || _installed) ...[
             _statusBox(),
             const SizedBox(height: 20),
           ],
-
-          // ── Action buttons ─────────────────────────────────────────────────
           if (!_downloading || _hasError) ...[
             _gradientBtn(
               label: _hasError ? 'Retry Download' : 'Update Now',
@@ -676,16 +656,12 @@ class _UpdateScreenState extends State<UpdateScreen>
             ),
             if (!_forceUpdt) ...[
               const SizedBox(height: 12),
-              // ✅ "Later" saves the version to SharedPreferences so the
-              //    auto-check never shows this same version again.
               _ghostBtn(
                 label: 'Remind Me Later',
                 onTap: _dismissUpdate,
               ),
             ],
           ],
-
-          // Force-update note
           if (_forceUpdt && !_downloading && !_installed) ...[
             const SizedBox(height: 16),
             Row(
@@ -704,7 +680,6 @@ class _UpdateScreenState extends State<UpdateScreen>
         ],
       );
 
-  // ── Card shell ─────────────────────────────────────────────────────────────
   Widget _card(Widget child) => Container(
         padding: const EdgeInsets.all(28),
         decoration: BoxDecoration(
@@ -752,7 +727,6 @@ class _UpdateScreenState extends State<UpdateScreen>
         ),
       );
 
-  // ── Build ──────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return PopScope(

@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 
 class TransactionDetailScreen extends StatelessWidget {
   final Map item;
-  final String sourceType; // request / transfer
+  final String sourceType;
   final Map user;
 
   const TransactionDetailScreen({
@@ -17,6 +17,7 @@ class TransactionDetailScreen extends StatelessWidget {
   static const green = Color(0xff00C076);
   static const red = Color(0xffef4444);
   static const amber = Color(0xffFFB800);
+  static const grey = Color(0xff8E8E93);
   static const textMuted = Color(0xff6f6f76);
 
   String v(dynamic x) {
@@ -25,6 +26,11 @@ class TransactionDetailScreen extends StatelessWidget {
   }
 
   double d(dynamic x) => double.tryParse(x?.toString() ?? "0") ?? 0;
+
+  bool get isClosed {
+    return sourceType == "request" &&
+        item["status"]?.toString().toLowerCase() == "closed";
+  }
 
   String fmtDate(dynamic raw) {
     final s = raw?.toString();
@@ -40,11 +46,13 @@ class TransactionDetailScreen extends StatelessWidget {
 
   String get title {
     if (sourceType == "transfer") return "Transfer Details";
+    if (isClosed) return "Transaction Closed";
     final type = item["type"]?.toString().toLowerCase();
     return type == "withdrawal" ? "Withdrawal Details" : "Deposit Details";
   }
 
   String get quantity {
+    if (isClosed) return "Transaction Closed";
     final amount = d(item["amount"]);
     if (amount == 0) return "0 USDT";
     return "${amount.toStringAsFixed(amount.truncateToDouble() == amount ? 0 : 2)} USDT";
@@ -53,6 +61,7 @@ class TransactionDetailScreen extends StatelessWidget {
   String get status {
     if (sourceType == "transfer") return "Transfer Completed";
     final s = item["status"]?.toString().toLowerCase() ?? "pending";
+    if (s == "closed") return "Transaction Closed";
     if (s == "approved") {
       final type = item["type"]?.toString().toLowerCase();
       return type == "withdrawal" ? "Withdrawal Completed" : "Deposit Completed";
@@ -66,18 +75,19 @@ class TransactionDetailScreen extends StatelessWidget {
     if (sourceType == "transfer") return green;
     if (s == "approved") return green;
     if (s == "rejected") return red;
+    if (s == "closed") return grey;
     return amber;
   }
 
-String get hash {
-  final tx = item["transaction_no"]?.toString();
-  if (tx != null && tx.isNotEmpty && tx != "null") return tx;
+  String get hash {
+    final tx = item["transaction_no"]?.toString();
+    if (tx != null && tx.isNotEmpty && tx != "null") return tx;
 
-  final id = v(item["id"]);
-  return sourceType == "transfer"
-      ? "TRA${id.padLeft(9, "0")}"
-      : "TNS${id.padLeft(9, "0")}";
-}
+    final id = v(item["id"]);
+    return sourceType == "transfer"
+        ? "TRA${id.padLeft(9, "0")}"
+        : "TNS${id.padLeft(9, "0")}";
+  }
 
   String get account {
     if (sourceType == "transfer") {
@@ -85,16 +95,19 @@ String get hash {
       final senderId = item["sender_id"]?.toString();
       return senderId == myId ? "Sent Transfer" : "Received Transfer";
     }
+    if (isClosed) return "Transaction Closed";
     final type = item["type"]?.toString().toLowerCase();
     return type == "withdrawal" ? "Funding Account" : "Wallet Account";
   }
 
   String get chainType {
     if (sourceType == "transfer") return "Internal Transfer";
-    return "Merchant Request";
+    return isClosed ? "Closed Request" : "Merchant Request";
   }
 
   String get address {
+    if (isClosed) return "—";
+
     if (sourceType == "transfer") {
       final myId = user["id"]?.toString();
       final senderId = item["sender_id"]?.toString();
@@ -102,10 +115,12 @@ String get hash {
           ? v(item["receiver_wallet_id"] ?? item["receiver_id"])
           : v(item["sender_wallet_id"] ?? item["sender_id"]);
     }
+
     return v(item["merchant_wallet_id"] ?? item["merchant_id"] ?? item["user_id"]);
   }
 
   String get fees {
+    if (isClosed) return "—";
     final xynder = d(item["xynder_fee"]);
     final network = d(item["network_fee"]);
     final total = xynder + network;
@@ -114,6 +129,7 @@ String get hash {
   }
 
   void copy(BuildContext context, String text) {
+    if (text == "—") return;
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -159,7 +175,7 @@ String get hash {
                       ),
                     ),
                   ),
-                  if (copyable) ...[
+                  if (copyable && right != "—") ...[
                     const SizedBox(width: 6),
                     const Icon(Icons.copy_rounded, color: Colors.white70, size: 16),
                   ],
@@ -174,7 +190,7 @@ String get hash {
 
   @override
   Widget build(BuildContext context) {
-    final id = v(item["id"]);
+    final amountTitle = isClosed ? "Status" : "Quantity";
 
     return Scaffold(
       backgroundColor: bg,
@@ -207,24 +223,27 @@ String get hash {
 
             const SizedBox(height: 70),
 
-            const Text(
-              "Quantity",
-              style: TextStyle(color: textMuted, fontSize: 21),
-            ),
+            Text(amountTitle, style: const TextStyle(color: textMuted, fontSize: 21)),
             const SizedBox(height: 10),
             Text(
               quantity,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 31,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: isClosed ? grey : Colors.white,
+                fontSize: isClosed ? 26 : 31,
                 fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(height: 16),
+
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.check_circle_rounded, color: statusColor, size: 22),
+                Icon(
+                  isClosed ? Icons.lock_rounded : Icons.check_circle_rounded,
+                  color: statusColor,
+                  size: 22,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   status,
@@ -243,13 +262,13 @@ String get hash {
               padding: const EdgeInsets.symmetric(horizontal: 28),
               child: Column(
                 children: [
-                  row(context, sourceType == "transfer" ? "Transfer Account" : "Withdrawal Account", account),
+                  row(context, sourceType == "transfer" ? "Transfer Account" : "Request Account", account),
                   row(context, "Fees", fees),
                   row(context, "Chain Type", chainType),
                   row(context, "Time", fmtDate(item["created_at"])),
-                  row(context, sourceType == "transfer" ? "Wallet Address" : "Withdrawal Address", address, copyable: true),
-                 row(context, "Transaction No", hash, copyable: true),
-row(context, "Reference ID", hash, copyable: true),
+                  row(context, sourceType == "transfer" ? "Wallet Address" : "Merchant Address", address, copyable: !isClosed),
+                  row(context, "Transaction No", hash, copyable: true),
+                  row(context, "Reference ID", hash, copyable: true),
                 ],
               ),
             ),

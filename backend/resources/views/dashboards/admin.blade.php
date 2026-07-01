@@ -1,376 +1,61 @@
-
 @extends('layouts.admin', ['title' => 'Admin Dashboard'])
 
 @push('styles')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
 
 <style>
-:root{
-    --dark:#101518;
-    --hero:#2b2f32;
-    --box:#2b2f32;
-    --panel:#24292d;
-    --input:#1f2428;
-    --line:#3b4248;
-    --red:#e8192c;
-    --red2:#c91022;
-    --green:#0ecb81;
-    --gold:#ffc933;
-    --text:#fff;
-    --muted:#aeb4ba;
-    --muted2:#747b82;
-}
-
+:root{--dark:#101518;--hero:#2b2f32;--box:#2b2f32;--panel:#24292d;--input:#1f2428;--line:#3b4248;--red:#e8192c;--red2:#c91022;--green:#0ecb81;--gold:#ffc933;--text:#fff;--muted:#aeb4ba;--muted2:#747b82;}
 *{box-sizing:border-box}
 
-.ad-page{
-    margin:-24px;
-    min-height:100vh;
-    background:var(--dark);
-    color:var(--text);
-    font-family:Inter,Arial,sans-serif;
-    padding-bottom:60px;
-}
-
-.ad-hero{
-    background:var(--hero);
-    padding:65px 85px 125px;
-    position:relative;
-    overflow:hidden;
-}
-
-.ad-hero::after{
-    content:"";
-    position:absolute;
-    inset:0;
-    opacity:.07;
-    background-image:linear-gradient(120deg,transparent 20%,rgba(255,255,255,.18) 21%,transparent 22%);
-    background-size:260px 260px;
-}
-
-.ad-hero-content{
-    position:relative;
-    z-index:2;
-    max-width:680px;
-}
-
-.ad-eyebrow{
-    color:var(--red);
-    font-size:12px;
-    font-weight:900;
-    letter-spacing:.14em;
-    text-transform:uppercase;
-    margin-bottom:14px;
-}
-
-.ad-title{
-    font-size:48px;
-    line-height:1.12;
-    font-weight:900;
-    margin:0 0 18px;
-}
-
+.ad-page{margin:-24px;min-height:100vh;background:var(--dark);color:var(--text);font-family:Inter,Arial,sans-serif;padding-bottom:60px;}
+.ad-hero{background:var(--hero);padding:65px 85px 125px;position:relative;overflow:hidden;}
+.ad-hero::after{content:"";position:absolute;inset:0;opacity:.07;background-image:linear-gradient(120deg,transparent 20%,rgba(255,255,255,.18) 21%,transparent 22%);background-size:260px 260px;}
+.ad-hero-content{position:relative;z-index:2;max-width:680px;}
+.ad-eyebrow{color:var(--red);font-size:12px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;margin-bottom:14px;}
+.ad-title{font-size:48px;line-height:1.12;font-weight:900;margin:0 0 18px;}
 .ad-title span{color:var(--red);display:block}
+.ad-subtitle{color:#b8bdc2;font-size:15px;line-height:1.7;font-weight:700;max-width:560px;}
 
-.ad-subtitle{
-    color:#b8bdc2;
-    font-size:15px;
-    line-height:1.7;
-    font-weight:700;
-    max-width:560px;
-}
+.ad-wrap{position:relative;z-index:5;margin:-82px 85px 0;}
+.ad-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:28px;}
+.ad-kpi{background:var(--box);border:1px solid var(--line);border-radius:6px;padding:20px;min-height:118px;position:relative;overflow:hidden;}
+.ad-kpi::after{content:"";position:absolute;right:-38px;top:-38px;width:115px;height:115px;border-radius:50%;background:rgba(232,25,44,.12);}
+.ad-kpi-icon{width:42px;height:42px;border-radius:50%;background:#3a1018;color:var(--red);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:14px;}
+.ad-kpi-label{color:var(--muted);font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;}
+.ad-kpi-value{font-size:28px;font-weight:900;margin-top:6px;}
+.ad-kpi-note{color:var(--muted2);font-size:12px;font-weight:800;margin-top:8px;}
 
-.ad-actions{
-    display:flex;
-    gap:12px;
-    flex-wrap:wrap;
-    margin-top:34px;
-}
-
-.ad-btn{
-    display:inline-flex;
-    align-items:center;
-    gap:8px;
-    padding:13px 18px;
-    border-radius:4px;
-    text-decoration:none;
-    color:#fff;
-    font-weight:900;
-    font-size:13px;
-    border:1px solid transparent;
-}
-
-.ad-btn.red{background:var(--red)}
-.ad-btn.red:hover{background:var(--red2)}
-.ad-btn.dark{background:var(--input);border-color:var(--line)}
-.ad-btn.dark:hover{border-color:var(--red);color:#fff}
-
-.ad-wrap{
-    position:relative;
-    z-index:5;
-    margin:-82px 85px 0;
-}
-
-.ad-kpis{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:18px;
-    margin-bottom:28px;
-}
-
-.ad-kpi{
-    background:var(--box);
-    border:1px solid var(--line);
-    border-radius:6px;
-    padding:20px;
-    min-height:118px;
-    position:relative;
-    overflow:hidden;
-}
-
-.ad-kpi::after{
-    content:"";
-    position:absolute;
-    right:-38px;
-    top:-38px;
-    width:115px;
-    height:115px;
-    border-radius:50%;
-    background:rgba(232,25,44,.12);
-}
-
-.ad-kpi-icon{
-    width:42px;
-    height:42px;
-    border-radius:50%;
-    background:#3a1018;
-    color:var(--red);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:22px;
-    margin-bottom:14px;
-}
-
-.ad-kpi-label{
-    color:var(--muted);
-    font-size:12px;
-    font-weight:900;
-    text-transform:uppercase;
-    letter-spacing:.06em;
-}
-
-.ad-kpi-value{
-    font-size:28px;
-    font-weight:900;
-    margin-top:6px;
-}
-
-.ad-kpi-note{
-    color:var(--muted2);
-    font-size:12px;
-    font-weight:800;
-    margin-top:8px;
-}
-
-.ad-grid-top{
-    display:grid;
-    grid-template-columns:2fr 1fr;
-    gap:24px;
-    margin-bottom:24px;
-}
-
-.ad-card{
-    background:var(--box);
-    border:1px solid var(--line);
-    border-radius:6px;
-    overflow:hidden;
-}
-
-.ad-card-head{
-    min-height:58px;
-    background:var(--panel);
-    border-bottom:1px solid var(--line);
-    padding:0 20px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:12px;
-}
-
-.ad-card-title{
-    display:flex;
-    align-items:center;
-    gap:9px;
-    font-size:16px;
-    font-weight:900;
-}
-
+.ad-grid-top{display:grid;grid-template-columns:2fr 1fr;gap:24px;margin-bottom:24px;}
+.ad-card{background:var(--box);border:1px solid var(--line);border-radius:6px;overflow:hidden;}
+.ad-card-head{min-height:58px;background:var(--panel);border-bottom:1px solid var(--line);padding:0 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.ad-card-title{display:flex;align-items:center;gap:9px;font-size:16px;font-weight:900;}
 .ad-card-title i{color:var(--red)}
-
-.ad-card-link{
-    color:var(--red);
-    text-decoration:none;
-    font-size:12px;
-    font-weight:900;
-}
-
 .ad-card-body{padding:20px}
+.ad-chart{width:100%;height:315px;}
 
-.ad-chart{
-    width:100%;
-    height:315px;
-}
+.ad-mid{display:grid;grid-template-columns:390px 1fr;gap:24px;margin-bottom:24px;}
+.ad-donut-wrap{height:315px;display:flex;align-items:center;justify-content:center;}
+.ad-total-row{border-top:1px solid var(--line);padding:16px 20px;display:flex;justify-content:space-between;align-items:center;}
 
-.ad-mid{
-    display:grid;
-    grid-template-columns:390px 1fr;
-    gap:24px;
-    margin-bottom:24px;
-}
-
-.ad-donut-wrap{
-    height:315px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-}
-
-.ad-mini-grid{
-    display:grid;
-    grid-template-columns:repeat(2,1fr);
-    gap:16px;
-}
-
-.ad-mini{
-    background:var(--box);
-    border:1px solid var(--line);
-    border-radius:6px;
-    padding:18px;
-    min-height:115px;
-    position:relative;
-    overflow:hidden;
-}
-
-.ad-mini-label{
-    color:var(--muted);
-    font-size:13px;
-    font-weight:800;
-}
-
-.ad-mini-value{
-    color:#fff;
-    font-size:24px;
-    font-weight:900;
-    margin-top:6px;
-}
-
-.ad-mini-status{
-    position:absolute;
-    right:16px;
-    bottom:14px;
-    font-size:12px;
-    font-weight:900;
-}
+.ad-mini-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+.ad-mini{background:var(--box);border:1px solid var(--line);border-radius:6px;padding:18px;min-height:115px;position:relative;overflow:hidden;}
+.ad-mini-label{color:var(--muted);font-size:13px;font-weight:800;}
+.ad-mini-value{color:#fff;font-size:24px;font-weight:900;margin-top:6px;}
+.ad-mini-status{position:absolute;right:16px;bottom:14px;font-size:12px;font-weight:900;}
 
 .good{color:var(--green)}
 .warn{color:var(--gold)}
 .danger{color:#ff6b7b}
 
-.spark{
-    position:absolute;
-    left:14px;
-    bottom:0;
-    height:38px;
-    display:flex;
-    align-items:flex-end;
-    gap:3px;
-    color:var(--red);
-}
+.spark{position:absolute;left:14px;bottom:0;height:38px;display:flex;align-items:flex-end;gap:3px;color:var(--red);}
+.spark span{width:3px;border-radius:3px 3px 0 0;background:currentColor;opacity:.9;}
 
-.spark span{
-    width:3px;
-    border-radius:3px 3px 0 0;
-    background:currentColor;
-    opacity:.9;
-}
-
-.ad-bottom{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:24px;
-}
-
-.ad-table-wrap{overflow-x:auto}
-
-.ad-table{
-    width:100%;
-    min-width:650px;
-    border-collapse:collapse;
-}
-
-.ad-table th{
-    background:var(--panel);
-    color:var(--muted2);
-    padding:14px 16px;
-    text-align:left;
-    font-size:11px;
-    font-weight:900;
-    text-transform:uppercase;
-    letter-spacing:.05em;
-}
-
-.ad-table td{
-    padding:15px 16px;
-    border-top:1px solid var(--line);
-    color:#c9ced3;
-    font-size:13px;
-    font-weight:700;
-    white-space:nowrap;
-}
-
-.ad-table tr:hover td{background:#30363a}
-
-.ad-name{
-    color:#fff;
-    font-weight:900;
-}
-
-.ad-small{
-    color:var(--muted2);
-    font-size:11px;
-    margin-top:3px;
-}
-
-.badge{
-    display:inline-flex;
-    align-items:center;
-    gap:6px;
-    padding:5px 10px;
-    border-radius:20px;
-    font-size:11px;
-    font-weight:900;
-    text-transform:uppercase;
-}
-
-.badge.pending{background:#3b2a09;color:var(--gold)}
-.badge.approved,.badge.active{background:#0d2b1e;color:var(--green)}
-.badge.rejected,.badge.blocked{background:#3a1018;color:#ff6b7b}
-.badge.client{background:#1f2428;color:#d5dade;border:1px solid var(--line)}
-.badge.merchant{background:#3b2a09;color:var(--gold)}
-.badge.buy{background:#0d2b1e;color:var(--green)}
-.badge.sell{background:#3a1018;color:#ff6b7b}
-
-.ad-empty{
-    padding:38px;
-    text-align:center;
-    color:var(--muted2);
-    font-weight:800;
-}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:20px;font-size:11px;font-weight:900;text-transform:uppercase;}
+.badge.rejected{background:#3a1018;color:#ff6b7b}
 
 @media(max-width:1200px){
     .ad-kpis{grid-template-columns:repeat(2,1fr)}
-    .ad-grid-top,.ad-mid,.ad-bottom{grid-template-columns:1fr}
+    .ad-grid-top,.ad-mid{grid-template-columns:1fr}
 }
 
 @media(max-width:760px){
@@ -411,21 +96,6 @@
             <div class="ad-subtitle">
                 Manage users, merchants, wallet buy/sell requests, online activity,
                 approval status, and total approved INR volume from one secure panel.
-            </div>
-
-            <div class="ad-actions">
-                <a class="ad-btn red" href="{{ route('admin.wallet-requests.index') }}">
-                    <i class="ti ti-receipt"></i> Wallet Requests
-                </a>
-                <a class="ad-btn dark" href="{{ route('admin.users.index') }}">
-                    <i class="ti ti-users"></i> Manage Users
-                </a>
-                <a class="ad-btn dark" href="{{ route('admin.users.create') }}">
-                    <i class="ti ti-user-plus"></i> Add User
-                </a>
-                <a class="ad-btn dark" href="{{ route('admin.config.index') }}">
-                    <i class="ti ti-settings"></i> Config
-                </a>
             </div>
         </div>
     </section>
@@ -501,7 +171,7 @@
                     <canvas id="donutChart" width="300" height="300"></canvas>
                 </div>
 
-                <div style="border-top:1px solid var(--line);padding:16px 20px;display:flex;justify-content:space-between;align-items:center;">
+                <div class="ad-total-row">
                     <b>Total Users</b>
                     <span class="badge rejected">{{ $totalUsers }}</span>
                 </div>
@@ -548,125 +218,6 @@
                     <div class="ad-mini-value">{{ $rejected }}</div>
                     <div class="spark">@foreach($bars as $h)<span style="height:{{ ($h+1)*3 }}px"></span>@endforeach</div>
                     <div class="ad-mini-status danger">Rejected</div>
-                </div>
-            </div>
-        </section>
-
-        <section class="ad-bottom">
-            <div class="ad-card">
-                <div class="ad-card-head">
-                    <div class="ad-card-title">
-                        <i class="ti ti-list-details"></i>
-                        Latest Wallet Requests
-                    </div>
-                    <a class="ad-card-link" href="{{ route('admin.wallet-requests.index') }}">View All</a>
-                </div>
-
-                <div class="ad-table-wrap">
-                    <table class="ad-table">
-                        <thead>
-                            <tr>
-                                <th>Client</th>
-                                <th>Type</th>
-                                <th>Amount</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                        @forelse($latestRequests as $request)
-                            <tr>
-                                <td>
-                                    <div class="ad-name">{{ $request->user->name ?? 'Deleted User' }}</div>
-                                    <div class="ad-small">{{ $request->user->email ?? '-' }}</div>
-                                </td>
-
-                                <td>
-                                    @if($request->type === 'deposit')
-                                        <span class="badge buy">
-                                            <i class="ti ti-trending-up"></i> Buy USD
-                                        </span>
-                                    @elseif($request->type === 'withdrawal')
-                                        <span class="badge sell">
-                                            <i class="ti ti-trending-down"></i> Sell USD
-                                        </span>
-                                    @else
-                                        <span class="badge client">{{ ucfirst($request->type) }}</span>
-                                    @endif
-                                </td>
-
-                                <td>
-                                    <div class="ad-name">$ {{ number_format((float)$request->amount, 2) }}</div>
-                                    <div class="ad-small">INR {{ number_format((float)($request->total_amount ?? 0), 2) }}</div>
-                                </td>
-
-                                <td>
-                                    <span class="badge {{ $request->status }}">
-                                        {{ ucfirst($request->status) }}
-                                    </span>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="4">
-                                    <div class="ad-empty">No wallet requests found.</div>
-                                </td>
-                            </tr>
-                        @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="ad-card">
-                <div class="ad-card-head">
-                    <div class="ad-card-title">
-                        <i class="ti ti-users"></i>
-                        Latest Users
-                    </div>
-                    <a class="ad-card-link" href="{{ route('admin.users.index') }}">View All</a>
-                </div>
-
-                <div class="ad-table-wrap">
-                    <table class="ad-table">
-                        <thead>
-                            <tr>
-                                <th>User</th>
-                                <th>Role</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                        @forelse($latestUsers as $user)
-                            <tr>
-                                <td>
-                                    <div class="ad-name">{{ $user->name }}</div>
-                                    <div class="ad-small">{{ $user->email }}</div>
-                                </td>
-
-                                <td>
-                                    <span class="badge {{ $user->role === 'merchant' ? 'merchant' : 'client' }}">
-                                        {{ ucfirst($user->role) }}
-                                    </span>
-                                </td>
-
-                                <td>
-                                    @php $userStatus = $user->status ?? 'active'; @endphp
-                                    <span class="badge {{ $userStatus === 'active' ? 'active' : 'blocked' }}">
-                                        {{ $userStatus === 'active' ? 'Active' : 'Blocked' }}
-                                    </span>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="3">
-                                    <div class="ad-empty">No users found.</div>
-                                </td>
-                            </tr>
-                        @endforelse
-                        </tbody>
-                    </table>
                 </div>
             </div>
         </section>
@@ -781,4 +332,3 @@ new Chart(document.getElementById('donutChart'), {
 });
 </script>
 @endsection
-
