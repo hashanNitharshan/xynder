@@ -13,7 +13,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
-
+use App\Models\Conversation;
 class AuthController extends Controller
 {
     private function ensureVerified(User $user)
@@ -127,6 +127,7 @@ class AuthController extends Controller
             'merchants' => $merchants,
         ]);
     }
+
 public function createRequest(Request $request)
 {
     $user = $request->user();
@@ -183,18 +184,13 @@ public function createRequest(Request $request)
     $config = SystemConfig::current();
 
     $convertedAmount = round($amount * (float) $config->inr_rate, 2);
-
     $xynderFee = round((float) $config->xynder_fee, 2);
     $networkFee = round((float) $config->network_fee, 2);
     $fee = round($xynderFee + $networkFee, 2);
 
-    if ($data['type'] === 'deposit') {
-        // Buy USD: client pays INR + fees
-        $totalAmount = round($convertedAmount + $fee, 2);
-    } else {
-        // Sell USD: client receives INR - fees
-        $totalAmount = round($convertedAmount - $fee, 2);
-    }
+    $totalAmount = $data['type'] === 'deposit'
+        ? round($convertedAmount + $fee, 2)
+        : round($convertedAmount - $fee, 2);
 
     if ($data['type'] === 'withdrawal' && $totalAmount <= 0) {
         return response()->json([
@@ -203,29 +199,52 @@ public function createRequest(Request $request)
         ], 422);
     }
 
-    $walletRequest = WalletRequest::create([
-        'user_id'          => $user->id,
-        'merchant_id'      => $merchant->id,
-        'type'             => $data['type'],
-        'amount'           => $amount,
-        'usd_rate'         => $config->usd_rate,
-        'inr_rate'         => $config->inr_rate,
-        'xynder_fee'       => $xynderFee,
-        'network_fee'      => $networkFee,
-        'converted_amount' => $convertedAmount,
-        'fee'              => $fee,
-        'total_amount'     => $totalAmount,
-        'note'             => $data['note'] ?? null,
-        'payment_slip'     => null,
-        'status'           => 'pending',
-    ]);
+    $walletRequest = DB::transaction(function () use (
+        $user,
+        $merchant,
+        $data,
+        $amount,
+        $config,
+        $xynderFee,
+        $networkFee,
+        $convertedAmount,
+        $fee,
+        $totalAmount
+    ) {
+        $walletRequest = WalletRequest::create([
+            'user_id'          => $user->id,
+            'merchant_id'      => $merchant->id,
+            'type'             => $data['type'],
+            'amount'           => $amount,
+            'usd_rate'         => $config->usd_rate,
+            'inr_rate'         => $config->inr_rate,
+            'xynder_fee'       => $xynderFee,
+            'network_fee'      => $networkFee,
+            'converted_amount' => $convertedAmount,
+            'fee'              => $fee,
+            'total_amount'     => $totalAmount,
+            'note'             => $data['note'] ?? null,
+            'payment_slip'     => null,
+            'status'           => 'pending',
+        ]);
+
+        Conversation::firstOrCreate(
+            ['wallet_request_id' => $walletRequest->id],
+            [
+                'user_one_id' => $user->id,
+                'user_two_id' => $merchant->id,
+            ]
+        );
+
+        return $walletRequest;
+    });
 
     return response()->json([
         'success'    => true,
         'message'    => $data['type'] === 'withdrawal'
-            ? 'Sell request submitted successfully.'
-            : 'Buy request submitted successfully.',
-        'request'    => $walletRequest->fresh(['merchant']),
+            ? 'Sell USD request submitted successfully.'
+            : 'Buy USD request submitted successfully.',
+        'request'    => $walletRequest->fresh(['merchant', 'conversation']),
         'merchant'   => $merchant,
         'request_id' => $walletRequest->id,
     ]);

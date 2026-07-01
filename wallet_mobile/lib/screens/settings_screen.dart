@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../services/api_service.dart';
+import '../services/update_service.dart';
 import 'profile_screen.dart';
 import 'login_screen.dart';
 
@@ -47,10 +49,23 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   late Map user;
 
+  String _appVersion = "";
+  bool _checkingUpdate = false;
+
   @override
   void initState() {
     super.initState();
     user = widget.user;
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      if (mounted) {
+        setState(() => _appVersion = info.version);
+      }
+    } catch (_) {}
   }
 
   bool get isVerified =>
@@ -96,6 +111,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ));
+  }
+
+  // ═══════════════════════════════════════════
+  //  CHECK FOR UPDATE
+  // ═══════════════════════════════════════════
+  Future<void> _checkForUpdate() async {
+    if (_checkingUpdate) return;
+    setState(() => _checkingUpdate = true);
+
+    final beforeVersion = _appVersion;
+
+    try {
+      await UpdateService.checkForUpdate(context);
+    } finally {
+      if (mounted) setState(() => _checkingUpdate = false);
+    }
+
+    // If UpdateService didn't push the UpdateScreen (i.e. already latest
+    // or skipped), give the user feedback instead of silence.
+    if (!mounted) return;
+    if (beforeVersion == _appVersion) {
+      _showSnack("You're on the latest version ($_appVersion)");
+    }
   }
 
   // ═══════════════════════════════════════════
@@ -252,6 +290,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required String sub,
     required VoidCallback onTap,
     Color color = _C.orange,
+    Widget? trailing,
   }) {
     return GestureDetector(
       onTap: onTap,
@@ -290,8 +329,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios_rounded,
-                color: _C.textSecondary, size: 14),
+            trailing ??
+                const Icon(Icons.arrow_forward_ios_rounded,
+                    color: _C.textSecondary, size: 14),
           ],
         ),
       ),
@@ -532,6 +572,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 label: "Help & Support",
                 sub: "Raise a support ticket",
                 onTap: _showSupport,
+              ),
+              _settingsTile(
+                icon: Icons.system_update_rounded,
+                label: "Check for Update",
+                sub: _appVersion.isEmpty
+                    ? "Loading version..."
+                    : "Current version: $_appVersion",
+                color: _C.gold,
+                onTap: _checkForUpdate,
+                trailing: _checkingUpdate
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: _C.gold,
+                        ),
+                      )
+                    : const Icon(Icons.arrow_forward_ios_rounded,
+                        color: _C.textSecondary, size: 14),
               ),
               _settingsTile(
                 icon: Icons.logout_rounded,
