@@ -10,25 +10,31 @@ import 'login_screen.dart';
 //  DESIGN TOKENS - SAME STYLE AS OTHER SCREENS
 // ─────────────────────────────────────────────────────────────
 class _C {
-  static const bg = Color(0xff0a0a0a);
-  static const surface = Color(0xff141414);
-  static const surfaceAlt = Color(0xff1c1c1e);
-  static const border = Color(0xff2a2a2a);
+  static const bg = Color(0xff000000);
+  static const surface = Color(0xff0D0D0D);
+  static const surfaceAlt = Color(0xff171717);
 
-  static const orange = Color(0xffFF4500);
-  static const amber = Color(0xffFFB800);
-  static const gold = Color(0xffFFD700);
+  static const border = Color(0xff2E2E2E);
 
-  static const green = Color(0xff22c55e);
-  static const red = Color(0xffef4444);
+  // Theme
+  static const orange = Color(0xffFACC15);
+  static const amber = Color(0xffFFD700);
+  static const gold = Color(0xffFFF176);
+
+  static const green = Color(0xff22C55E);
+  static const red = Color(0xffEF4444);
 
   static const textPrimary = Colors.white;
-  static const textSecondary = Color(0xff8E8E93);
+  static const textSecondary = Color(0xffA3A3A3);
 
   static const gradientCard = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xff1a0a00), Color(0xff2d1200), Color(0xff1a0800)],
+    colors: [
+      Color(0xff050505),
+      Color(0xff111111),
+      Color(0xff1A1600),
+    ],
   );
 }
 
@@ -106,10 +112,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _showSnack(String msg, {bool success = true}) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      backgroundColor: success ? _C.green : _C.red,
-      content: Text(msg),
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      backgroundColor: success ? _C.amber : _C.red,
+      content: Text(
+  msg,
+  style: TextStyle(
+    color: success ? Colors.black : Colors.white,
+    fontWeight: FontWeight.w700,
+  ),
+),
     ));
   }
 
@@ -212,7 +222,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         decoration: BoxDecoration(
           gradient: _C.gradientCard,
           borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: const Color(0xff3a1500)),
+       border: Border.all(color: const Color(0xff4A3B00)),
         ),
         child: Row(
           children: [

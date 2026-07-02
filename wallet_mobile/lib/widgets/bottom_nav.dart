@@ -11,16 +11,10 @@ class BottomNav extends StatelessWidget {
     required this.onTap,
   });
 
-  static const Color surface = Color(0xff141414);
-  static const Color border = Color(0xff2a2a2a);
-  static const Color orange = Color(0xffFF4500);
-  static const Color amber = Color(0xffFFB800);
-  static const Color gold = Color(0xffFFD700);
-  static const Color textSecondary = Color(0xff8E8E93);
-
-  static const LinearGradient gradientAccent = LinearGradient(
-    colors: [orange, amber, gold],
-  );
+  static const Color surface = Color(0xff181A20);
+  static const Color border = Color(0xff2B3139);
+  static const Color yellow = Color(0xffF0B90B);
+  static const Color muted = Color(0xff848E9C);
 
   static void handleTap(
     BuildContext context,
@@ -37,69 +31,65 @@ class BottomNav extends StatelessWidget {
       );
       return;
     }
+
     setState(index);
   }
 
   @override
   Widget build(BuildContext context) {
     final items = [
-      _NavItem(icon: Icons.home_rounded, label: 'Home'),
-      _NavItem(icon: Icons.account_balance_wallet_rounded, label: 'P2P'),
-      _NavItem(icon: Icons.swap_horiz_rounded, label: 'Transfer'),
-      _NavItem(icon: Icons.history_rounded, label: 'History'),
-      _NavItem(icon: Icons.settings_rounded, label: 'Settings'),
+      Icons.home_rounded,
+      Icons.account_balance_wallet_rounded,
+      Icons.swap_horiz_rounded,
+      Icons.history_rounded,
+      Icons.settings_rounded,
     ];
 
     return SafeArea(
       top: false,
       child: Container(
-        margin: const EdgeInsets.fromLTRB(12, 0, 12, 10),
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 9),
+        margin: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+        height: 68,
         decoration: BoxDecoration(
           color: surface,
-          borderRadius: BorderRadius.circular(26),
+          borderRadius: BorderRadius.circular(22),
           border: Border.all(color: border),
           boxShadow: [
             BoxShadow(
-              color: orange.withOpacity(0.16),
-              blurRadius: 30,
-              offset: const Offset(0, 12),
+              color: Colors.black.withOpacity(.45),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
         child: Row(
           children: List.generate(items.length, (index) {
             final selected = currentIndex == index;
-            final item = items[index];
-            final isUpdate = index == 5;
 
             return Expanded(
-              child: GestureDetector(
+              child: InkWell(
+                borderRadius: BorderRadius.circular(18),
+                splashColor: Colors.transparent,
+                highlightColor: Colors.transparent,
                 onTap: () => onTap(index),
-                behavior: HitTestBehavior.opaque,
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 220),
-                  height: 54,
-                  margin: const EdgeInsets.symmetric(horizontal: 1),
+                  curve: Curves.easeOut,
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
-                    gradient: selected && !isUpdate ? gradientAccent : null,
-                    color: selected && isUpdate
-                        ? amber.withOpacity(0.15)
-                        : selected
-                            ? null
-                            : Colors.transparent,
-                    borderRadius: BorderRadius.circular(18),
-                    border: selected && isUpdate
-                        ? Border.all(color: amber.withOpacity(0.4))
-                        : Border.all(color: Colors.transparent),
+                    color: selected
+                        ? yellow.withOpacity(.15)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: Center(
                     child: Icon(
-                      item.icon,
-                      size: selected ? 26 : 23,
-                      color: selected
-                          ? (isUpdate ? amber : Colors.black)
-                          : textSecondary,
+                      items[index],
+                      size: selected ? 28 : 23,
+                      color: selected ? yellow : muted,
                     ),
                   ),
                 ),
@@ -110,10 +100,4 @@ class BottomNav extends StatelessWidget {
       ),
     );
   }
-}
-
-class _NavItem {
-  final IconData icon;
-  final String label;
-  const _NavItem({required this.icon, required this.label});
 }

@@ -2,38 +2,52 @@ import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
 import 'chat_screen.dart';
-
 class _C {
-  static const bg = Color(0xff0a0a0a);
-  static const surface = Color(0xff141414);
-  static const surfaceAlt = Color(0xff1c1c1e);
-  static const border = Color(0xff2a2a2a);
-  static const borderFaint = Color(0xff1e1e1e);
+  // Background
+  static const bg = Color(0xff000000);
+  static const surface = Color(0xff0D0D0D);
+  static const surfaceAlt = Color(0xff171717);
 
-  static const orange = Color(0xffFF4500);
-  static const amber = Color(0xffFFB800);
-  static const gold = Color(0xffFFD700);
+  // Borders
+  static const border = Color(0xff2E2E2E);
+  static const borderFaint = Color(0xff202020);
 
-  static const green = Color(0xff22c55e);
-  static const red = Color(0xffef4444);
-  static const blue = Color(0xff3b82f6);
+  // Primary Theme (Yellow)
+  static const orange = Color(0xffFACC15);
+  static const amber = Color(0xffFFD700);
+  static const gold = Color(0xffFFF176);
 
+  // Status Colors
+  static const green = Color(0xff22C55E);
+  static const red = Color(0xffEF4444);
+  static const blue = Color(0xffFACC15);
+
+  // Text
   static const textPrimary = Colors.white;
-  static const textSecondary = Color(0xff8E8E93);
+  static const textSecondary = Color(0xffA3A3A3);
 
+  // Yellow Button Gradient
   static const gradientAccent = LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
-    colors: [orange, amber, gold],
+    colors: [
+      Color(0xffFACC15),
+      Color(0xffFFD700),
+      Color(0xffFFF176),
+    ],
   );
 
+  // Black Card Gradient
   static const gradientCard = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xff1a0a00), Color(0xff2d1200), Color(0xff1a0800)],
+    colors: [
+      Color(0xff050505),
+      Color(0xff111111),
+      Color(0xff1A1600),
+    ],
   );
 }
-
 class RequestScreen extends StatefulWidget {
   const RequestScreen({super.key});
 
@@ -364,7 +378,7 @@ class _RequestScreenState extends State<RequestScreen>
           decoration: BoxDecoration(
             gradient: _C.gradientCard,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xff3a1500)),
+          border: Border.all(color: const Color(0xff4A3B00)),
           ),
           child: Row(
             children: [
@@ -863,7 +877,7 @@ class _RequestScreenState extends State<RequestScreen>
         duration: const Duration(milliseconds: 220),
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xff1f0d00) : _C.bg,
+          color: selected ? const Color(0xff2A2300) : _C.bg,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: selected ? _C.orange : _C.border,

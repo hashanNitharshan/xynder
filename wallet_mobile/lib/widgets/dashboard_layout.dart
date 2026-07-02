@@ -13,47 +13,56 @@ import '../screens/chat_screen.dart';
 import '../screens/history_screen.dart';
 import '../screens/settings_screen.dart';
 
-// ─────────────────────────────────────────────────────────────
-//  DESIGN TOKENS
-// ─────────────────────────────────────────────────────────────
 class _C {
-  static const bg = Color(0xff0a0a0a);
-  static const surface = Color(0xff141414);
-  static const surfaceAlt = Color(0xff1c1c1e);
-  static const border = Color(0xff2a2a2a);
-  static const borderFaint = Color(0xff1e1e1e);
+  // Background
+  static const bg = Color(0xff0B0E11);
+  static const surface = Color(0xff181A20);
+  static const surfaceAlt = Color(0xff202630);
 
-  static const orange = Color(0xffFF4500);
-  static const amber = Color(0xffFFB800);
-  static const gold = Color(0xffFFD700);
+  // Borders
+  static const border = Color(0xff2B3139);
+  static const borderFaint = Color(0xff30363D);
 
-  static const green = Color(0xff22c55e);
-  static const red = Color(0xffef4444);
-  static const blue = Color(0xff3b82f6);
+  // Binance Yellow
+  static const orange = Color(0xffF0B90B);
+  static const amber = Color(0xffD8A800);
+  static const gold = Color(0xffC99400);
+
+  static const green = Color(0xff02C076);
+  static const red = Color(0xffF6465D);
+  static const blue = Color(0xff3B82F6);
 
   static const textPrimary = Colors.white;
-  static const textSecondary = Color(0xff8E8E93);
-  static const textMuted = Color(0xff3a3a3c);
+  static const textSecondary = Color(0xff848E9C);
+  static const textMuted = Color(0xff5E6673);
 
   static const gradientCard = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xff1a0a00), Color(0xff2d1200), Color(0xff1a0800)],
+    colors: [
+      Color(0xff1A1D24),
+      Color(0xff15181E),
+      Color(0xff111318),
+    ],
   );
 
   static const gradientAccent = LinearGradient(
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
-    colors: [orange, amber, gold],
+    colors: [
+      Color(0xffD8A800),
+      Color(0xffF0B90B),
+    ],
   );
 
   static const gradientGlow = RadialGradient(
-    center: Alignment(-0.2, -0.6),
-    radius: 1.2,
-    colors: [Color(0x55FF4500), Color(0x22FF8C00), Color(0x00000000)],
+    center: Alignment(-0.5, -0.8),
+    radius: 1.4,
+    colors: [
+      Color(0x18F0B90B),
+      Color(0x06F0B90B),
+      Colors.transparent,
+    ],
   );
 }
-
 // ─────────────────────────────────────────────────────────────
 //  GAUGE PAINTER
 // ─────────────────────────────────────────────────────────────
@@ -331,7 +340,7 @@ class _DashboardLayoutState extends State<DashboardLayout>
                   ),
                   child: CircleAvatar(
                     radius: 20,
-                    backgroundColor: _C.surfaceAlt,
+                   backgroundColor: const Color(0xff181A20),
                     backgroundImage: photoUrl.isNotEmpty
                         ? NetworkImage(photoUrl)
                         : null,
@@ -352,7 +361,7 @@ class _DashboardLayoutState extends State<DashboardLayout>
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.verified_rounded,
-                          color: _C.green, size: 14),
+                          color: _C.orange,size: 14),
                     ),
                   ),
               ],
@@ -362,180 +371,173 @@ class _DashboardLayoutState extends State<DashboardLayout>
       ),
     );
   }
+Widget _heroCard() {
+  final balance = toDouble(user["balance"]);
+  final name = user["name"]?.toString() ?? "CARD HOLDER";
 
-  // ═══════════════════════════════════════════
-  //  HERO CARD  (Wavix-style with glow)
-  // ═══════════════════════════════════════════
-  Widget _heroCard() {
-    final balance = toDouble(user["balance"]);
-    final name = user["name"]?.toString() ?? "CARD HOLDER";
-
-    return FadeTransition(
-      opacity: _cardFade,
-      child: SlideTransition(
-        position: _cardSlide,
-        child: Container(
-          margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-          height: 200,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(28),
-            gradient: _C.gradientCard,
-            border: Border.all(color: const Color(0xff3a1500), width: 1.2),
-          ),
-          child: Stack(
-            children: [
-              // Glow
-              Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(28),
-                    gradient: _C.gradientGlow,
-                  ),
-                ),
-              ),
-
-              // Decorative circles
-              Positioned(
-                top: -40,
-                right: -40,
-                child: Container(
-                  width: 160,
-                  height: 160,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: _C.orange.withOpacity(0.06),
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: -30,
-                right: 60,
-                child: Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: _C.amber.withOpacity(0.05),
-                  ),
-                ),
-              ),
-
-              // Content
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Top row
-                    Row(
-                      children: [
-                        ShaderMask(
-                          shaderCallback: (b) =>
-                              _C.gradientAccent.createShader(b),
-                          child: const Text(
-                            "XYNDER",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 16,
-                              letterSpacing: 2.5,
-                            ),
-                          ),
-                        ),
-                        const Spacer(),
-                        GestureDetector(
-                          onTap: () =>
-                              setState(() => balanceHidden = !balanceHidden),
-                          child: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.07),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              balanceHidden
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
-                              color: Colors.white54,
-                              size: 16,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const Spacer(),
-
-                    // Balance
-                    Text(
-                      "My Wallet",
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.4),
-                        fontSize: 11,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      balanceHidden
-                          ? "••••••••"
-                          : "\$${balance.toStringAsFixed(2)}",
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 30,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-
-                    const Spacer(),
-
-                    // Bottom row
-                    Row(
-                      children: [
-                        // Card number
-                        Text(
-                          maskCard(user["card_number"]),
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.5),
-                            fontSize: 13,
-                            letterSpacing: 1.8,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const Spacer(),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              name.toUpperCase(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                            Text(
-                              "12/29",
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.4),
-                                fontSize: 10,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
+  return FadeTransition(
+    opacity: _cardFade,
+    child: SlideTransition(
+      position: _cardSlide,
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+        height: 200,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(28),
+          gradient: _C.gradientCard,
+          border: Border.all(
+            color: const Color(0xff353C47),
+            width: 1.2,
           ),
         ),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(28),
+                  gradient: _C.gradientGlow,
+                ),
+              ),
+            ),
+
+            Positioned(
+              top: -40,
+              right: -40,
+              child: Container(
+                width: 160,
+                height: 160,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _C.orange.withOpacity(0.06),
+                ),
+              ),
+            ),
+
+            Positioned(
+              bottom: -30,
+              right: 60,
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _C.amber.withOpacity(0.05),
+                ),
+              ),
+            ),
+
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      ShaderMask(
+                        shaderCallback: (b) =>
+                            _C.gradientAccent.createShader(b),
+                        child: const Text(
+                          "XYNDER",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 16,
+                            letterSpacing: 2.5,
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      GestureDetector(
+                        onTap: () =>
+                            setState(() => balanceHidden = !balanceHidden),
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.07),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            balanceHidden
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                            color: Colors.white54,
+                            size: 16,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const Spacer(),
+
+                  Text(
+                    "My Wallet",
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.4),
+                      fontSize: 11,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    balanceHidden
+                        ? "••••••••"
+                        : "\$${balance.toStringAsFixed(2)}",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 30,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+
+                  const Spacer(),
+
+                  Row(
+                    children: [
+                      Text(
+                        maskCard(user["card_number"]),
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.5),
+                          fontSize: 13,
+                          letterSpacing: 1.8,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const Spacer(),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            name.toUpperCase(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          Text(
+                            "12/29",
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.4),
+                              fontSize: 10,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
-    );
-  }
+    ),
+  );
+}
 
  
 
@@ -548,7 +550,7 @@ class _DashboardLayoutState extends State<DashboardLayout>
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 13),
         decoration: BoxDecoration(
-          color: _C.surface,
+         color: const Color(0xff181A20),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: _C.border),
         ),
@@ -558,9 +560,9 @@ class _DashboardLayoutState extends State<DashboardLayout>
             Icon(icon, color: Colors.white70, size: 17),
             const SizedBox(width: 7),
             Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
+  label,
+  style: TextStyle(
+    color: Colors.white,
                 fontWeight: FontWeight.w700,
                 fontSize: 13,
               ),
@@ -570,38 +572,41 @@ class _DashboardLayoutState extends State<DashboardLayout>
       ),
     );
   }
-
-  Widget _solidBtn(
-      {required IconData icon,
-      required String label,
-      required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 13),
-        decoration: BoxDecoration(
-          gradient: _C.gradientAccent,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: Colors.black, size: 17),
-            const SizedBox(width: 7),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.black,
-                fontWeight: FontWeight.w800,
-                fontSize: 13,
-              ),
-            ),
-          ],
-        ),
+Widget _solidBtn({
+  required IconData icon,
+  required String label,
+  required VoidCallback onTap,
+}) {
+  return GestureDetector(
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.symmetric(vertical: 13),
+      decoration: BoxDecoration(
+      gradient: _C.gradientAccent,
+        borderRadius: BorderRadius.circular(16),
       ),
-    );
-  }
-
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            color: Colors.white,
+            size: 17,
+          ),
+          const SizedBox(width: 7),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              fontSize: 13,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
   // ═══════════════════════════════════════════
   //  STATISTICS CARD  (gauge + bar chart)
   // ═══════════════════════════════════════════
@@ -641,19 +646,25 @@ class _DashboardLayoutState extends State<DashboardLayout>
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(26),
-          border: Border.all(color: const Color(0xff3a1500)),
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xff17100b), Color(0xff111111), Color(0xff1a0a00)],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: _C.orange.withOpacity(0.08),
-              blurRadius: 26,
-              offset: const Offset(0, 14),
-            ),
-          ],
+          border: Border.all(
+  color: const Color(0xff2B2B2B),
+),
+       gradient: const LinearGradient(
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
+  colors: [
+    Color(0xff1A1D24),
+    Color(0xff161A20),
+    Color(0xff12151B),
+  ],
+),
+       boxShadow: [
+  BoxShadow(
+    color: Colors.black.withOpacity(0.55),
+    blurRadius: 25,
+    offset: const Offset(0, 15),
+  ),
+],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -668,7 +679,7 @@ class _DashboardLayoutState extends State<DashboardLayout>
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: const Icon(Icons.insights_rounded,
-                      color: Colors.black, size: 22),
+                    color: Color(0xff111111), size: 22),
                 ),
                 const SizedBox(width: 12),
                 const Expanded(
@@ -932,7 +943,7 @@ Widget _cardActions() {
       child: Container(
         height: 260,
         decoration: BoxDecoration(
-          color: _C.surface,
+         color: const Color(0xff181A20),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(color: _C.border),
         ),

@@ -6,38 +6,52 @@ import '../widgets/pinwheel_loader.dart';
 //  DESIGN TOKENS - SAME STYLE AS request_screen.dart
 // ─────────────────────────────────────────────────────────────
 class _C {
-  static const bg = Color(0xff0a0a0a);
-  static const surface = Color(0xff141414);
-  static const surfaceAlt = Color(0xff1c1c1e);
-  static const border = Color(0xff2a2a2a);
-  static const borderFaint = Color(0xff1e1e1e);
+  static const bg = Color(0xff000000);
+  static const surface = Color(0xff0D0D0D);
+  static const surfaceAlt = Color(0xff171717);
 
-  static const orange = Color(0xffFF4500);
-  static const amber = Color(0xffFFB800);
-  static const gold = Color(0xffFFD700);
+  static const border = Color(0xff2E2E2E);
+  static const borderFaint = Color(0xff202020);
 
-  static const red = Color(0xffef4444);
-  static const blue = Color(0xff3b82f6);
+  // Theme
+  static const orange = Color(0xffFACC15);
+  static const amber = Color(0xffFFD700);
+  static const gold = Color(0xffFFF176);
+
+  static const red = Color(0xffEF4444);
+  static const blue = Color(0xffFACC15);
 
   static const textPrimary = Colors.white;
-  static const textSecondary = Color(0xff8E8E93);
+  static const textSecondary = Color(0xffA3A3A3);
 
   static const gradientAccent = LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
-    colors: [orange, amber, gold],
+    colors: [
+      Color(0xffFACC15),
+      Color(0xffFFD700),
+      Color(0xffFFF176),
+    ],
   );
 
   static const gradientCard = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xff1a0a00), Color(0xff2d1200), Color(0xff1a0800)],
+    colors: [
+      Color(0xff050505),
+      Color(0xff111111),
+      Color(0xff1A1600),
+    ],
   );
 
   static const gradientGlow = RadialGradient(
     center: Alignment(-0.2, -0.6),
     radius: 1.2,
-    colors: [Color(0x55FF4500), Color(0x22FF8C00), Color(0x00000000)],
+    colors: [
+      Color(0x55FACC15),
+      Color(0x22FFD700),
+      Color(0x00000000),
+    ],
   );
 }
 
@@ -543,7 +557,7 @@ Future<void> sendTransfer() async {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xff1f0d00),
+       color: const Color(0xff2A2300),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: _C.orange, width: 1.4),
       ),

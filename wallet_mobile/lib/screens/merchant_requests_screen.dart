@@ -3,38 +3,52 @@ import '../services/api_service.dart';
 import 'chat_screen.dart';
 
 class _C {
-  static const bg = Color(0xff0a0a0a);
-  static const surface = Color(0xff141414);
-  static const surfaceAlt = Color(0xff1c1c1e);
-  static const border = Color(0xff2a2a2a);
+  static const bg = Color(0xff000000);
+  static const surface = Color(0xff0D0D0D);
+  static const surfaceAlt = Color(0xff171717);
 
-  static const orange = Color(0xffFF4500);
-  static const amber = Color(0xffFFB800);
-  static const gold = Color(0xffFFD700);
+  static const border = Color(0xff2E2E2E);
 
-  static const success = Color(0xff22c55e);
-  static const red = Color(0xffef4444);
-  static const blue = Color(0xff3b82f6);
+  // Theme
+  static const orange = Color(0xffFACC15);
+  static const amber = Color(0xffFFD700);
+  static const gold = Color(0xffFFF176);
+
+  static const success = Color(0xff22C55E);
+  static const red = Color(0xffEF4444);
+  static const blue = Color(0xffFACC15);
 
   static const textPrimary = Colors.white;
-  static const textSecondary = Color(0xff8E8E93);
+  static const textSecondary = Color(0xffA3A3A3);
 
   static const gradientAccent = LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
-    colors: [orange, amber, gold],
+    colors: [
+      Color(0xffFACC15),
+      Color(0xffFFD700),
+      Color(0xffFFF176),
+    ],
   );
 
   static const gradientCard = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xff1a0a00), Color(0xff2d1200), Color(0xff1a0800)],
+    colors: [
+      Color(0xff050505),
+      Color(0xff111111),
+      Color(0xff1A1600),
+    ],
   );
 
   static const gradientGlow = RadialGradient(
     center: Alignment(-0.2, -0.6),
     radius: 1.2,
-    colors: [Color(0x55FF4500), Color(0x22FF8C00), Color(0x00000000)],
+    colors: [
+      Color(0x55FACC15),
+      Color(0x22FFD700),
+      Color(0x00000000),
+    ],
   );
 }
 
@@ -569,9 +583,9 @@ class _MerchantRequestsScreenState extends State<MerchantRequestsScreen>
               width: 76,
               height: 76,
               decoration: BoxDecoration(
-                color: _C.orange.withOpacity(0.10),
+               color: _C.amber.withOpacity(0.10),
                 shape: BoxShape.circle,
-                border: Border.all(color: _C.orange.withOpacity(0.25)),
+               border: Border.all(color: _C.amber.withOpacity(0.30)),
               ),
               child: const Icon(
                 Icons.receipt_long_rounded,

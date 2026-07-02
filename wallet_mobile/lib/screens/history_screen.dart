@@ -8,31 +8,36 @@ import 'transaction_detail_screen.dart';
 //  DESIGN TOKENS - SAME STYLE AS OTHER SCREENS
 // ─────────────────────────────────────────────────────────────
 class _C {
-  static const bg = Color(0xff0a0a0a);
-  static const surface = Color(0xff141414);
-  static const surfaceAlt = Color(0xff1c1c1e);
-  static const border = Color(0xff2a2a2a);
-  static const borderFaint = Color(0xff1e1e1e);
+  static const bg = Color(0xff000000);
+  static const surface = Color(0xff0D0D0D);
+  static const surfaceAlt = Color(0xff171717);
 
-  static const orange = Color(0xffFF4500);
-  static const amber = Color(0xffFFB800);
-  static const gold = Color(0xffFFD700);
+  static const border = Color(0xff2E2E2E);
+  static const borderFaint = Color(0xff202020);
 
-  static const green = Color(0xff22c55e);
-  static const red = Color(0xffef4444);
-  static const blue = Color(0xff3b82f6);
+  // Theme
+  static const orange = Color(0xffFACC15);
+  static const amber = Color(0xffFFD700);
+  static const gold = Color(0xffFFF176);
+
+  static const green = Color(0xff22C55E);
+  static const red = Color(0xffEF4444);
+  static const blue = Color(0xffFACC15);
 
   static const textPrimary = Colors.white;
-  static const textSecondary = Color(0xff8E8E93);
-  static const textMuted = Color(0xff3a3a3c);
+  static const textSecondary = Color(0xffA3A3A3);
+  static const textMuted = Color(0xff666666);
 
   static const gradientAccent = LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
-    colors: [orange, amber, gold],
+    colors: [
+      Color(0xffFACC15),
+      Color(0xffFFD700),
+      Color(0xffFFF176),
+    ],
   );
 }
-
 class HistoryScreen extends StatefulWidget {
   final Map user;
 
@@ -216,7 +221,7 @@ Widget _sortIcon({
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: _C.orange.withOpacity(0.22),
+          color: _C.amber.withOpacity(0.28),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -578,7 +583,7 @@ Widget _tile(Map<String, dynamic> wrap) {
               width: 42,
               height: 42,
               decoration: BoxDecoration(
-                color: _C.orange.withOpacity(0.12),
+                color: _C.amber.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(icon, color: _C.orange, size: 21),
@@ -625,7 +630,7 @@ Widget _tile(Map<String, dynamic> wrap) {
       backgroundColor: _C.bg,
       body: SafeArea(
         child: RefreshIndicator(
-          color: _C.orange,
+          color: _C.amber,
           onRefresh: _loadData,
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
