@@ -1,24 +1,30 @@
-
 @extends('layouts.admin', ['title' => 'Settings'])
 
 @push('styles')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
 <style>
 :root{
-    --dark:#101518;
-    --hero:#2b2f32;
-    --box:#2b2f32;
-    --panel:#24292d;
-    --input:#1f2428;
-    --line:#3b4248;
-    --red:#e8192c;
-    --red2:#c91022;
+    --bg:#0B0E11;
+    --surface:#181A20;
+    --surface-alt:#1E2329;
+    --input:#0B0E11;
+    --border:#2B3139;
+
+    --yellow:#F0B90B;
+    --yellow-dark:#C99400;
+    --gold:#FFD45A;
+
     --green:#0ecb81;
-    --gold:#ffc933;
+    --red:#ef4444;
+
     --text:#fff;
-    --muted:#aeb4ba;
-    --muted2:#747b82;
+    --muted:#848E9C;
+    --muted2:#5e6673;
+
+    --shadow:0 18px 45px rgba(0,0,0,.35);
 }
 
 *{box-sizing:border-box}
@@ -26,14 +32,14 @@
 .vs-page{
     margin:-24px;
     min-height:100vh;
-    background:var(--dark);
+    background:var(--bg);
     color:var(--text);
-    font-family:Inter,Arial,sans-serif;
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
     padding-bottom:60px;
 }
 
 .vs-hero{
-    background:var(--hero);
+    background:var(--surface);
     padding:65px 85px 120px;
     position:relative;
     overflow:hidden;
@@ -51,11 +57,11 @@
 .vs-hero-inner{
     position:relative;
     z-index:2;
-    max-width:680px;
+    max-width:720px;
 }
 
 .vs-eyebrow{
-    color:var(--red);
+    color:var(--yellow);
     font-size:12px;
     font-weight:900;
     letter-spacing:.14em;
@@ -64,66 +70,131 @@
 }
 
 .vs-title-main{
-    font-size:46px;
-    line-height:1.12;
-    font-weight:900;
+    font-size:34px;
+    line-height:1.15;
+    font-weight:800;
     margin:0 0 18px;
+    color:#fff;
 }
 
 .vs-title-main span{
-    color:var(--red);
+    color:var(--yellow);
     display:block;
 }
 
 .vs-subtitle-main{
-    color:#b8bdc2;
+    color:var(--muted);
     font-size:15px;
     line-height:1.7;
     font-weight:700;
-    max-width:580px;
+    max-width:590px;
 }
 
 .vs-wrap{
     position:relative;
     z-index:5;
-    margin:-82px 85px 0;
+    margin:-82px 45px 0;
+}
+
+.vs-stats{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:18px;
+    margin-bottom:28px;
+}
+
+.vs-stat{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:20px;
+    min-height:118px;
+    position:relative;
+    overflow:hidden;
+}
+
+.vs-stat::after{
+    content:"";
+    position:absolute;
+    right:-38px;
+    top:-38px;
+    width:115px;
+    height:115px;
+    border-radius:50%;
+    background:rgba(240,185,11,.12);
+}
+
+.vs-stat-icon{
+    width:42px;
+    height:42px;
+    border-radius:50%;
+    background:rgba(240,185,11,.12);
+    color:var(--yellow);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:22px;
+    margin-bottom:14px;
+}
+
+.vs-stat-label{
+    color:var(--muted);
+    font-size:12px;
+    font-weight:900;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+}
+
+.vs-stat-value{
+    font-size:22px;
+    font-weight:800;
+    margin-top:6px;
+    color:#fff;
 }
 
 .vs-card{
-    background:var(--box);
-    border:1.5px solid var(--red);
+    background:var(--surface);
+    border:1.5px solid var(--yellow);
     border-radius:7px;
     overflow:hidden;
-    box-shadow:0 18px 40px rgba(0,0,0,.28);
+    box-shadow:var(--shadow);
 }
 
 .vs-card-head{
-    background:var(--panel);
-    border-bottom:1px solid var(--line);
+    background:var(--surface-alt);
+    border-bottom:1px solid var(--border);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
     padding:18px 22px;
 }
 
 .vs-title{
     margin:0;
-    font-size:18px;
-    font-weight:900;
+    font-size:15px;
+    font-weight:800;
     display:flex;
     align-items:center;
     gap:9px;
+    color:#fff;
 }
 
 .vs-title i{
-    color:var(--red);
+    color:var(--yellow);
+    font-size:18px;
 }
 
 .vs-subtitle{
-    margin-top:6px;
+    margin-top:5px;
     color:var(--muted);
-    font-size:13px;
+    font-size:12px;
     font-weight:700;
 }
 
 .vs-table-wrap{
+    width:100%;
     overflow-x:auto;
 }
 
@@ -131,37 +202,39 @@
     width:100%;
     min-width:980px;
     border-collapse:collapse;
+    font-size:13px;
 }
 
 .vs-table th{
-    background:var(--panel);
+    background:var(--surface-alt);
     color:var(--muted2);
-    font-size:11px;
+    font-size:10px;
+    font-weight:900;
     text-transform:uppercase;
     letter-spacing:.05em;
     text-align:left;
     padding:14px 16px;
-    border-bottom:1px solid var(--line);
-    font-weight:900;
+    border-bottom:1px solid var(--border);
     white-space:nowrap;
 }
 
 .vs-table td{
     padding:15px 16px;
-    border-top:1px solid var(--line);
+    border-top:1px solid var(--border);
     color:#c9ced3;
     vertical-align:middle;
     font-weight:700;
 }
 
 .vs-table tr:hover td{
-    background:#30363a;
+    background:var(--surface-alt);
 }
 
 .vs-ref{
-    color:var(--red);
+    color:var(--yellow);
     font-family:monospace;
     font-weight:900;
+    font-size:12px;
 }
 
 .vs-name{
@@ -173,6 +246,7 @@
     font-size:11px;
     color:var(--muted);
     margin-top:3px;
+    font-weight:700;
 }
 
 .vs-role{
@@ -187,7 +261,7 @@
     white-space:nowrap;
     background:var(--input);
     color:#d5dade;
-    border:1px solid var(--line);
+    border:1px solid var(--border);
 }
 
 .vs-role.merchant{
@@ -200,7 +274,7 @@
     display:inline-flex;
     align-items:center;
     gap:5px;
-    color:var(--red);
+    color:var(--yellow);
     text-decoration:none;
     font-size:12px;
     font-weight:900;
@@ -208,7 +282,7 @@
 }
 
 .vs-link:hover{
-    color:#ff6b7b;
+    color:var(--gold);
 }
 
 .vs-badge{
@@ -237,13 +311,16 @@
     border:0;
     border-radius:4px;
     padding:10px 14px;
-    font-size:13px;
+    font-size:12px;
     font-weight:900;
     cursor:pointer;
     display:inline-flex;
     align-items:center;
+    justify-content:center;
     gap:7px;
     white-space:nowrap;
+    text-decoration:none;
+    font-family:inherit;
 }
 
 .vs-btn-green{
@@ -256,18 +333,16 @@
     color:#fff;
 }
 
+.vs-btn-green:hover,
 .vs-btn-red:hover{
-    background:var(--red2);
-}
-
-.vs-btn-green:hover{
-    opacity:.9;
+    transform:translateY(-1px);
+    opacity:.92;
 }
 
 .vs-pagination{
     padding:16px 22px;
-    border-top:1px solid var(--line);
-    background:var(--panel);
+    border-top:1px solid var(--border);
+    background:var(--surface-alt);
 }
 
 .vs-empty{
@@ -277,39 +352,58 @@
     font-weight:800;
 }
 
+@media(max-width:1300px){
+    .vs-wrap{margin:-82px 24px 0;}
+    .vs-table th{font-size:9px;padding:12px 10px;}
+    .vs-table td{font-size:12px;padding:13px 10px;}
+}
+
 @media(max-width:1100px){
-    .vs-wrap{
-        margin:-82px 24px 0;
+    .vs-stats{grid-template-columns:repeat(2,1fr);}
+    .vs-table{min-width:0;}
+    .vs-table thead{display:none;}
+    .vs-table,
+    .vs-table tbody,
+    .vs-table tr,
+    .vs-table td{display:block;width:100%;}
+    .vs-table tr{
+        background:var(--surface-alt);
+        border:1px solid var(--border);
+        border-radius:7px;
+        margin:12px;
+        padding:14px;
+    }
+    .vs-table td{
+        border-top:0;
+        padding:9px 0;
+        white-space:normal;
+    }
+    .vs-table td::before{
+        content:attr(data-label);
+        display:block;
+        color:var(--muted2);
+        font-size:10px;
+        font-weight:900;
+        text-transform:uppercase;
+        margin-bottom:5px;
     }
 }
 
 @media(max-width:768px){
-    .vs-page{
-        margin:-16px;
-    }
-
-    .vs-hero{
-        padding:45px 24px 110px;
-    }
-
-    .vs-title-main{
-        font-size:34px;
-    }
-
-    .vs-wrap{
-        margin:-76px 18px 0;
-    }
+    .vs-page{margin:-16px;}
+    .vs-hero{padding:45px 24px 110px;}
+    .vs-title-main{font-size:34px;}
+    .vs-wrap{margin:-76px 18px 0;}
+    .vs-stats{grid-template-columns:1fr;}
 }
 </style>
 @endpush
 
 @section('content')
-
 <div class="vs-page">
-
     <section class="vs-hero">
         <div class="vs-hero-inner">
-            <div class="vs-eyebrow">Xynder Wallet Admin</div>
+            <div class="vs-eyebrow">BITXNOW ADMIN</div>
 
             <h1 class="vs-title-main">
                 User Verification
@@ -324,16 +418,40 @@
     </section>
 
     <main class="vs-wrap">
+        <section class="vs-stats">
+            <div class="vs-stat">
+                <div class="vs-stat-icon"><i class="ti ti-users"></i></div>
+                <div class="vs-stat-label">Total Users</div>
+                <div class="vs-stat-value">{{ $users->total() ?? $users->count() }}</div>
+            </div>
+
+            <div class="vs-stat">
+                <div class="vs-stat-icon"><i class="ti ti-shield-check"></i></div>
+                <div class="vs-stat-label">Verified</div>
+                <div class="vs-stat-value">{{ $verifiedCount ?? 0 }}</div>
+            </div>
+
+            <div class="vs-stat">
+                <div class="vs-stat-icon"><i class="ti ti-clock"></i></div>
+                <div class="vs-stat-label">Not Verified</div>
+                <div class="vs-stat-value">{{ $unverifiedCount ?? 0 }}</div>
+            </div>
+
+            <div class="vs-stat">
+                <div class="vs-stat-icon"><i class="ti ti-building-store"></i></div>
+                <div class="vs-stat-label">Merchants</div>
+                <div class="vs-stat-value">{{ $merchantCount ?? 0 }}</div>
+            </div>
+        </section>
 
         <section class="vs-card">
             <div class="vs-card-head">
-                <h2 class="vs-title">
-                    <i class="ti ti-shield-check"></i>
-                    User Verification Settings
-                </h2>
-
-                <div class="vs-subtitle">
-                    Admin can verify or unverify client and merchant accounts here.
+                <div>
+                    <h2 class="vs-title">
+                        <i class="ti ti-shield-check"></i>
+                        User Verification Settings
+                    </h2>
+                    <div class="vs-subtitle">Admin can verify or unverify client and merchant accounts here.</div>
                 </div>
             </div>
 
@@ -354,39 +472,37 @@
                     <tbody>
                     @forelse($users as $user)
                         <tr>
-                            <td>
+                            <td data-label="#">
                                 <span class="vs-ref">#{{ $user->id }}</span>
                             </td>
 
-                            <td>
+                            <td data-label="User">
                                 <div class="vs-name">{{ $user->name }}</div>
                                 <div class="vs-small">{{ $user->phone ?? 'No phone' }}</div>
                             </td>
 
-                            <td>{{ $user->email }}</td>
+                            <td data-label="Email">{{ $user->email }}</td>
 
-                            <td>
+                            <td data-label="Role">
                                 <span class="vs-role {{ $user->role === 'merchant' ? 'merchant' : '' }}">
                                     <i class="ti {{ $user->role === 'merchant' ? 'ti-building-store' : 'ti-user' }}"></i>
                                     {{ ucfirst($user->role) }}
                                 </span>
                             </td>
 
-                            <td>
+                            <td data-label="Aadhaar">
                                 {{ $user->aadhaar ?? '—' }}
 
                                 @if($user->aadhaar_photo)
                                     <br>
-                                    <a href="{{ asset('storage/'.$user->aadhaar_photo) }}"
-                                       target="_blank"
-                                       class="vs-link">
+                                    <a href="{{ asset('storage/'.$user->aadhaar_photo) }}" target="_blank" class="vs-link">
                                         <i class="ti ti-photo"></i>
                                         View Aadhaar Photo
                                     </a>
                                 @endif
                             </td>
 
-                            <td>
+                            <td data-label="Verification">
                                 @if($user->is_verified)
                                     <span class="vs-badge vs-badge-green">
                                         <i class="ti ti-circle-check"></i>
@@ -400,23 +516,17 @@
                                 @endif
                             </td>
 
-                            <td>
-                                <form method="POST"
-                                      action="{{ route('admin.settings.toggle-verification', $user) }}"
-                                      style="margin:0;">
+                            <td data-label="Action">
+                                <form method="POST" action="{{ route('admin.settings.toggle-verification', $user) }}" style="margin:0;">
                                     @csrf
 
                                     @if($user->is_verified)
-                                        <button type="submit"
-                                                class="vs-btn vs-btn-red"
-                                                onclick="return confirm('Mark this user as unverified?')">
+                                        <button type="submit" class="vs-btn vs-btn-red" onclick="return confirm('Mark this user as unverified?')">
                                             <i class="ti ti-x"></i>
                                             Mark Unverified
                                         </button>
                                     @else
-                                        <button type="submit"
-                                                class="vs-btn vs-btn-green"
-                                                onclick="return confirm('Verify this user?')">
+                                        <button type="submit" class="vs-btn vs-btn-green" onclick="return confirm('Verify this user?')">
                                             <i class="ti ti-check"></i>
                                             Verify User
                                         </button>
@@ -439,9 +549,6 @@
                 {{ $users->appends(request()->query())->links() }}
             </div>
         </section>
-
     </main>
 </div>
-
 @endsection
-

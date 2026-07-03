@@ -1,48 +1,50 @@
-@extends('layouts.admin', ['title' => 'Wallet Requests'])
+@extends('layouts.admin', ['title' => 'P2P Requests'])
 
 @push('styles')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
 <style>
-:root{--dark:#101518;--hero:#2b2f32;--box:#2b2f32;--panel:#24292d;--input:#1f2428;--line:#3b4248;--red:#e8192c;--red2:#c91022;--green:#0ecb81;--gold:#ffc933;--text:#fff;--muted:#aeb4ba;--muted2:#747b82;}
+:root{--dark:#0B0E11;--hero:#181A20;--box:#181A20;--panel:#1E2329;--input:#0B0E11;--line:#2B3139;--yellow:#F0B90B;--yellow2:#C99400;--green:#0ecb81;--sell:#ef4444;--gold:#FFD45A;--text:#fff;--muted:#848E9C;--muted2:#5e6673;}
 *{box-sizing:border-box}
-.ad-page{margin:-24px;min-height:100vh;background:var(--dark);color:var(--text);font-family:Inter,Arial,sans-serif;padding-bottom:60px;}
+.ad-page{margin:-24px;min-height:100vh;background:var(--dark);color:var(--text);font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;padding-bottom:60px;}
 .ad-hero{background:var(--hero);padding:65px 85px 120px;position:relative;overflow:hidden;}
 .ad-hero::after{content:"";position:absolute;inset:0;opacity:.07;background-image:linear-gradient(120deg,transparent 20%,rgba(255,255,255,.18) 21%,transparent 22%);background-size:260px 260px;}
 .ad-hero-inner{position:relative;z-index:2;max-width:680px;}
-.ad-eyebrow{color:var(--red);font-size:12px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;margin-bottom:14px;}
-.ad-title-main{font-size:46px;line-height:1.12;font-weight:900;margin:0 0 18px;}
-.ad-title-main span{color:var(--red);display:block;}
-.ad-subtitle{color:#b8bdc2;font-size:15px;line-height:1.7;font-weight:700;max-width:580px;}
+.ad-eyebrow{color:var(--yellow);font-size:12px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;margin-bottom:14px;}
+.ad-title-main{font-size:34px;line-height:1.15;font-weight:800;margin:0 0 18px;}
+.ad-title-main span{color:var(--yellow);display:block;}
+.ad-subtitle{color:#848E9C;font-size:15px;line-height:1.7;font-weight:700;max-width:580px;}
 .ad-wrap{position:relative;z-index:5;margin:-82px 45px 0;}
 .ad-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:28px;}
 .ad-kpi{background:var(--box);border:1px solid var(--line);border-radius:6px;padding:20px;min-height:118px;position:relative;overflow:hidden;}
-.ad-kpi::after{content:"";position:absolute;right:-38px;top:-38px;width:115px;height:115px;border-radius:50%;background:rgba(232,25,44,.12);}
-.ad-kpi-icon{width:42px;height:42px;border-radius:50%;background:#3a1018;color:var(--red);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:14px;}
+.ad-kpi::after{content:"";position:absolute;right:-38px;top:-38px;width:115px;height:115px;border-radius:50%;background:rgba(240,185,11,.12);}
+.ad-kpi-icon{width:42px;height:42px;border-radius:50%;background:rgba(240,185,11,.12);color:var(--yellow);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:14px;}
 .ad-kpi-label{color:var(--muted);font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;}
-.ad-kpi-value{font-size:28px;font-weight:900;margin-top:6px;}
-.ad-card{background:var(--box);border:1.5px solid var(--red);border-radius:7px;overflow:hidden;box-shadow:0 18px 40px rgba(0,0,0,.28);}
+.ad-kpi-value{font-size:22px;font-weight:800;margin-top:6px;}
+.ad-card{background:var(--box);border:1.5px solid var(--yellow);border-radius:7px;overflow:hidden;box-shadow:0 18px 40px rgba(0,0,0,.28);}
 .ad-card-head{background:var(--panel);border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:18px 22px;}
-.ad-title{font-size:18px;font-weight:900;margin:0;display:flex;align-items:center;gap:9px;}
-.ad-title i{color:var(--red);}
+.ad-title{font-size:15px;font-weight:800;margin:0;display:flex;align-items:center;gap:9px;}
+.ad-title i{color:var(--yellow);}
 .ad-filters{display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:10px;padding:16px 22px;border-bottom:1px solid var(--line);background:var(--box);}
 .ad-search-wrap{position:relative;}
 .ad-search-wrap i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:16px;}
 .ad-input,.ad-select{width:100%;height:42px;border:1px solid var(--line);border-radius:4px;padding:0 13px;font-size:13px;background:var(--input);color:var(--text);outline:0;font-weight:700;}
 .ad-search-wrap .ad-input{padding-left:36px;}
-.ad-input:focus,.ad-select:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(232,25,44,.12);}
+.ad-input:focus,.ad-select:focus{border-color:var(--yellow);box-shadow:0 0 0 3px rgba(240,185,11,.12);}
 .ad-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 13px;border-radius:4px;font-size:12px;font-weight:900;border:0;cursor:pointer;text-decoration:none;white-space:nowrap;}
-.ad-btn-red{background:var(--red);color:#fff;}
+.ad-btn-red{background:var(--yellow);color:#111;}
 .ad-btn-green{background:var(--green);color:#052e16;}
 .ad-btn-yellow{background:var(--gold);color:#111;}
 .ad-btn-ghost{background:var(--input);color:#fff;border:1px solid var(--line);}
-.ad-btn-ghost:hover{border-color:var(--red);color:#fff;}
-.ad-table-wrap{width:100%;overflow-x:hidden!important;}
+.ad-btn-ghost:hover{border-color:var(--yellow);color:#fff;}
+.ad-table-wrap{width:100%;overflow-x:auto!important;}
 .ad-table{width:100%!important;min-width:0!important;border-collapse:collapse;table-layout:fixed;font-size:13px;}
 .ad-table th{background:var(--panel);color:var(--muted2);font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.05em;padding:14px 8px;text-align:left;}
 .ad-table td{padding:15px 8px;border-top:1px solid var(--line);color:#c9ced3;vertical-align:middle;font-weight:700;word-break:break-word;white-space:normal;}
 .ad-click-row{cursor:pointer;}
-.ad-click-row:hover td{background:#30363a;}
+.ad-click-row:hover td{background:#1E2329;}
 .ad-table th:nth-child(1),.ad-table td:nth-child(1){width:10%;}
 .ad-table th:nth-child(2),.ad-table td:nth-child(2){width:13%;}
 .ad-table th:nth-child(3),.ad-table td:nth-child(3){width:13%;}
@@ -55,31 +57,45 @@
 .ad-table th:nth-child(10),.ad-table td:nth-child(10){width:11%;}
 .ad-name{font-weight:900;color:#fff;}
 .ad-small{font-size:11px;color:var(--muted);margin-top:3px;}
-.ad-ref{color:var(--red);font-family:monospace;font-weight:900;font-size:12px;}
-.ad-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:20px;font-size:11px;font-weight:900;white-space:normal;text-transform:uppercase;}
+.ad-ref{color:var(--yellow);font-family:monospace;font-weight:900;font-size:12px;}
+.ad-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:20px;font-size:11px;font-weight:900;white-space:nowrap;text-transform:uppercase;}
 .ad-badge-green{background:#0d2b1e;color:var(--green);}
-.ad-badge-red{background:#3a1018;color:#ff6b7b;}
+.ad-badge-red{background:rgba(239,68,68,.13);color:#ff9b9b;}
 .ad-badge-yellow{background:#3b2a09;color:var(--gold);}
 .ad-badge-gray{background:var(--input);color:#d5dade;border:1px solid var(--line);}
 .ad-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
 .ad-actions form{margin:0;}
 .ad-icon-btn{width:36px;height:36px;border-radius:4px;border:1px solid var(--line);background:var(--input);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;text-decoration:none;font-size:17px;}
-.ad-icon-btn:hover{border-color:var(--red);transform:translateY(-1px);}
+.ad-icon-btn:hover{border-color:var(--yellow);transform:translateY(-1px);}
 .ad-icon-view{color:var(--gold);}
 .ad-icon-approve{color:var(--green);}
-.ad-icon-reject{color:#ff6b7b;}
+.ad-icon-reject{color:#ff9b9b;}
 .ad-slip{width:44px;height:44px;object-fit:cover;border-radius:5px;border:1px solid var(--line);cursor:pointer;background:var(--input);}
 .ad-pagination{padding:16px 22px;border-top:1px solid var(--line);background:var(--panel);display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;}
 .ad-pagination-info{color:var(--muted);font-size:12px;font-weight:800;}
+
+.ad-pagination nav{width:auto;max-width:100%;}
+.ad-pagination nav > div{display:flex!important;align-items:center!important;gap:8px!important;flex-wrap:wrap!important;}
+.ad-pagination nav p{margin:0!important;color:var(--muted)!important;font-size:12px!important;font-weight:800!important;}
+.ad-pagination nav a,
+.ad-pagination nav span{display:inline-flex!important;align-items:center!important;justify-content:center!important;min-width:34px!important;height:34px!important;padding:0 10px!important;border-radius:5px!important;border:1px solid var(--line)!important;background:var(--input)!important;color:#fff!important;text-decoration:none!important;font-size:12px!important;font-weight:900!important;line-height:1!important;box-shadow:none!important;}
+.ad-pagination nav span[aria-current="page"] span,
+.ad-pagination nav span[aria-current="page"]{background:var(--yellow)!important;color:#111!important;border-color:var(--yellow)!important;}
+.ad-pagination nav a:hover{border-color:var(--yellow)!important;color:var(--yellow)!important;}
+.ad-pagination nav svg{width:16px!important;height:16px!important;max-width:16px!important;max-height:16px!important;display:block!important;stroke-width:3!important;}
+.ad-pagination nav .hidden{display:none!important;}
+.ad-pagination nav div:first-child{display:none!important;}
+.ad-pagination nav div:last-child{display:flex!important;}
+
 .ad-empty{text-align:center;padding:45px;color:var(--muted);font-weight:800;}
 .ad-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:9999;align-items:center;justify-content:center;padding:18px;}
 .ad-modal-overlay.open{display:flex;}
-.ad-modal{background:var(--box);border:1.5px solid var(--red);border-radius:7px;width:870px;max-width:100%;max-height:92vh;overflow-y:auto;box-shadow:0 18px 50px rgba(0,0,0,.5);}
+.ad-modal{background:var(--box);border:1.5px solid var(--yellow);border-radius:7px;width:870px;max-width:100%;max-height:92vh;overflow-y:auto;box-shadow:0 18px 50px rgba(0,0,0,.5);}
 .ad-modal-hdr{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:17px 22px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:5;}
-.ad-modal-title{margin:0;font-size:18px;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px;}
-.ad-modal-title i{color:var(--red);}
+.ad-modal-title{margin:0;font-size:15px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px;}
+.ad-modal-title i{color:var(--yellow);}
 .ad-modal-close{width:34px;height:34px;border:1px solid var(--line);background:var(--input);color:#fff;border-radius:4px;cursor:pointer;}
-.ad-modal-close:hover{background:var(--red);border-color:var(--red);}
+.ad-modal-close:hover{background:var(--yellow);border-color:var(--yellow);}
 .ad-modal-body{padding:22px;}
 .ad-detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
 .ad-detail-item{border:1px solid var(--line);background:var(--panel);border-radius:5px;padding:12px;}
@@ -91,7 +107,7 @@
 .ad-lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:10001;align-items:center;justify-content:center;flex-direction:column;}
 .ad-lightbox.open{display:flex;}
 .ad-lightbox img{max-width:90vw;max-height:80vh;border-radius:8px;border:1px solid var(--line);}
-.ad-lightbox-close{position:absolute;top:18px;right:24px;background:var(--red);border:0;color:#fff;font-size:22px;width:38px;height:38px;border-radius:4px;cursor:pointer;}
+.ad-lightbox-close{position:absolute;top:18px;right:24px;background:var(--yellow);border:0;color:#fff;font-size:22px;width:38px;height:38px;border-radius:4px;cursor:pointer;}
 @media(max-width:1300px){.ad-wrap{margin:-82px 24px 0;}.ad-table th{font-size:9px;padding:12px 6px;}.ad-table td{font-size:12px;padding:13px 6px;}.ad-btn{padding:8px 9px;font-size:11px;}}
 @media(max-width:1100px){.ad-kpis{grid-template-columns:repeat(2,1fr);}.ad-filters{grid-template-columns:1fr 1fr;}.ad-table,.ad-table thead,.ad-table tbody,.ad-table th,.ad-table td,.ad-table tr{display:block;width:100%!important;}.ad-table thead{display:none;}.ad-table tr{background:var(--panel);border:1px solid var(--line);border-radius:7px;margin:12px;padding:14px;}.ad-table td{border-top:0;padding:9px 0;}.ad-table td::before{content:attr(data-label);display:block;color:var(--muted2);font-size:10px;font-weight:900;text-transform:uppercase;margin-bottom:5px;}.ad-table td:first-child::before{display:none;}}
 @media(max-width:768px){.ad-page{margin:-16px;}.ad-hero{padding:45px 24px 110px;}.ad-title-main{font-size:34px;}.ad-wrap{margin:-76px 18px 0;}.ad-kpis{grid-template-columns:1fr;}.ad-filters{grid-template-columns:1fr;}.ad-detail-grid{grid-template-columns:1fr;}.ad-pagination{flex-direction:column;align-items:flex-start;}}
@@ -103,7 +119,7 @@
     <section class="ad-hero">
         <div class="ad-hero-inner">
           
-            <h1 class="ad-title-main">Wallet <span>Requests</span></h1>
+            <h1 class="ad-title-main">P2P <span>Requests</span></h1>
            
         </div>
     </section>
@@ -118,7 +134,7 @@
 
         <section class="ad-card">
             <div class="ad-card-head">
-                <h2 class="ad-title"><i class="ti ti-list-details"></i> Wallet Requests</h2>
+                <h2 class="ad-title"><i class="ti ti-list-details"></i> P2P Requests</h2>
             </div>
 
             <form id="adFilterForm" method="GET" action="{{ route('admin.wallet-requests.index') }}" class="ad-filters">
@@ -182,9 +198,9 @@
 
                             <td data-label="Type">
                                 @if($request->type === 'deposit')
-                                    <span class="ad-badge ad-badge-green"><i class="ti ti-trending-up"></i> Buy USD</span>
+                                    <span class="ad-badge ad-badge-green"><i class="ti ti-plus"></i> Buy USD</span>
                                 @elseif($request->type === 'withdrawal')
-                                    <span class="ad-badge ad-badge-red"><i class="ti ti-trending-down"></i> Sell USD</span>
+                                    <span class="ad-badge ad-badge-red"><i class="ti ti-minus"></i> Sell USD</span>
                                 @else
                                     <span class="ad-badge ad-badge-gray">{{ ucwords(str_replace('_', ' ', $request->type)) }}</span>
                                 @endif
@@ -246,6 +262,13 @@
         <i class="ti ti-lock"></i>
     </button>
 </form>
+                                    @elseif($request->status === 'approved')
+                                        <form method="POST" action="{{ route('admin.wallet-requests.close', $request) }}">
+                                            @csrf
+                                            <button type="submit" class="ad-icon-btn ad-icon-view" title="Close" onclick="return confirm('Close this approved request?')">
+                                                <i class="ti ti-lock"></i>
+                                            </button>
+                                        </form>
                                     @else
                                         <span class="ad-small">Processed</span>
                                     @endif
@@ -253,7 +276,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="10"><div class="ad-empty">No wallet requests found.</div></td></tr>
+                        <tr><td colspan="9"><div class="ad-empty">No P2P requests found.</div></td></tr>
                     @endforelse
                     </tbody>
                 </table>
@@ -269,7 +292,7 @@
             <div class="ad-modal-overlay" id="adView{{ $request->id }}">
                 <div class="ad-modal">
                     <div class="ad-modal-hdr">
-                        <h2 class="ad-modal-title"><i class="ti ti-receipt"></i> Wallet Request Details</h2>
+                        <h2 class="ad-modal-title"><i class="ti ti-receipt"></i> P2P Request Details</h2>
                         <button class="ad-modal-close" onclick="adCloseModal('adView{{ $request->id }}')"><i class="ti ti-x"></i></button>
                     </div>
 

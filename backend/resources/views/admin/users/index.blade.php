@@ -2,32 +2,47 @@
 
 @push('styles')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
 <style>
-:root{
-    --dark:#101518;
-    --box:#2b2f32;
-    --panel:#24292d;
-    --input:#1f2428;
-    --line:#3b4248;
-    --red:#e8192c;
-    --red2:#c91022;
+ :root{
+    --bg:#0B0E11;
+    --surface:#181A20;
+    --surface-alt:#1E2329;
+    --border:#2B3139;
+    --yellow:#F0B90B;
+    --yellow-dark:#C99400;
+    --gold:#FFD45A;
     --green:#0ecb81;
-    --gold:#ffc933;
-    --text:#fff;
-    --muted:#aeb4ba;
-    --muted2:#747b82;
+    --red:#ef4444;
+    --text:#ffffff;
+    --muted:#848E9C;
+    --muted2:#5e6673;
+    --shadow:0 18px 45px rgba(0,0,0,.35);
 }
 
 *{box-sizing:border-box}
 
+.ad-simple-head{
+    background:radial-gradient(circle at 92% 0%,rgba(240,185,11,.20),transparent 38%),linear-gradient(135deg,#181A20,#0B0E11);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:18px 20px;
+    box-shadow:var(--shadow);
+    margin-bottom:20px;
+}
+.ad-simple-kicker{color:var(--yellow);font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;margin-bottom:5px}
+.ad-simple-head h1{margin:0;font-size:19px;font-weight:800;letter-spacing:-.2px;color:#fff}
+.ad-simple-head p{margin:4px 0 0;color:var(--muted);font-size:12px;font-weight:600}
+
 .ad-page{
-    margin:-24px;
+    margin:-28px;
     min-height:100vh;
-    background:var(--dark);
+    background:var(--bg);
     color:var(--text);
-    font-family:Inter,Arial,sans-serif;
-    padding:24px;
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    padding:24px 36px 48px;
 }
 
 .ad-kpis{
@@ -38,11 +53,11 @@
 }
 
 .ad-kpi{
-    background:var(--box);
-    border:1px solid var(--line);
-    border-radius:6px;
-    padding:20px;
-    min-height:118px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:18px;
+    min-height:92px;
     position:relative;
     overflow:hidden;
 }
@@ -62,8 +77,8 @@
     width:42px;
     height:42px;
     border-radius:50%;
-    background:#3a1018;
-    color:var(--red);
+    background:rgba(240,185,11,.12);
+    color:var(--yellow);
     display:flex;
     align-items:center;
     justify-content:center;
@@ -80,7 +95,7 @@
 }
 
 .ad-kpi-value{
-    font-size:28px;
+    font-size:22px;
     font-weight:900;
     margin-top:6px;
 }
@@ -93,17 +108,17 @@
 }
 
 .ad-card{
-    background:var(--box);
-    border:1.5px solid var(--red);
-    border-radius:7px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:14px;
     overflow:hidden;
     width:100%;
 }
 
 .ad-head{
-    background:var(--panel);
-    border-bottom:1px solid var(--line);
-    padding:16px;
+    background:var(--surface-alt);
+    border-bottom:1px solid var(--border);
+    padding:16px 20px;
     display:flex;
     align-items:center;
     justify-content:space-between;
@@ -113,14 +128,14 @@
 
 .ad-title{
     margin:0;
-    font-size:22px;
-    font-weight:900;
+    font-size:15px;
+    font-weight:800;
 }
 
 .ad-tabs{
     display:flex;
-    background:var(--input);
-    border:1px solid var(--line);
+    background:var(--surface-alt);
+    border:1px solid var(--border);
     border-radius:5px;
     overflow:hidden;
 }
@@ -131,7 +146,7 @@
     font-size:13px;
     font-weight:900;
     text-decoration:none;
-    border-right:1px solid var(--line);
+    border-right:1px solid var(--border);
 }
 
 .ad-tab:last-child{border-right:0}
@@ -139,8 +154,8 @@
 .ad-tab.active,
 .ad-tab:hover{
     background:rgba(232,25,44,.14);
-    color:var(--red);
-    box-shadow:inset 0 -3px 0 var(--red);
+    color:var(--yellow);
+    box-shadow:inset 0 -3px 0 var(--yellow);
 }
 
 .ad-btn{
@@ -158,25 +173,25 @@
     white-space:nowrap;
 }
 
-.ad-btn-red{background:var(--red);color:#fff}
-.ad-btn-red:hover{background:var(--red2);color:#fff}
-.ad-btn-dark{background:var(--input);color:#fff;border:1px solid var(--line)}
-.ad-btn-dark:hover{border-color:var(--red);color:#fff}
+.ad-btn-red{background:var(--yellow);color:#fff}
+.ad-btn-red:hover{background:var(--yellow-dark);color:#fff}
+.ad-btn-dark{background:var(--surface-alt);color:#fff;border:1px solid var(--border)}
+.ad-btn-dark:hover{border-color:var(--yellow);color:#fff}
 
 .ad-filters{
     display:grid;
     grid-template-columns:2fr 1fr 1fr auto;
     gap:10px;
-    padding:16px;
-    border-bottom:1px solid var(--line);
+    padding:16px 20px;
+    border-bottom:1px solid var(--border);
 }
 
 .ad-input,
 .ad-select{
     height:42px;
     width:100%;
-    background:var(--input);
-    border:1px solid var(--line);
+    background:var(--surface-alt);
+    border:1px solid var(--border);
     color:var(--text);
     border-radius:4px;
     padding:0 13px;
@@ -186,7 +201,7 @@
 
 .ad-input:focus,
 .ad-select:focus{
-    border-color:var(--red);
+    border-color:var(--yellow);
     box-shadow:0 0 0 3px rgba(232,25,44,.12);
 }
 
@@ -202,9 +217,9 @@
 }
 
 .ad-table th{
-    background:var(--panel);
+    background:var(--surface-alt);
     color:var(--muted2);
-    padding:13px 10px;
+    padding:13px 16px;
     font-size:10px;
     font-weight:900;
     text-transform:uppercase;
@@ -213,18 +228,18 @@
 }
 
 .ad-table td{
-    padding:16px 10px;
-    border-top:1px solid var(--line);
+    padding:15px 16px;
+    border-top:1px solid var(--border);
     color:#c9ced3;
     font-size:13px;
-    font-weight:800;
+    font-weight:700;
     vertical-align:middle;
     white-space:normal;
     word-break:break-word;
 }
 
 .ad-table tr:hover td{
-    background:#30363a;
+    background:#1E2329;
 }
 
 /* 7 columns now: User, Balance, Status, Bank/UPI, Online, Verify, Actions */
@@ -253,12 +268,12 @@
 
 .ad-avatar{
     object-fit:cover;
-    border:2px solid var(--line);
+    border:2px solid var(--border);
 }
 
 .ad-avatar-empty{
-    background:#3a1018;
-    color:var(--red);
+    background:rgba(240,185,11,.12);
+    color:var(--yellow);
     display:flex;
     align-items:center;
     justify-content:center;
@@ -299,8 +314,8 @@
     align-items:center;
     gap:6px;
     margin-top:6px;
-    background:#3a1018;
-    color:#ff9aaa;
+    background:rgba(240,185,11,.12);
+    color:#F0B90B;
     border-radius:20px;
     padding:3px 6px 3px 9px;
     font-size:10px;
@@ -324,7 +339,7 @@
     display:inline-flex;
     align-items:center;
     justify-content:center;
-    color:#ff9aaa;
+    color:#F0B90B;
     cursor:pointer;
     font-size:11px;
     padding:0;
@@ -347,9 +362,9 @@
 }
 
 .ad-green{background:#0d2b1e;color:var(--green)}
-.ad-red{background:#3a1018;color:#ff6b7b}
+.ad-red{background:rgba(240,185,11,.12);color:#ff9b9b}
 .ad-yellow{background:#3b2a09;color:var(--gold)}
-.ad-gray{background:var(--input);color:#d5dade;border:1px solid var(--line)}
+.ad-gray{background:var(--surface-alt);color:#d5dade;border:1px solid var(--border)}
 
 .ad-actions{
     display:flex;
@@ -363,8 +378,8 @@
     width:32px;
     height:32px;
     border-radius:4px;
-    border:1px solid var(--line);
-    background:var(--input);
+    border:1px solid var(--border);
+    background:var(--surface-alt);
     display:inline-flex;
     align-items:center;
     justify-content:center;
@@ -373,10 +388,10 @@
     text-decoration:none;
 }
 
-.ad-icon:hover{border-color:var(--red)}
+.ad-icon:hover{border-color:var(--yellow)}
 .ad-edit{color:#fff}
 .ad-good{color:var(--green)}
-.ad-bad{color:#ff6b7b}
+.ad-bad{color:#ff9b9b}
 
 .ad-empty{
     text-align:center;
@@ -386,11 +401,23 @@
 }
 
 .ad-pagination{
-    padding:16px;
-    background:var(--panel);
-    border-top:1px solid var(--line);
+    padding:16px 20px;
+    background:var(--surface-alt);
+    border-top:1px solid var(--border);
 }
 
+
+.ad-kpi:hover,.ad-card:hover{border-color:rgba(240,185,11,.42)}
+.ad-kpi-icon{border:1px solid rgba(240,185,11,.35)}
+.ad-card{box-shadow:var(--shadow)}
+.ad-btn-red{background:var(--yellow);color:#0B0E11}
+.ad-btn-red:hover{background:var(--yellow-dark);color:#0B0E11}
+.ad-tab.active,.ad-tab:hover{background:rgba(240,185,11,.12);color:var(--yellow);box-shadow:inset 0 -3px 0 var(--yellow)}
+.ad-input:focus,.ad-select:focus{border-color:var(--yellow);box-shadow:0 0 0 3px rgba(240,185,11,.12)}
+.ad-avatar-empty{border:1px solid rgba(240,185,11,.35)}
+.ad-wallet{background:rgba(240,185,11,.12);color:var(--yellow);border:1px solid rgba(240,185,11,.28)}
+.ad-copy-btn{color:var(--yellow)}
+.ad-icon:hover{border-color:var(--yellow)}
 @media(max-width:1200px){
     .ad-table,
     .ad-table thead,
@@ -405,9 +432,9 @@
     .ad-table thead{display:none}
 
     .ad-table tr{
-        background:var(--panel);
-        border:1px solid var(--line);
-        border-radius:7px;
+        background:var(--surface-alt);
+        border:1px solid var(--border);
+        border-radius:14px;
         margin:12px;
         padding:14px;
     }
@@ -444,6 +471,12 @@
 @section('content')
 
 <div class="ad-page">
+
+    <section class="ad-simple-head">
+        <div class="ad-simple-kicker">BITXNOW ADMIN</div>
+        <h1>Clients & Merchants</h1>
+        <p>Manage client and merchant accounts, verification, status, wallet IDs, and online activity.</p>
+    </section>
 
     <div class="ad-kpis">
         <div class="ad-kpi">
@@ -579,7 +612,7 @@
                         </td>
 
                         <td data-label="Balance">
-                            LKR {{ number_format((float)($user->balance ?? 0), 2) }}
+                            ${{ number_format((float)($user->balance ?? 0), 2) }}
                         </td>
 
                         <td data-label="Status">

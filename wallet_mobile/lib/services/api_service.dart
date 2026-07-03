@@ -617,4 +617,18 @@ static Future<Map<String, dynamic>> rejectRequest(String requestId) async {
     return {"success": false, "message": e.toString()};
   }
 }
+static Future<Map<String, dynamic>> closeRequest(String requestId) async {
+  try {
+    final res = await http.post(
+      Uri.parse("$baseUrl/requests/$requestId/close"),
+      headers: await headers(),
+    ).timeout(const Duration(seconds: 25));
+
+    final data = decode(res);
+    if (res.statusCode == 401) await clearToken();
+    return data;
+  } catch (e) {
+    return {"success": false, "message": e.toString()};
+  }
+}
 }

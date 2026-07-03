@@ -28,13 +28,40 @@ class WalletTransferController extends Controller
     {
         $user = User::findOrFail($request->user()->id);
 
+        $filterQ = trim((string) $request->query('q', ''));
+        $filterType = $request->query('type', 'all');
+
         $transfers = WalletTransfer::with(['sender', 'receiver'])
             ->where(function ($q) use ($user) {
                 $q->where('sender_id', $user->id)
                     ->orWhere('receiver_id', $user->id);
             })
-            ->latest()
-            ->paginate(20);
+            ->when($filterType === 'sent', function ($q) use ($user) {
+                $q->where('sender_id', $user->id);
+            })
+            ->when($filterType === 'received', function ($q) use ($user) {
+                $q->where('receiver_id', $user->id);
+            })
+            ->when($filterQ !== '', function ($q) use ($filterQ) {
+                $q->where(function ($qq) use ($filterQ) {
+                    $qq->where('transaction_no', 'like', '%' . $filterQ . '%')
+                        ->orWhere('receiver_wallet_id', 'like', '%' . $filterQ . '%')
+                        ->orWhere('note', 'like', '%' . $filterQ . '%')
+                        ->orWhereHas('sender', function ($senderQ) use ($filterQ) {
+                            $senderQ->where('name', 'like', '%' . $filterQ . '%')
+                                ->orWhere('email', 'like', '%' . $filterQ . '%')
+                                ->orWhere('wallet_id', 'like', '%' . $filterQ . '%');
+                        })
+                        ->orWhereHas('receiver', function ($receiverQ) use ($filterQ) {
+                            $receiverQ->where('name', 'like', '%' . $filterQ . '%')
+                                ->orWhere('email', 'like', '%' . $filterQ . '%')
+                                ->orWhere('wallet_id', 'like', '%' . $filterQ . '%');
+                        });
+                });
+            })
+            ->latest('created_at')
+            ->paginate(20)
+            ->withQueryString();
 
         $receiver = null;
 
@@ -58,6 +85,10 @@ class WalletTransferController extends Controller
         $data = $request->validate([
             'wallet_id' => 'required|string|max:50',
         ]);
+
+        if (! $user->is_active || $user->status !== 'active') {
+            return back()->withErrors(['wallet_id' => 'Your account has been blocked.'])->withInput();
+        }
 
         if (! $user->is_verified) {
             return back()->withErrors(['wallet_id' => 'Your account is not verified yet.'])->withInput();
@@ -107,7 +138,9 @@ class WalletTransferController extends Controller
 
         try {
             $transfer = DB::transaction(function () use ($sender, $data, $amount) {
-                $lockedSender = User::where('id', $sender->id)->lockForUpdate()->firstOrFail();
+                $lockedSender = User::where('id', $sender->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
                 $receiver = User::where('wallet_id', $data['receiver_wallet_id'])
                     ->where('status', 'active')
@@ -151,23 +184,28 @@ class WalletTransferController extends Controller
                 ]
             );
 
-            $dashboardRoute = $sender->role === 'merchant'
-                ? 'merchant.dashboard'
-                : 'client.dashboard';
+            $transferRoute = $sender->role === 'merchant'
+                ? 'merchant.transfers'
+                : 'client.transfers';
 
             $chatRoute = $sender->role === 'merchant'
-                ? 'merchant.chats.show'
-                : 'client.chats.show';
+                ? 'merchant.chats.transfer'
+                : 'client.chats.transfer';
+
+            $transferNo = $transfer->transaction_no ?? 'TRA' . str_pad($transfer->id, 9, '0', STR_PAD_LEFT);
+            $chatUrl = route($chatRoute, $transfer);
 
             return redirect()
-                ->route($dashboardRoute)
+                ->route($transferRoute)
                 ->with('success', 'Transfer sent successfully.')
+                ->with('last_transfer_no', $transferNo)
+                ->with('chat_url', $chatUrl)
                 ->with('popup_transaction', [
                     'title' => 'Wallet Transfer Completed',
-                    'no' => $transfer->transaction_no,
+                    'no' => $transferNo,
                     'amount' => number_format((float) $transfer->amount, 2),
                     'status' => 'COMPLETED',
-                    'chat_url' => route($chatRoute, $conversation),
+                    'chat_url' => $chatUrl,
                 ]);
         } catch (\Throwable $e) {
             return back()->withErrors(['amount' => $e->getMessage() ?: 'Transfer failed.'])->withInput();

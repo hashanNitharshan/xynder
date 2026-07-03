@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
 import 'chat_screen.dart';
+
 class _C {
   // Background
   static const bg = Color(0xff000000);
@@ -12,28 +13,28 @@ class _C {
   static const border = Color(0xff2E2E2E);
   static const borderFaint = Color(0xff202020);
 
-  // Primary Theme (Yellow)
-  static const orange = Color(0xffFACC15);
-  static const amber = Color(0xffFFD700);
-  static const gold = Color(0xffFFF176);
+  // Primary Theme (Dark Yellow / Goldenrod)
+  static const orange = Color(0xffB8860B); // dark goldenrod
+  static const amber = Color(0xff9A6B00); // deep amber
+  static const gold = Color(0xffD4A017); // muted gold highlight
 
   // Status Colors
   static const green = Color(0xff22C55E);
   static const red = Color(0xffEF4444);
-  static const blue = Color(0xffFACC15);
+  static const blue = Color(0xffB8860B);
 
   // Text
   static const textPrimary = Colors.white;
   static const textSecondary = Color(0xffA3A3A3);
 
-  // Yellow Button Gradient
+  // Dark Yellow Button Gradient
   static const gradientAccent = LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
     colors: [
-      Color(0xffFACC15),
-      Color(0xffFFD700),
-      Color(0xffFFF176),
+      Color(0xff8A6300),
+      Color(0xffB8860B),
+      Color(0xffD4A017),
     ],
   );
 
@@ -44,10 +45,11 @@ class _C {
     colors: [
       Color(0xff050505),
       Color(0xff111111),
-      Color(0xff1A1600),
+      Color(0xff1A1500),
     ],
   );
 }
+
 class RequestScreen extends StatefulWidget {
   const RequestScreen({super.key});
 
@@ -121,13 +123,12 @@ class _RequestScreenState extends State<RequestScreen>
   double get _totalFee => _fee + _netFee;
   double get _converted => _amount * _inrRate;
 
- double get _total {
-  if (_isSell) {
-    return _converted - _totalFee; // Sell
+  double get _total {
+    if (_isSell) {
+      return _converted - _totalFee; // Sell
+    }
+    return _converted + _totalFee; // Buy
   }
-
-  return _converted + _totalFee; // Buy
-}
 
   bool get _isVerified {
     final v = _user?["is_verified"];
@@ -277,93 +278,8 @@ class _RequestScreenState extends State<RequestScreen>
     );
   }
 
-  // Goes back to the Dashboard home page instead of just popping
-  // one route (fixes back button not returning to dashboard).
-  void _goBackToDashboard() {
-    Navigator.popUntil(context, (route) => route.isFirst);
-  }
-
-  Widget _topBar() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: _goBackToDashboard,
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: _C.surface,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: _C.border),
-              ),
-              child: const Icon(
-                Icons.arrow_back_ios_new_rounded,
-                color: Colors.white,
-                size: 18,
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "P2P Request",
-                  style: TextStyle(
-                    color: _C.textPrimary,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  "Buy or Sell USD safely",
-                  style: TextStyle(
-                    color: _C.textSecondary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (_lastRequestId != null && _lastMerchantUser != null)
-            GestureDetector(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ChatScreen(
-                    otherUser: _lastMerchantUser!,
-                    chatType: "request",
-                    chatId: _lastRequestId!,
-                  ),
-                ),
-              ),
-              child: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  gradient: _C.gradientAccent,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.chat_rounded,
-                  color: Colors.black,
-                  size: 20,
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
   // ═══════════════════════════════════════════
-  //  SMALL BALANCE STRIP (Sell only, replaces big hero card)
+  //  SMALL BALANCE STRIP (Sell only)
   // ═══════════════════════════════════════════
   Widget _smallBalanceStrip() {
     if (!_isSell) return const SizedBox.shrink();
@@ -378,7 +294,7 @@ class _RequestScreenState extends State<RequestScreen>
           decoration: BoxDecoration(
             gradient: _C.gradientCard,
             borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xff4A3B00)),
+            border: Border.all(color: const Color(0xff3A2E00)),
           ),
           child: Row(
             children: [
@@ -391,7 +307,7 @@ class _RequestScreenState extends State<RequestScreen>
                 ),
                 child: const Icon(
                   Icons.account_balance_wallet_rounded,
-                  color: Colors.black,
+                  color: Colors.white,
                   size: 18,
                 ),
               ),
@@ -426,12 +342,12 @@ class _RequestScreenState extends State<RequestScreen>
                 decoration: BoxDecoration(
                   color: _isVerified
                       ? _C.green.withOpacity(0.14)
-                      : _C.amber.withOpacity(0.14),
+                      : _C.gold.withOpacity(0.14),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: _isVerified
                         ? _C.green.withOpacity(0.3)
-                        : _C.amber.withOpacity(0.3),
+                        : _C.gold.withOpacity(0.3),
                   ),
                 ),
                 child: Row(
@@ -441,13 +357,13 @@ class _RequestScreenState extends State<RequestScreen>
                           ? Icons.verified_rounded
                           : Icons.warning_amber_rounded,
                       size: 12,
-                      color: _isVerified ? _C.green : _C.amber,
+                      color: _isVerified ? _C.green : _C.gold,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       _isVerified ? "VERIFIED" : "UNVERIFIED",
                       style: TextStyle(
-                        color: _isVerified ? _C.green : _C.amber,
+                        color: _isVerified ? _C.green : _C.gold,
                         fontSize: 9,
                         fontWeight: FontWeight.w900,
                       ),
@@ -499,12 +415,13 @@ class _RequestScreenState extends State<RequestScreen>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 17, color: active ? Colors.black : Colors.white54),
+              Icon(icon,
+                  size: 17, color: active ? Colors.white : Colors.white54),
               const SizedBox(width: 7),
               Text(
                 label,
                 style: TextStyle(
-                  color: active ? Colors.black : Colors.white70,
+                  color: active ? Colors.white : Colors.white70,
                   fontWeight: FontWeight.w900,
                   fontSize: 13,
                 ),
@@ -529,7 +446,7 @@ class _RequestScreenState extends State<RequestScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            "Request Details",
+            "P2P Details",
             style: TextStyle(
               color: _C.textPrimary,
               fontSize: 17,
@@ -541,7 +458,7 @@ class _RequestScreenState extends State<RequestScreen>
             controller: _amountCtrl,
             label: "USD Amount",
             icon: Icons.attach_money_rounded,
-            iconColor: _C.amber,
+            iconColor: _C.gold,
             keyboardType: TextInputType.number,
             onChanged: (_) => setState(() {}),
           ),
@@ -557,7 +474,7 @@ class _RequestScreenState extends State<RequestScreen>
           ),
           const SizedBox(height: 22),
           _gradientBtn(
-            label: _isSell ? "Continue Sell Request" : "Continue Buy Request",
+            label: _isSell ? "Continue Sell P2P" : "Continue Buy P2P",
             icon: Icons.arrow_forward_rounded,
             loading: _merchantLoading,
             onTap: _processRequest,
@@ -571,7 +488,7 @@ class _RequestScreenState extends State<RequestScreen>
     required TextEditingController controller,
     required String label,
     required IconData icon,
-    Color iconColor = _C.amber,
+    Color iconColor = _C.gold,
     TextInputType? keyboardType,
     int maxLines = 1,
     Function(String)? onChanged,
@@ -624,7 +541,7 @@ class _RequestScreenState extends State<RequestScreen>
           _summaryRow(
             "Total INR",
             "₹${_total.toStringAsFixed(2)}",
-            color: _C.amber,
+            color: _C.gold,
             bold: true,
             large: true,
           ),
@@ -691,20 +608,20 @@ class _RequestScreenState extends State<RequestScreen>
                   height: 22,
                   child: CircularProgressIndicator(
                     strokeWidth: 2.5,
-                    color: Colors.black,
+                    color: Colors.white,
                   ),
                 )
               : Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (icon != null) ...[
-                      Icon(icon, color: Colors.black, size: 18),
+                      Icon(icon, color: Colors.white, size: 18),
                       const SizedBox(width: 8),
                     ],
                     Text(
                       label,
                       style: const TextStyle(
-                        color: Colors.black,
+                        color: Colors.white,
                         fontWeight: FontWeight.w900,
                         fontSize: 15,
                       ),
@@ -757,7 +674,7 @@ class _RequestScreenState extends State<RequestScreen>
                         ),
                         child: const Icon(
                           Icons.storefront_rounded,
-                          color: Colors.black,
+                          color: Colors.white,
                           size: 18,
                         ),
                       ),
@@ -804,7 +721,7 @@ class _RequestScreenState extends State<RequestScreen>
                     border: Border(top: BorderSide(color: _C.border)),
                   ),
                   child: _gradientBtn(
-                    label: _isSell ? "Submit Sell Request" : "Submit Buy Request",
+                    label: _isSell ? "Submit Sell P2P" : "Submit Buy P2P",
                     icon: Icons.send_rounded,
                     loading: _submitting,
                     onTap: _submitFinal,
@@ -834,7 +751,7 @@ class _RequestScreenState extends State<RequestScreen>
           _stripItem(
               "Converted", "₹${_converted.toStringAsFixed(2)}", _C.orange),
           _divider(),
-          _stripItem("Total INR", "₹${_total.toStringAsFixed(2)}", _C.amber),
+          _stripItem("Total INR", "₹${_total.toStringAsFixed(2)}", _C.gold),
         ],
       ),
     );
@@ -877,10 +794,10 @@ class _RequestScreenState extends State<RequestScreen>
         duration: const Duration(milliseconds: 220),
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xff2A2300) : _C.bg,
+          color: selected ? const Color(0xff2A2100) : _C.bg,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: selected ? _C.orange : _C.border,
+            color: selected ? _C.gold : _C.border,
             width: selected ? 1.8 : 1,
           ),
         ),
@@ -940,64 +857,90 @@ class _RequestScreenState extends State<RequestScreen>
     );
   }
 
-  void _showSuccessDialog({
-    String? requestId,
-    String? requestNo,
-    Map<String, dynamic>? merchant,
-  }) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        backgroundColor: _C.surfaceAlt,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
-        title: const Text(
-          "Request Submitted!",
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              _isSell
-                  ? "Your Sell USD request has been submitted successfully."
-                  : "Your Buy USD request has been submitted successfully.",
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: _C.textSecondary, fontSize: 13),
-            ),
-            const SizedBox(height: 20),
-            if (requestId != null && merchant != null)
-              _gradientBtn(
-                label: "Chat with Merchant",
-                icon: Icons.chat_rounded,
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ChatScreen(
-                        otherUser: merchant,
-                        chatType: "request",
-                        chatId: requestId,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            const SizedBox(height: 10),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Close"),
-            ),
-          ],
+ void _showSuccessDialog({
+  String? requestId,
+  String? requestNo,
+  Map<String, dynamic>? merchant,
+}) {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => AlertDialog(
+      backgroundColor: _C.surfaceAlt,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+      title: const Text(
+        "P2P Submitted!",
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w900,
         ),
       ),
-    );
-  }
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            _isSell
+                ? "Your Sell USD P2P has been submitted successfully. Chat is open only while request is pending."
+                : "Your Buy USD P2P has been submitted successfully. Chat is open only while request is pending.",
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: _C.textSecondary, fontSize: 13),
+          ),
+          const SizedBox(height: 14),
+          if (requestNo != null)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: _C.bg,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: _C.border),
+              ),
+              child: Text(
+                requestNo,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: _C.gold,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          const SizedBox(height: 20),
+          if (requestId != null && merchant != null)
+            _gradientBtn(
+              label: "Chat with Merchant",
+              icon: Icons.chat_rounded,
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ChatScreen(
+                      otherUser: merchant,
+                      chatType: "request",
+                      chatId: requestId,
+                    ),
+                  ),
+                );
+              },
+            ),
+          const SizedBox(height: 10),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              "Close",
+              style: TextStyle(
+                color: _C.textSecondary,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -1020,7 +963,6 @@ class _RequestScreenState extends State<RequestScreen>
             physics: const AlwaysScrollableScrollPhysics(),
             child: Column(
               children: [
-                _topBar(),
                 _smallBalanceStrip(),
                 _typeSelector(),
                 _formCard(),

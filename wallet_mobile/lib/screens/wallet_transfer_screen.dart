@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
-import 'chat_screen.dart';
 import '../widgets/pinwheel_loader.dart';
+
 // ─────────────────────────────────────────────────────────────
-//  DESIGN TOKENS - SAME STYLE AS request_screen.dart
+//  DESIGN TOKENS - SAME STYLE AS request_screen.dart (dark yellow)
 // ─────────────────────────────────────────────────────────────
 class _C {
   static const bg = Color(0xff000000);
@@ -13,13 +13,13 @@ class _C {
   static const border = Color(0xff2E2E2E);
   static const borderFaint = Color(0xff202020);
 
-  // Theme
-  static const orange = Color(0xffFACC15);
-  static const amber = Color(0xffFFD700);
-  static const gold = Color(0xffFFF176);
+  // Theme (Dark Yellow / Goldenrod)
+  static const orange = Color(0xffB8860B); // dark goldenrod
+  static const amber = Color(0xff9A6B00); // deep amber
+  static const gold = Color(0xffD4A017); // muted gold highlight
 
   static const red = Color(0xffEF4444);
-  static const blue = Color(0xffFACC15);
+  static const blue = Color(0xffB8860B);
 
   static const textPrimary = Colors.white;
   static const textSecondary = Color(0xffA3A3A3);
@@ -28,9 +28,9 @@ class _C {
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
     colors: [
-      Color(0xffFACC15),
-      Color(0xffFFD700),
-      Color(0xffFFF176),
+      Color(0xff8A6300),
+      Color(0xffB8860B),
+      Color(0xffD4A017),
     ],
   );
 
@@ -40,7 +40,7 @@ class _C {
     colors: [
       Color(0xff050505),
       Color(0xff111111),
-      Color(0xff1A1600),
+      Color(0xff1A1500),
     ],
   );
 
@@ -48,8 +48,8 @@ class _C {
     center: Alignment(-0.2, -0.6),
     radius: 1.2,
     colors: [
-      Color(0x55FACC15),
-      Color(0x22FFD700),
+      Color(0x55B8860B),
+      Color(0x22D4A017),
       Color(0x00000000),
     ],
   );
@@ -133,8 +133,8 @@ class _WalletTransferScreenState extends State<WalletTransferScreen>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         content: Text(
           message,
-          style: TextStyle(
-            color: success ? Colors.black : Colors.white,
+          style: const TextStyle(
+            color: Colors.white,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -168,159 +168,70 @@ class _WalletTransferScreenState extends State<WalletTransferScreen>
       showSnack(res["message"] ?? "Wallet not found.", success: false);
     }
   }
-Future<void> sendTransfer() async {
-  if (loading) return;
 
-  final walletId = walletCtrl.text.trim();
-  final amount = amountCtrl.text.trim();
+  Future<void> sendTransfer() async {
+    if (loading) return;
 
-  if (walletId.isEmpty || amount.isEmpty) {
-    showSnack("Wallet address and amount are required.", success: false);
-    return;
-  }
+    final walletId = walletCtrl.text.trim();
+    final amount = amountCtrl.text.trim();
 
-  if (!isVerified) {
-    showSnack(
-      "Your account is not verified yet. Transfers are disabled.",
-      success: false,
-    );
-    return;
-  }
-
-  setState(() => loading = true);
-
-  final res = await ApiService.walletTransfer(
-    receiverWalletId: walletId,
-    amount: amount,
-    note: noteCtrl.text.trim(),
-  );
-
-  if (!mounted) return;
-  setState(() => loading = false);
-
-  if (res["success"] == true) {
-    final transferId =
-        res["transfer"]?["id"]?.toString() ?? res["transfer_id"]?.toString();
-
-    final transferNo = res["transfer"]?["transaction_no"]?.toString() ??
-        (transferId != null ? "TRA${transferId.padLeft(9, "0")}" : null);
-
-    final receiverSnapshot =
-        receiver != null ? Map<String, dynamic>.from(receiver!) : null;
-
-    walletCtrl.clear();
-    amountCtrl.clear();
-    noteCtrl.clear();
-
-    setState(() {
-      receiver = null;
-      _lastTransferId = transferId;
-      _lastReceiverUser = receiverSnapshot;
-    });
-
-    if (widget.onSuccess != null) {
-      await widget.onSuccess!();
+    if (walletId.isEmpty || amount.isEmpty) {
+      showSnack("Wallet address and amount are required.", success: false);
+      return;
     }
 
-    _showSuccessDialog(
-      transferId: transferId,
-      transferNo: transferNo,
-      receiverUser: receiverSnapshot,
-      message: res["message"] ?? "Transfer successful.",
-    );
-  } else {
-    showSnack(res["message"] ?? "Transfer failed.", success: false);
-  }
-}
+    if (!isVerified) {
+      showSnack(
+        "Your account is not verified yet. Transfers are disabled.",
+        success: false,
+      );
+      return;
+    }
 
-  // Goes back to the Dashboard home page instead of just popping
-  // one route (this screen is shown as a dashboard tab, not pushed).
-  void _goBackToDashboard() {
-    Navigator.popUntil(context, (route) => route.isFirst);
-  }
+    setState(() => loading = true);
 
-  // ═══════════════════════════════════════════
-  //  TOP BAR
-  // ═══════════════════════════════════════════
-  Widget _topBar() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: _goBackToDashboard,
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: _C.surface,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: _C.border),
-              ),
-              child: const Icon(
-                Icons.arrow_back_ios_new_rounded,
-                color: Colors.white,
-                size: 18,
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Wallet Transfer",
-                  style: TextStyle(
-                    color: _C.textPrimary,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  "Send USD to another wallet",
-                  style: TextStyle(
-                    color: _C.textSecondary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (_lastTransferId != null && _lastReceiverUser != null)
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ChatScreen(
-                      otherUser: _lastReceiverUser!,
-                      chatType: "transfer",
-                      chatId: _lastTransferId!,
-                    ),
-                  ),
-                );
-              },
-              child: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  gradient: _C.gradientAccent,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.chat_rounded,
-                  color: Colors.black,
-                  size: 20,
-                ),
-              ),
-            ),
-        ],
-      ),
+    final res = await ApiService.walletTransfer(
+      receiverWalletId: walletId,
+      amount: amount,
+      note: noteCtrl.text.trim(),
     );
+
+    if (!mounted) return;
+    setState(() => loading = false);
+
+    if (res["success"] == true) {
+      final transferId =
+          res["transfer"]?["id"]?.toString() ?? res["transfer_id"]?.toString();
+
+      final transferNo = res["transfer"]?["transaction_no"]?.toString() ??
+          (transferId != null ? "TRA${transferId.padLeft(9, "0")}" : null);
+
+      final receiverSnapshot =
+          receiver != null ? Map<String, dynamic>.from(receiver!) : null;
+
+      walletCtrl.clear();
+      amountCtrl.clear();
+      noteCtrl.clear();
+
+      setState(() {
+        receiver = null;
+        _lastTransferId = transferId;
+        _lastReceiverUser = receiverSnapshot;
+      });
+
+      if (widget.onSuccess != null) {
+        await widget.onSuccess!();
+      }
+
+      _showSuccessDialog(
+        transferId: transferId,
+        transferNo: transferNo,
+        receiverUser: receiverSnapshot,
+        message: res["message"] ?? "Transfer successful.",
+      );
+    } else {
+      showSnack(res["message"] ?? "Transfer failed.", success: false);
+    }
   }
 
   // ═══════════════════════════════════════════
@@ -362,7 +273,7 @@ Future<void> sendTransfer() async {
             controller: amountCtrl,
             label: "USD Amount",
             icon: Icons.attach_money_rounded,
-            iconColor: _C.amber,
+            iconColor: _C.gold,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
           ),
           const SizedBox(height: 16),
@@ -396,7 +307,7 @@ Future<void> sendTransfer() async {
           ),
           child: const Icon(
             Icons.send_rounded,
-            color: _C.orange,
+            color: _C.gold,
             size: 18,
           ),
         ),
@@ -467,7 +378,7 @@ Future<void> sendTransfer() async {
         decoration: BoxDecoration(
           color: _C.bg,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: _C.amber, width: 1.3),
+          border: Border.all(color: _C.gold, width: 1.3),
         ),
         child: Center(
           child: loading
@@ -475,19 +386,19 @@ Future<void> sendTransfer() async {
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(
-                    color: _C.amber,
+                    color: _C.gold,
                     strokeWidth: 2.2,
                   ),
                 )
               : Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(icon, color: _C.amber, size: 18),
+                    Icon(icon, color: _C.gold, size: 18),
                     const SizedBox(width: 8),
                     Text(
                       label,
                       style: const TextStyle(
-                        color: _C.amber,
+                        color: _C.gold,
                         fontWeight: FontWeight.w900,
                         fontSize: 14,
                       ),
@@ -528,20 +439,20 @@ Future<void> sendTransfer() async {
                   height: 22,
                   child: CircularProgressIndicator(
                     strokeWidth: 2.5,
-                    color: Colors.black,
+                    color: Colors.white,
                   ),
                 )
               : Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (icon != null) ...[
-                      Icon(icon, color: Colors.black, size: 18),
+                      Icon(icon, color: Colors.white, size: 18),
                       const SizedBox(width: 8),
                     ],
                     Text(
                       label,
                       style: const TextStyle(
-                        color: Colors.black,
+                        color: Colors.white,
                         fontWeight: FontWeight.w900,
                         fontSize: 15,
                       ),
@@ -557,7 +468,7 @@ Future<void> sendTransfer() async {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-       color: const Color(0xff2A2300),
+        color: const Color(0xff2A2100),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: _C.orange, width: 1.4),
       ),
@@ -573,12 +484,12 @@ Future<void> sendTransfer() async {
                     width: 46,
                     height: 46,
                     decoration: BoxDecoration(
-                      color: _C.amber.withOpacity(0.12),
+                      color: _C.gold.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: const Icon(
                       Icons.person_rounded,
-                      color: _C.amber,
+                      color: _C.gold,
                       size: 24,
                     ),
                   ),
@@ -590,7 +501,7 @@ Future<void> sendTransfer() async {
                         const Text(
                           "Receiver Found",
                           style: TextStyle(
-                            color: _C.amber,
+                            color: _C.gold,
                             fontWeight: FontWeight.w900,
                             fontSize: 12,
                           ),
@@ -618,7 +529,7 @@ Future<void> sendTransfer() async {
                   ),
                   const Icon(
                     Icons.check_circle_rounded,
-                    color: _C.amber,
+                    color: _C.gold,
                     size: 22,
                   ),
                 ],
@@ -652,16 +563,16 @@ void _showSuccessDialog({
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: _C.amber.withOpacity(0.12),
+                color: _C.gold.withOpacity(0.12),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: _C.amber.withOpacity(0.3),
+                  color: _C.gold.withOpacity(0.3),
                   width: 2,
                 ),
               ),
               child: const Icon(
                 Icons.check_rounded,
-                color: _C.amber,
+                color: _C.gold,
                 size: 32,
               ),
             ),
@@ -702,14 +613,14 @@ void _showSuccessDialog({
                   children: [
                     const Icon(
                       Icons.tag_rounded,
-                      color: _C.amber,
+                      color: _C.gold,
                       size: 16,
                     ),
                     const SizedBox(width: 7),
                     Text(
                       "Transfer ${transferNo ?? transferId}",
                       style: const TextStyle(
-                        color: _C.amber,
+                        color: _C.gold,
                         fontWeight: FontWeight.w900,
                         fontSize: 14,
                       ),
@@ -719,7 +630,7 @@ void _showSuccessDialog({
               ),
               const SizedBox(height: 12),
               const Text(
-                "You can now chat with the receiver about this transfer.",
+                "Transfer completed successfully.",
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white38,
@@ -728,25 +639,6 @@ void _showSuccessDialog({
               ),
             ],
             const SizedBox(height: 20),
-            if (transferId != null && receiverUser != null)
-              _gradientBtn(
-                label: "Open Chat",
-                icon: Icons.chat_rounded,
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ChatScreen(
-                        otherUser: receiverUser,
-                        chatType: "transfer",
-                        chatId: transferId,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
               child: TextButton(
@@ -771,7 +663,6 @@ void _showSuccessDialog({
     },
   );
 }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -781,7 +672,6 @@ void _showSuccessDialog({
           physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
             children: [
-              _topBar(),
               _transferForm(),
             ],
           ),

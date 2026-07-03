@@ -58,17 +58,17 @@ class TransactionDetailScreen extends StatelessWidget {
     return "${amount.toStringAsFixed(amount.truncateToDouble() == amount ? 0 : 2)} USDT";
   }
 
-  String get status {
-    if (sourceType == "transfer") return "Transfer Completed";
-    final s = item["status"]?.toString().toLowerCase() ?? "pending";
-    if (s == "closed") return "Transaction Closed";
-    if (s == "approved") {
-      final type = item["type"]?.toString().toLowerCase();
-      return type == "withdrawal" ? "Withdrawal Completed" : "Deposit Completed";
-    }
-    if (s == "rejected") return "Request Rejected";
-    return "Request Pending";
-  }
+String get status {
+  if (sourceType == "transfer") return "Transfer Completed";
+
+  final s = item["status"]?.toString().toLowerCase() ?? "pending";
+
+  if (s == "closed") return "Transaction Closed";
+  if (s == "approved") return "Request Accepted - Chat Locked";
+  if (s == "rejected") return "Request Rejected - Chat Locked";
+
+  return "Request Pending";
+}
 
   Color get statusColor {
     final s = item["status"]?.toString().toLowerCase() ?? "";
@@ -239,11 +239,15 @@ class TransactionDetailScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  isClosed ? Icons.lock_rounded : Icons.check_circle_rounded,
-                  color: statusColor,
-                  size: 22,
-                ),
+              Icon(
+  isClosed ||
+          item["status"]?.toString().toLowerCase() == "approved" ||
+          item["status"]?.toString().toLowerCase() == "rejected"
+      ? Icons.lock_rounded
+      : Icons.access_time_rounded,
+  color: statusColor,
+  size: 22,
+),
                 const SizedBox(width: 8),
                 Text(
                   status,

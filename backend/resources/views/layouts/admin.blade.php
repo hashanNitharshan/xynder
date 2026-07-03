@@ -2,37 +2,49 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{{ $title ?? 'Xynder Wallet' }}</title>
+
+    <title>{{ $title ?? 'BITXNOW' }}</title>
+
+    <link rel="icon" type="image/png" href="{{ asset('images/bitxnow_logo.jpeg') }}">
+    <link rel="shortcut icon" type="image/png" href="{{ asset('images/bitxnow_logo.jpeg') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/bitxnow_logo.jpeg') }}">
+
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <style>
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
         :root{
-            --dark:#101518;
-            --hero:#2b2f32;
-            --box:#2b2f32;
-            --panel:#24292d;
-            --input:#1f2428;
-            --line:#3b4248;
-            --red:#e8192c;
-            --red2:#c91022;
+            --bg:#0B0E11;
+            --surface:#181A20;
+            --surface-alt:#1E2329;
+            --border:#2B3139;
+            --border-faint:#202020;
+            --orange:#F0B90B;
+            --amber:#C99400;
+            --gold:#FFD45A;
+
+            --red:#ef4444;
             --green:#0ecb81;
-            --gold:#ffc933;
-            --text:#fff;
-            --muted:#aeb4ba;
-            --muted2:#747b82;
-            --shadow:0 18px 40px rgba(0,0,0,.28);
+
+            --text-primary:#ffffff;
+            --text-secondary:#848E9C;
+            --muted:#5e6673;
+
+            --shadow:0 18px 40px rgba(0,0,0,.35);
         }
 
         html,body{height:100%}
 
         body{
-            background:var(--dark);
-            color:var(--text);
-            font-family:Inter,'Segoe UI',Arial,sans-serif;
-            font-size:15px;
+            background:var(--bg);
+            color:var(--text-primary);
+            font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+            font-size:14px;
             overflow-x:hidden;
         }
 
@@ -41,7 +53,7 @@
 
         .shell{
             display:grid;
-            grid-template-columns:280px 1fr;
+            grid-template-columns:270px 1fr;
             min-height:100vh;
         }
 
@@ -49,8 +61,8 @@
             height:100vh;
             position:sticky;
             top:0;
-            background:#161b1f;
-            border-right:1px solid var(--line);
+            background:var(--surface);
+            border-right:1px solid var(--border);
             display:flex;
             flex-direction:column;
             overflow-y:auto;
@@ -67,38 +79,49 @@
             align-items:center;
             gap:12px;
             padding:0 22px;
-            border-bottom:1px solid var(--line);
-            background:#1f2428;
+            border-bottom:1px solid var(--border);
+            background:var(--surface-alt);
             flex-shrink:0;
         }
 
-        .brand-icon{
+        .brand-logo{
             width:42px;
             height:42px;
             border-radius:50%;
-            background:var(--red);
+            object-fit:cover;
+            border:1px solid var(--border);
+            outline:none;
+            box-shadow:none;
+            background:transparent;
+            flex-shrink:0;
+        }
+
+        .brand-logo-fallback{
             display:flex;
             align-items:center;
             justify-content:center;
-            color:#fff;
-            font-size:22px;
-            flex-shrink:0;
-            box-shadow:0 0 0 5px rgba(232,25,44,.12);
+            width:42px;
+            height:42px;
+            border-radius:50%;
+            background:var(--surface);
+            border:1px solid var(--border);
+            color:var(--orange);
+            font-weight:900;
+            font-size:17px;
         }
 
         .brand-name{
-            font-size:19px;
-            font-weight:900;
-            letter-spacing:-.3px;
+            font-size:18px;
+            font-weight:800;
             color:#fff;
             line-height:1.1;
         }
 
-        .brand-name span{color:var(--red)}
+        .brand-name span{color:var(--orange)}
 
         .brand-sub{
             font-size:11px;
-            color:#9fa5aa;
+            color:var(--text-secondary);
             font-weight:800;
             text-transform:uppercase;
             letter-spacing:.08em;
@@ -110,16 +133,14 @@
             flex:1;
         }
 
-        .nav-section{
-            margin-top:24px;
-        }
+        .nav-section{margin-top:24px}
 
         .nav-label{
             font-size:11px;
             font-weight:900;
             text-transform:uppercase;
             letter-spacing:.08em;
-            color:#747b82;
+            color:var(--text-secondary);
             padding:0 12px;
             margin-bottom:8px;
             display:block;
@@ -133,9 +154,9 @@
             min-height:46px;
             padding:12px 13px;
             border-radius:6px;
-            color:#aeb4ba;
-            font-size:14px;
-            font-weight:800;
+            color:var(--text-secondary);
+            font-size:13px;
+            font-weight:700;
             margin-bottom:5px;
             cursor:pointer;
             border:1px solid transparent;
@@ -149,84 +170,58 @@
             text-align:center;
             font-size:20px;
             flex-shrink:0;
-            color:#747b82;
+            color:var(--text-secondary);
             transition:.15s;
         }
 
         .nav-item:hover{
-            background:#24292d;
+            background:var(--surface-alt);
             color:#fff;
-            border-color:#3b4248;
+            border-color:var(--border);
         }
 
-        .nav-item:hover i{
-            color:var(--red);
-        }
+        .nav-item:hover i{color:var(--orange)}
 
         .nav-item.active{
-            background:#3a1018;
+            background:rgba(240,185,11,.12);
             color:#fff;
-            border-color:rgba(232,25,44,.55);
-            box-shadow:inset 3px 0 0 var(--red);
+            border-color:rgba(240,185,11,.55);
+            box-shadow:inset 3px 0 0 var(--orange);
         }
 
-        .nav-item.active i{
-            color:var(--red);
-        }
+        .nav-item.active i{color:var(--orange)}
 
         .nav-logout:hover{
-            background:#3a1018;
-            color:#ff6b7b;
-            border-color:rgba(232,25,44,.45);
+            background:rgba(239,68,68,.12);
+            color:#ff9b9b;
+            border-color:rgba(239,68,68,.45);
         }
 
-        .sidebar-footer{
-            padding:16px 18px;
-            border-top:1px solid var(--line);
-            background:#1f2428;
-            display:flex;
-            align-items:center;
-            gap:12px;
-            flex-shrink:0;
-        }
+        .sidebar-footer{display:none}
 
-        .sf-avatar{
-            width:42px;
-            height:42px;
+        .p-avatar,.pm-head-avatar{
             border-radius:50%;
-            background:var(--red);
+            background:transparent;
+            border:1px solid var(--border);
+            color:var(--orange);
             display:flex;
             align-items:center;
             justify-content:center;
-            font-size:15px;
             font-weight:900;
-            color:#fff;
-            flex-shrink:0;
             overflow:hidden;
+            flex-shrink:0;
         }
 
-        .sf-avatar img{
+        .p-avatar{width:34px;height:34px;font-size:13px}
+        .pm-head-avatar{width:44px;height:44px;font-size:16px}
+
+        .p-avatar img,
+        .pm-head-avatar img{
             width:100%;
             height:100%;
             object-fit:cover;
-        }
-
-        .sf-name{
-            font-size:14px;
-            font-weight:900;
-            color:#fff;
-            line-height:1.2;
-            white-space:nowrap;
-            overflow:hidden;
-            text-overflow:ellipsis;
-        }
-
-        .sf-role{
-            font-size:11px;
-            color:#9fa5aa;
-            margin-top:3px;
-            font-weight:800;
-            text-transform:uppercase;
+            display:block;
+            background:transparent;
         }
 
         .main{
@@ -237,8 +232,8 @@
 
         .topbar{
             height:76px;
-            background:#1f2428;
-            border-bottom:1px solid var(--line);
+            background:var(--surface-alt);
+            border-bottom:1px solid var(--border);
             display:flex;
             align-items:center;
             justify-content:space-between;
@@ -262,8 +257,8 @@
             height:42px;
             align-items:center;
             justify-content:center;
-            background:#24292d;
-            border:1px solid var(--line);
+            background:var(--surface);
+            border:1px solid var(--border);
             border-radius:6px;
             color:#fff;
             cursor:pointer;
@@ -275,8 +270,8 @@
             align-items:center;
             gap:10px;
             height:46px;
-            background:#101518;
-            border:1px solid var(--line);
+            background:var(--bg);
+            border:1px solid var(--border);
             border-radius:6px;
             padding:0 15px;
             width:360px;
@@ -285,12 +280,12 @@
         }
 
         .search-box:focus-within{
-            border-color:var(--red);
-            box-shadow:0 0 0 3px rgba(232,25,44,.12);
+            border-color:var(--orange);
+            box-shadow:0 0 0 3px rgba(240,185,11,.12);
         }
 
         .search-box i{
-            color:#747b82;
+            color:var(--text-secondary);
             font-size:18px;
             flex-shrink:0;
         }
@@ -305,7 +300,7 @@
             width:100%;
         }
 
-        .search-box input::placeholder{color:#747b82}
+        .search-box input::placeholder{color:var(--muted)}
 
         .topbar-right{
             display:flex;
@@ -321,7 +316,7 @@
             align-items:center;
             justify-content:center;
             border-radius:6px;
-            color:#aeb4ba;
+            color:var(--text-secondary);
             font-size:21px;
             cursor:pointer;
             border:1px solid transparent;
@@ -329,8 +324,8 @@
         }
 
         .tb-icon:hover{
-            background:#24292d;
-            border-color:var(--line);
+            background:var(--surface);
+            border-color:var(--border);
             color:#fff;
         }
 
@@ -340,8 +335,8 @@
             right:3px;
             min-width:18px;
             height:18px;
-            background:var(--red);
-            color:#fff;
+            background:var(--orange);
+            color:#0B0E11;
             font-size:10px;
             font-weight:900;
             border-radius:20px;
@@ -349,19 +344,17 @@
             align-items:center;
             justify-content:center;
             padding:0 5px;
-            border:2px solid #1f2428;
+            border:2px solid var(--surface-alt);
         }
 
         .tb-divider{
             width:1px;
             height:32px;
-            background:var(--line);
+            background:var(--border);
             margin:0 7px;
         }
 
-        .profile-wrap{
-            position:relative;
-        }
+        .profile-wrap{position:relative}
 
         .profile-btn{
             display:flex;
@@ -369,8 +362,8 @@
             gap:10px;
             min-height:48px;
             padding:0 13px 0 10px;
-            background:#24292d;
-            border:1px solid var(--line);
+            background:var(--surface);
+            border:1px solid var(--border);
             border-radius:6px;
             color:#fff;
             cursor:pointer;
@@ -378,29 +371,8 @@
         }
 
         .profile-btn:hover{
-            border-color:rgba(232,25,44,.5);
-            background:#30363a;
-        }
-
-        .p-avatar{
-            width:34px;
-            height:34px;
-            border-radius:50%;
-            background:var(--red);
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            font-size:13px;
-            font-weight:900;
-            color:#fff;
-            overflow:hidden;
-            flex-shrink:0;
-        }
-
-        .p-avatar img{
-            width:100%;
-            height:100%;
-            object-fit:cover;
+            border-color:rgba(240,185,11,.5);
+            background:var(--surface-alt);
         }
 
         .p-name{
@@ -416,14 +388,14 @@
 
         .p-role{
             font-size:11px;
-            color:#9fa5aa;
+            color:var(--text-secondary);
             font-weight:800;
             text-transform:uppercase;
         }
 
         .p-chevron{
             font-size:16px;
-            color:#9fa5aa;
+            color:var(--text-secondary);
             margin-left:2px;
         }
 
@@ -432,8 +404,8 @@
             right:0;
             top:58px;
             width:270px;
-            background:#24292d;
-            border:1px solid #3b4248;
+            background:var(--surface);
+            border:1px solid var(--border);
             border-radius:7px;
             box-shadow:0 20px 50px rgba(0,0,0,.55);
             display:none;
@@ -445,32 +417,11 @@
 
         .pm-head{
             padding:16px;
-            border-bottom:1px solid var(--line);
+            border-bottom:1px solid var(--border);
             display:flex;
             gap:12px;
             align-items:center;
-            background:#1f2428;
-        }
-
-        .pm-head-avatar{
-            width:44px;
-            height:44px;
-            border-radius:50%;
-            background:var(--red);
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            font-size:16px;
-            font-weight:900;
-            color:#fff;
-            overflow:hidden;
-            flex-shrink:0;
-        }
-
-        .pm-head-avatar img{
-            width:100%;
-            height:100%;
-            object-fit:cover;
+            background:var(--surface-alt);
         }
 
         .pm-hname{
@@ -481,18 +432,15 @@
 
         .pm-hemail{
             font-size:12px;
-            color:#9fa5aa;
+            color:var(--text-secondary);
             margin-top:3px;
             word-break:break-all;
             font-weight:700;
         }
 
-        .pm-items{
-            padding:7px;
-        }
+        .pm-items{padding:7px}
 
-        .pm-link,
-        .pm-logout{
+        .pm-link,.pm-logout{
             width:100%;
             display:flex;
             align-items:center;
@@ -500,7 +448,7 @@
             padding:11px 12px;
             background:transparent;
             border:0;
-            color:#aeb4ba;
+            color:var(--text-secondary);
             font-size:13px;
             font-weight:800;
             text-align:left;
@@ -510,25 +458,22 @@
         }
 
         .pm-link:hover{
-            background:#30363a;
+            background:var(--surface-alt);
             color:#fff;
         }
 
-        .pm-link i,
-        .pm-logout i{
-            font-size:17px;
-            color:var(--red);
-        }
+        .pm-link i{font-size:17px;color:var(--orange)}
+        .pm-logout i{font-size:17px;color:var(--red)}
 
         .pm-sep{
             height:1px;
-            background:var(--line);
+            background:var(--border);
             margin:5px 6px;
         }
 
         .pm-logout:hover{
-            background:#3a1018;
-            color:#ff6b7b;
+            background:rgba(239,68,68,.12);
+            color:#ff9b9b;
         }
 
         .content{
@@ -538,14 +483,62 @@
             min-width:0;
         }
 
+        .page-head{
+            display:flex;
+            align-items:center;
+            gap:14px;
+            margin-bottom:22px;
+            padding-bottom:18px;
+            border-bottom:1px solid var(--border);
+        }
+
+        .page-head-icon{
+            width:48px;
+            height:48px;
+            border-radius:10px;
+            background:rgba(240,185,11,.12);
+            border:1px solid rgba(240,185,11,.4);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            flex-shrink:0;
+            overflow:hidden;
+        }
+
+        .page-head-icon i{
+            font-size:24px;
+            color:var(--orange);
+        }
+
+        .page-head-icon img{
+            width:100%;
+            height:100%;
+            object-fit:cover;
+        }
+
+        .page-title{
+            font-size:19px;
+            font-weight:800;
+            color:#fff;
+            letter-spacing:-.3px;
+            line-height:1.2;
+        }
+
+        .page-subtitle{
+            font-size:13px;
+            color:var(--text-secondary);
+            font-weight:700;
+            margin-top:3px;
+        }
+
         .alert{
             display:flex;
             align-items:flex-start;
             gap:10px;
             padding:14px 16px;
             border-radius:4px;
-            font-size:14px;
-            font-weight:800;
+            font-size:13px;
+            font-weight:700;
             margin-bottom:16px;
         }
 
@@ -556,29 +549,29 @@
         }
 
         .alert-success{
-            background:#0d2b1e;
-            border:1px solid #1a4a35;
+            background:rgba(14,203,129,.12);
+            border:1px solid rgba(14,203,129,.35);
             color:var(--green);
         }
 
         .alert-error{
-            background:#3a1018;
-            border:1px solid #71313a;
-            color:#ff6b7b;
+            background:rgba(239,68,68,.12);
+            border:1px solid rgba(239,68,68,.35);
+            color:#ff9b9b;
         }
 
         .footer{
             position:fixed;
-            left:280px;
+            left:270px;
             right:0;
             bottom:0;
             height:42px;
-            background:#1f2428;
-            border-top:1px solid var(--line);
+            background:var(--surface-alt);
+            border-top:1px solid var(--border);
             display:flex;
             align-items:center;
             justify-content:center;
-            color:#9fa5aa;
+            color:var(--text-secondary);
             font-size:12px;
             font-weight:700;
             z-index:30;
@@ -597,7 +590,6 @@
             }
 
             .sidebar.open{left:0}
-
             .mobile-toggle{display:flex}
 
             .search-box{
@@ -605,23 +597,12 @@
                 max-width:260px;
             }
 
-            .tb-icon.hide-mobile{
-                display:none;
-            }
+            .tb-icon.hide-mobile{display:none}
 
-            .p-name,
-            .p-role,
-            .p-chevron{
-                display:none;
-            }
+            .p-name,.p-role,.p-chevron{display:none}
 
-            .profile-btn{
-                padding:0 8px;
-            }
-
-            .footer{
-                left:0;
-            }
+            .profile-btn{padding:0 8px}
+            .footer{left:0}
 
             .content{
                 padding:18px;
@@ -635,18 +616,27 @@
                 height:68px;
             }
 
-            .search-box{
-                display:none;
-            }
-
-            .tb-divider{
-                display:none;
-            }
+            .search-box,.tb-divider{display:none}
 
             .content{
                 padding:16px;
                 padding-bottom:62px;
             }
+
+            .page-head{
+                gap:10px;
+                margin-bottom:16px;
+                padding-bottom:14px;
+            }
+
+            .page-head-icon{
+                width:40px;
+                height:40px;
+                border-radius:8px;
+            }
+
+            .page-head-icon i{font-size:20px}
+            .page-title{font-size:18px}
         }
     </style>
 
@@ -657,7 +647,9 @@
 @php
     $authUser = auth()->user();
     $role = $authUser->role ?? 'admin';
-    $photo = $authUser?->photo ? url('/api/storage/'.$authUser->photo) : null;
+    $bitxnowLogo = asset('images/bitxnow_logo.jpeg');
+    $userPhoto = $authUser?->photo ? url('/api/storage/'.$authUser->photo) : null;
+    $photo = $role === 'admin' ? $bitxnowLogo : ($userPhoto ?: $bitxnowLogo);
 
     if ($role === 'merchant') {
         $dashboardRoute = route('merchant.dashboard');
@@ -689,14 +681,14 @@
 <div class="shell">
 
     <aside class="sidebar" id="sidebar">
-
         <div class="brand">
-            <div class="brand-icon">
-                <i class="ti ti-infinity"></i>
-            </div>
+            <img src="{{ asset('images/bitxnow_logo.jpeg') }}"
+                 class="brand-logo"
+                 alt="BitXNow"
+                 onerror="this.onerror=null;this.replaceWith(Object.assign(document.createElement('div'),{className:'brand-logo brand-logo-fallback',innerText:'B'}));">
 
             <div>
-                <div class="brand-name">Xynder <span>Wallet</span></div>
+                <div class="brand-name">BITX<span>NOW</span></div>
                 <div class="brand-sub">{{ ucfirst($role) }} Panel</div>
             </div>
         </div>
@@ -721,7 +713,7 @@
                     <a href="{{ route('admin.wallet-requests.index') }}"
                        class="nav-item {{ request()->routeIs('admin.wallet-requests.*') ? 'active' : '' }}">
                         <i class="ti ti-credit-card"></i>
-                        Wallet Requests
+                       P2P Requests
                     </a>
 
                     <a href="{{ route('admin.wallet-transfers.index') }}"
@@ -730,6 +722,7 @@
                         Transfers
                     </a>
 
+                   
                 </div>
 
                 <div class="nav-section">
@@ -754,7 +747,7 @@
                     <a href="{{ $requestRoute }}"
                        class="nav-item {{ request()->url() === $requestRoute ? 'active' : '' }}">
                         <i class="ti ti-credit-card"></i>
-                        Requests
+                         P2P Requests
                     </a>
 
                     <a href="{{ $transferRoute }}"
@@ -792,7 +785,6 @@
             <div style="margin-top:8px">
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-
                     <button type="submit" class="nav-item nav-logout">
                         <i class="ti ti-logout"></i>
                         Logout
@@ -801,20 +793,6 @@
             </div>
         </nav>
 
-        <div class="sidebar-footer">
-            <div class="sf-avatar">
-                @if($photo)
-                    <img src="{{ $photo }}" alt="{{ $authUser->name ?? 'User' }}">
-                @else
-                    {{ strtoupper(substr($authUser->name ?? 'A', 0, 1)) }}
-                @endif
-            </div>
-
-            <div style="min-width:0">
-                <div class="sf-name">{{ $authUser->name ?? 'User' }}</div>
-                <div class="sf-role">{{ ucfirst($role) }}</div>
-            </div>
-        </div>
 
     </aside>
 
@@ -844,21 +822,10 @@
                     <i class="ti ti-moon"></i>
                 </div>
 
-                <div class="tb-icon hide-mobile" title="Apps">
-                    <i class="ti ti-grid-dots"></i>
-                </div>
-
                 <div class="tb-icon" title="Notifications">
                     <i class="ti ti-bell"></i>
                     @if(($stats['pending'] ?? 0) > 0)
                         <span class="tb-badge">{{ $stats['pending'] }}</span>
-                    @endif
-                </div>
-
-                <div class="tb-icon" title="Transactions">
-                    <i class="ti ti-receipt"></i>
-                    @if(($stats['rejected'] ?? 0) > 0)
-                        <span class="tb-badge">{{ $stats['rejected'] }}</span>
                     @endif
                 </div>
 
@@ -872,11 +839,7 @@
                             aria-expanded="false"
                             id="profileToggle">
                         <div class="p-avatar">
-                            @if($photo)
-                                <img src="{{ $photo }}" alt="{{ $authUser->name ?? 'User' }}">
-                            @else
-                                {{ strtoupper(substr($authUser->name ?? 'A', 0, 1)) }}
-                            @endif
+                            <img src="{{ $photo }}" alt="BITXNOW">
                         </div>
 
                         <div>
@@ -890,11 +853,7 @@
                     <div class="profile-menu" id="profileMenu" role="menu">
                         <div class="pm-head">
                             <div class="pm-head-avatar">
-                                @if($photo)
-                                    <img src="{{ $photo }}" alt="{{ $authUser->name ?? 'User' }}">
-                                @else
-                                    {{ strtoupper(substr($authUser->name ?? 'A', 0, 1)) }}
-                                @endif
+                                <img src="{{ $photo }}" alt="BITXNOW">
                             </div>
 
                             <div>
@@ -904,21 +863,14 @@
                         </div>
 
                         <div class="pm-items">
-                            <a class="pm-link" href="{{ $profileRoute }}" role="menuitem">
-                                <i class="ti ti-user-circle"></i>
-                                My Profile
-                            </a>
+                            
 
-                            <a class="pm-link" href="{{ $settingsRoute }}" role="menuitem">
-                                <i class="ti ti-settings-2"></i>
-                                Settings
-                            </a>
+                           
 
                             <div class="pm-sep"></div>
 
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
-
                                 <button class="pm-logout" type="submit" role="menuitem">
                                     <i class="ti ti-logout"></i>
                                     Logout
@@ -943,7 +895,6 @@
             @if($errors->any())
                 <div class="alert alert-error">
                     <i class="ti ti-alert-circle"></i>
-
                     <div>
                         @foreach($errors->all() as $error)
                             <div>{{ $error }}</div>
@@ -959,7 +910,7 @@
 </div>
 
 <div class="footer">
-    Copyright &copy; {{ date('Y') }} Xynder Wallet. All rights reserved.
+    Copyright &copy; {{ date('Y') }} BITXNOW. All rights reserved.
 </div>
 
 <script>

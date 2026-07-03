@@ -35,28 +35,30 @@ class UpdateScreen extends StatefulWidget {
 class _UpdateScreenState extends State<UpdateScreen>
     with SingleTickerProviderStateMixin {
 
-  static const _bg      = Color(0xff0a0a0a);
-  static const _surface = Color(0xff141414);
-  static const _border  = Color(0xff2a2a2a);
-  static const _orange  = Color(0xffFF4500);
-  static const _amber   = Color(0xffFFB800);
-  static const _gold    = Color(0xffFFD700);
-  static const _muted   = Color(0xff8E8E93);
+  // BitXnow blue -> purple palette
+  static const _bg      = Color(0xff070A12);
+  static const _surface = Color(0xff10131C);
+  static const _border  = Color(0xff232A3A);
+  static const _blue    = Color(0xff2E9BFF);
+  static const _blueDeep= Color(0xff2563EB);
+  static const _purple  = Color(0xff7C3AED);
+  static const _purpleLt= Color(0xff9B6BFF);
+  static const _muted   = Color(0xff8A93A6);
 
   static const _gradientAccent = LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
-    colors: [_orange, _amber, _gold],
+    colors: [_blue, _blueDeep, _purple],
   );
   static const _gradientCard = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xff1a0a00), Color(0xff2d1200), Color(0xff1a0800)],
+    colors: [Color(0xff141826), Color(0xff0E1119), Color(0xff070A12)],
   );
   static const _gradientGlow = RadialGradient(
     center: Alignment(-0.2, -0.6),
     radius: 1.2,
-    colors: [Color(0x55FF4500), Color(0x22FF8C00), Color(0x00000000)],
+    colors: [Color(0x552E9BFF), Color(0x337C3AED), Color(0x00000000)],
   );
 
   String _currentVer = '';
@@ -243,7 +245,7 @@ class _UpdateScreenState extends State<UpdateScreen>
         decoration: BoxDecoration(
           gradient: LinearGradient(colors: [
             Colors.transparent,
-            _amber.withOpacity(0.3),
+            _blue.withOpacity(0.3),
             Colors.transparent,
           ]),
         ),
@@ -255,7 +257,7 @@ class _UpdateScreenState extends State<UpdateScreen>
           children: [
             Container(width: 5, height: 5,
                 decoration: const BoxDecoration(
-                    shape: BoxShape.circle, color: _amber)),
+                    shape: BoxShape.circle, color: _blue)),
             const SizedBox(width: 10),
             Expanded(
               child: Text(text,
@@ -298,12 +300,12 @@ class _UpdateScreenState extends State<UpdateScreen>
                 padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: _amber.withOpacity(0.15),
+                  color: _blue.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Text('LATEST',
                     style: TextStyle(
-                        color: _amber,
+                        color: _blue,
                         fontSize: 9,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 1.0)),
@@ -328,7 +330,7 @@ class _UpdateScreenState extends State<UpdateScreen>
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-                color: _orange.withOpacity(0.3),
+                color: _purple.withOpacity(0.35),
                 blurRadius: 18,
                 offset: const Offset(0, 7))
           ],
@@ -337,11 +339,11 @@ class _UpdateScreenState extends State<UpdateScreen>
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: Colors.black, size: 20),
+              Icon(icon, color: Colors.white, size: 20),
               const SizedBox(width: 9),
               Text(label,
                   style: const TextStyle(
-                      color: Colors.black,
+                      color: Colors.white,
                       fontWeight: FontWeight.w900,
                       fontSize: 16)),
             ],
@@ -381,7 +383,7 @@ class _UpdateScreenState extends State<UpdateScreen>
             : Icons.download_rounded;
     final iconColor = _hasError
         ? Colors.redAccent
-        : _installed ? Colors.greenAccent : _amber;
+        : _installed ? Colors.greenAccent : _blue;
 
     return Column(
       children: [
@@ -395,7 +397,7 @@ class _UpdateScreenState extends State<UpdateScreen>
                   ? Colors.red.withOpacity(0.25)
                   : _installed
                       ? Colors.green.withOpacity(0.25)
-                      : _amber.withOpacity(0.15),
+                      : _blue.withOpacity(0.15),
             ),
           ),
           child: Column(
@@ -420,7 +422,7 @@ class _UpdateScreenState extends State<UpdateScreen>
                   if (_downloading && _progress > 0)
                     Text('${(_progress * 100).toStringAsFixed(0)}%',
                         style: const TextStyle(
-                            color: _amber,
+                            color: _blue,
                             fontSize: 13,
                             fontWeight: FontWeight.w900)),
                 ],
@@ -432,7 +434,7 @@ class _UpdateScreenState extends State<UpdateScreen>
                   child: LinearProgressIndicator(
                     value: _progress > 0 ? _progress : null,
                     backgroundColor: _border,
-                    valueColor: const AlwaysStoppedAnimation(_amber),
+                    valueColor: const AlwaysStoppedAnimation(_blue),
                     minHeight: 8,
                   ),
                 ),
@@ -455,7 +457,7 @@ class _UpdateScreenState extends State<UpdateScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CircularProgressIndicator(color: _amber, strokeWidth: 2.5),
+              CircularProgressIndicator(color: _blue, strokeWidth: 2.5),
               SizedBox(height: 20),
               Text('Checking for updates...',
                   style: TextStyle(color: _muted, fontSize: 14)),
@@ -511,7 +513,7 @@ class _UpdateScreenState extends State<UpdateScreen>
                   fontSize: 24,
                   fontWeight: FontWeight.w900)),
           const SizedBox(height: 8),
-          const Text('Xynder Wallet is running the\nlatest version.',
+          const Text('BitXnow Wallet is running the\nlatest version.',
               textAlign: TextAlign.center,
               style: TextStyle(color: _muted, fontSize: 13, height: 1.6)),
           const SizedBox(height: 28),
@@ -525,7 +527,7 @@ class _UpdateScreenState extends State<UpdateScreen>
               _versionChip(
                   label: 'LATEST',
                   version: _serverVer,
-                  color: _amber,
+                  color: _blue,
                   isNew: true),
             ],
           ),
@@ -542,12 +544,12 @@ class _UpdateScreenState extends State<UpdateScreen>
             decoration: BoxDecoration(
               color: _forceUpdt
                   ? Colors.red.withOpacity(0.12)
-                  : _amber.withOpacity(0.10),
+                  : _blue.withOpacity(0.10),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
                 color: _forceUpdt
                     ? Colors.red.withOpacity(0.35)
-                    : _amber.withOpacity(0.30),
+                    : _blue.withOpacity(0.30),
               ),
             ),
             child: Row(
@@ -557,14 +559,14 @@ class _UpdateScreenState extends State<UpdateScreen>
                   _forceUpdt
                       ? Icons.warning_amber_rounded
                       : Icons.system_update_rounded,
-                  color: _forceUpdt ? Colors.redAccent : _amber,
+                  color: _forceUpdt ? Colors.redAccent : _blue,
                   size: 14,
                 ),
                 const SizedBox(width: 6),
                 Text(
                   _forceUpdt ? 'UPDATE REQUIRED' : 'UPDATE AVAILABLE',
                   style: TextStyle(
-                    color: _forceUpdt ? Colors.redAccent : _amber,
+                    color: _forceUpdt ? Colors.redAccent : _blue,
                     fontSize: 11,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1.2,
@@ -586,8 +588,8 @@ class _UpdateScreenState extends State<UpdateScreen>
           const SizedBox(height: 8),
           Text(
             _forceUpdt
-                ? 'This update is required to continue\nusing the Xynder Wallet app.'
-                : 'A newer version of Xynder Wallet\nis available for download.',
+                ? 'This update is required to continue\nusing the BitXnow Wallet app.'
+                : 'A newer version of BitXnow Wallet\nis available for download.',
             textAlign: TextAlign.center,
             style: const TextStyle(color: _muted, fontSize: 13, height: 1.6),
           ),
@@ -599,12 +601,12 @@ class _UpdateScreenState extends State<UpdateScreen>
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Icon(Icons.arrow_forward_rounded,
-                    color: _amber.withOpacity(0.6), size: 22),
+                    color: _blue.withOpacity(0.6), size: 22),
               ),
               _versionChip(
                   label: 'NEW',
                   version: _serverVer,
-                  color: _amber,
+                  color: _blue,
                   isNew: true),
             ],
           ),
@@ -615,20 +617,20 @@ class _UpdateScreenState extends State<UpdateScreen>
             width: double.infinity,
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: const Color(0xff2a1500).withOpacity(0.6),
+              color: const Color(0xff0E1626).withOpacity(0.6),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: _amber.withOpacity(0.15)),
+              border: Border.all(color: _blue.withOpacity(0.15)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Row(
                   children: [
-                    Icon(Icons.auto_awesome_rounded, color: _amber, size: 14),
+                    Icon(Icons.auto_awesome_rounded, color: _blue, size: 14),
                     SizedBox(width: 6),
                     Text("WHAT'S NEW",
                         style: TextStyle(
-                            color: _amber,
+                            color: _blue,
                             fontSize: 10,
                             fontWeight: FontWeight.w900,
                             letterSpacing: 1.1)),
@@ -685,10 +687,10 @@ class _UpdateScreenState extends State<UpdateScreen>
         decoration: BoxDecoration(
           gradient: _gradientCard,
           borderRadius: BorderRadius.circular(32),
-          border: Border.all(color: const Color(0xff3a1500)),
+          border: Border.all(color: const Color(0xff232A3A)),
           boxShadow: [
             BoxShadow(
-                color: _orange.withOpacity(0.22),
+                color: _purple.withOpacity(0.25),
                 blurRadius: 55,
                 offset: const Offset(0, 24))
           ],
@@ -708,16 +710,20 @@ class _UpdateScreenState extends State<UpdateScreen>
               children: [
                 Container(
                   width: 100, height: 100,
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: Colors.white.withOpacity(0.05),
-                    border: Border.all(color: _amber, width: 2),
+                    border: Border.all(color: _blue, width: 2),
                     boxShadow: [
                       BoxShadow(
-                          color: _orange.withOpacity(0.28), blurRadius: 32)
+                          color: _purple.withOpacity(0.30), blurRadius: 32)
                     ],
                   ),
-                  child: Center(child: XynderLogo(size: 68)),
+                  child: Image.asset(
+                    "assets/images/bitxnow_logo.jpeg",
+                    fit: BoxFit.contain,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 child,
@@ -739,11 +745,11 @@ class _UpdateScreenState extends State<UpdateScreen>
         body: Stack(
           children: [
             Positioned(top: -110, left: -80,
-                child: _glowBall(270, 0.09, _orange)),
+                child: _glowBall(270, 0.10, _blue)),
             Positioned(bottom: -130, right: -80,
-                child: _glowBall(310, 0.07, _amber)),
+                child: _glowBall(310, 0.10, _purple)),
             Positioned(top: 140, right: 60,
-                child: _glowBall(80, 0.05, _gold)),
+                child: _glowBall(80, 0.06, _blue)),
 
             SafeArea(
               child: Center(

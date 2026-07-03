@@ -28,15 +28,26 @@ class WebSettingsController extends Controller
 
         $tickets = SupportTicket::where('user_id', $user->id)
             ->latest()
-            ->take(10)
-            ->get();
+            ->paginate(10)
+            ->withQueryString();
 
         return view($view, compact('user', 'tickets'));
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+
+        abort_unless(in_array($user->role, ['client', 'merchant'], true), 403);
+
+        return redirect()->route($user->role === 'merchant' ? 'merchant.profile' : 'client.profile');
     }
 
     public function changePassword(Request $request)
     {
         $user = $request->user();
+
+        abort_unless(in_array($user->role, ['client', 'merchant'], true), 403);
 
         $data = $request->validate([
             'current_password' => 'required|string',
@@ -44,9 +55,9 @@ class WebSettingsController extends Controller
         ]);
 
         if (! Hash::check($data['current_password'], $user->password)) {
-            return back()->withErrors([
-                'current_password' => 'Current password is incorrect.',
-            ]);
+            return back()
+                ->withErrors(['current_password' => 'Current password is incorrect.'])
+                ->withInput();
         }
 
         $user->update([
@@ -59,6 +70,8 @@ class WebSettingsController extends Controller
     public function storeSupport(Request $request)
     {
         $user = $request->user();
+
+        abort_unless(in_array($user->role, ['client', 'merchant'], true), 403);
 
         $data = $request->validate([
             'name' => 'required|string|max:255',

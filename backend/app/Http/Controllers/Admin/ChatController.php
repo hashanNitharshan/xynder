@@ -97,49 +97,49 @@ class ChatController extends Controller
         ));
     }
 
-    public function send(Request $request, Conversation $conversation)
-    {
-        $this->adminOnly();
+ public function send(Request $request, Conversation $conversation)
+{
+    $this->adminOnly();
 
-        if (method_exists($conversation, 'isLocked') && $conversation->isLocked()) {
-            return back()->withErrors([
-                'message' => 'This chat is locked.',
-            ]);
-        }
-
-        $data = $request->validate([
-            'message' => 'nullable|string|max:2000',
-            'receiver_id' => 'required|exists:users,id',
-            'attachment' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,webp,pdf,doc,docx,xls,xlsx,txt,zip',
+    if (method_exists($conversation, 'isLocked') && $conversation->isLocked()) {
+        return back()->withErrors([
+            'message' => 'This chat is locked.',
         ]);
-
-        if (empty($data['message']) && ! $request->hasFile('attachment')) {
-            return back()
-                ->withErrors(['message' => 'Message or attachment is required.'])
-                ->withInput();
-        }
-
-        if (! in_array((int) $data['receiver_id'], [
-            (int) $conversation->user_one_id,
-            (int) $conversation->user_two_id,
-        ], true)) {
-            return back()
-                ->withErrors(['receiver_id' => 'Receiver must be one of this chat users.'])
-                ->withInput();
-        }
-
-        ChatMessage::create(array_merge([
-            'conversation_id' => $conversation->id,
-            'sender_id' => Auth::id(),
-            'receiver_id' => (int) $data['receiver_id'],
-            'message' => $data['message'] ?? '',
-            'status' => 'sent',
-        ], $this->storeAttachment($request)));
-
-        $conversation->touch();
-
-        return back()->with('success', 'Message sent.');
     }
+
+    $data = $request->validate([
+        'message'     => 'nullable|string|max:2000',
+        'receiver_id' => 'required|exists:users,id',
+        'attachment'  => 'nullable|file|max:10240|mimes:jpg,jpeg,png,webp,pdf,doc,docx,xls,xlsx,txt,zip',
+    ]);
+
+    if (empty($data['message']) && ! $request->hasFile('attachment')) {
+        return back()
+            ->withErrors(['message' => 'Message or attachment is required.'])
+            ->withInput();
+    }
+
+    if (! in_array((int) $data['receiver_id'], [
+        (int) $conversation->user_one_id,
+        (int) $conversation->user_two_id,
+    ], true)) {
+        return back()
+            ->withErrors(['receiver_id' => 'Receiver must be one of this chat users.'])
+            ->withInput();
+    }
+
+    ChatMessage::create(array_merge([
+        'conversation_id' => $conversation->id,
+        'sender_id'       => Auth::id(),
+        'receiver_id'     => (int) $data['receiver_id'],
+        'message'         => $data['message'] ?? '',
+        'status'          => 'sent',
+    ], $this->storeAttachment($request)));
+
+    $conversation->touch();
+
+    return redirect()->route('admin.chats.show', $conversation);
+}
 
     public function openTransfer(WalletTransfer $walletTransfer)
     {

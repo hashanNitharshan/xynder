@@ -20,7 +20,6 @@ dependencies:
   webview_flutter_android: ^4.12.0
   webview_flutter_wkwebview: ^3.25.1
 
-  # ✅ Auto-update packages
   package_info_plus: ^8.0.0
   dio: ^5.4.0
   open_file: ^3.3.2
@@ -29,6 +28,7 @@ dependencies:
 
 dev_dependencies:
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.3
   flutter_test:
     sdk: flutter
 
@@ -36,4 +36,11 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/images/
+    - assets/images/bitxnow_logo.jpeg
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/bitxnow_logo.jpeg"
+  adaptive_icon_background: "#0B0E11"
+  adaptive_icon_foreground: "assets/images/bitxnow_logo.jpeg"

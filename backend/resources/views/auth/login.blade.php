@@ -2,25 +2,35 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Xynder Wallet Login</title>
+    <title>BITXNOW Login</title>
+<link rel="icon" type="image/jpeg" href="{{ asset('images/bitxnow_logo.jpeg') }}">
+<link rel="shortcut icon" type="image/jpeg" href="{{ asset('images/bitxnow_logo.jpeg') }}">
+<link rel="apple-touch-icon" href="{{ asset('images/bitxnow_logo.jpeg') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
 
     <style>
         :root{
-            --dark:#101518;
-            --hero:#2b2f32;
-            --box:#2b2f32;
-            --panel:#24292d;
-            --input:#1f2428;
-            --line:#3b4248;
-            --red:#e8192c;
-            --red2:#c91022;
-            --green:#0ecb81;
-            --gold:#ffc933;
-            --text:#fff;
-            --muted:#aeb4ba;
-            --muted2:#747b82;
+            /* Backgrounds */
+            --bg:#0B0E11;
+            --surface:#181A20;
+            --surface-alt:#1E2329;
+
+            /* Borders */
+            --border:#2B3139;
+            --border-faint:#202020;
+
+            /* BitXnow yellow theme */
+            --orange:#F0B90B;
+            --amber:#C99400;
+            --gold:#FFD45A;
+
+            /* Status */
+            --red:#ef4444;
+
+            /* Text */
+            --text-primary:#ffffff;
+            --text-secondary:#848E9C;
         }
 
         *{
@@ -34,9 +44,10 @@
         }
 
         body{
-            font-family:Inter,Arial,sans-serif;
-            background:var(--dark);
-            color:var(--text);
+            font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+            background:var(--bg);
+            color:var(--text-primary);
+            font-weight:400;
         }
 
         a{
@@ -44,188 +55,96 @@
             color:inherit;
         }
 
-        .login-page{
-            min-height:100vh;
-            display:grid;
-            grid-template-columns:1.05fr .95fr;
-            background:var(--dark);
-        }
-
-        .login-left{
-            position:relative;
-            background:var(--hero);
-            padding:70px 80px;
-            overflow:hidden;
+        /* ===== Top bar ===== */
+        .topnav{
+            height:64px;
             display:flex;
-            flex-direction:column;
+            align-items:center;
             justify-content:space-between;
+            padding:0 32px;
+            border-bottom:1px solid var(--border-faint);
         }
 
-        .login-left::after{
-            content:"";
-            position:absolute;
-            inset:0;
-            opacity:.08;
-            background-image:linear-gradient(120deg,transparent 20%,rgba(255,255,255,.18) 21%,transparent 22%);
-            background-size:260px 260px;
-        }
-
-        .login-brand{
-            position:relative;
-            z-index:2;
-            display:inline-flex;
+        .topnav-brand{
+            display:flex;
             align-items:center;
-            gap:12px;
+            gap:8px;
+            font-size:17px;
+            font-weight:600;
             color:#fff;
-            font-size:22px;
-            font-weight:900;
         }
 
-        .brand-icon{
-            width:44px;
-            height:44px;
-            border-radius:50%;
-            background:var(--red);
+        .brand-logo{
+            width:26px;
+            height:26px;
+            object-fit:contain;
+            flex-shrink:0;
+        }
+
+        .brand-logo-fallback{
             display:flex;
             align-items:center;
             justify-content:center;
-            box-shadow:0 0 0 6px rgba(232,25,44,.13);
-            font-size:23px;
+            width:26px;
+            height:26px;
+            background:var(--orange);
+            color:#0B0E11;
+            font-weight:700;
+            font-size:13px;
+            border-radius:4px;
         }
 
-        .login-brand span{
-            color:var(--red);
+        .topnav-lang{
+            display:flex;
+            align-items:center;
+            gap:6px;
+            color:var(--text-secondary);
+            font-size:13px;
+            font-weight:400;
         }
 
-        .hero-content{
-            position:relative;
-            z-index:2;
-            max-width:620px;
-        }
-
-        .eyebrow{
-            color:var(--red);
-            font-size:12px;
-            font-weight:900;
-            letter-spacing:.14em;
-            text-transform:uppercase;
-            margin-bottom:16px;
-        }
-
-        .hero-title{
-            font-size:56px;
-            line-height:1.08;
-            font-weight:900;
-            margin-bottom:22px;
-        }
-
-        .hero-title span{
-            color:var(--red);
-            display:block;
-        }
-
-        .hero-sub{
-            color:#b8bdc2;
+        .topnav-lang i{
             font-size:16px;
-            line-height:1.8;
-            font-weight:700;
-            max-width:520px;
         }
 
-        .hero-cards{
-            position:relative;
-            z-index:2;
-            display:grid;
-            grid-template-columns:repeat(3,1fr);
-            gap:14px;
-            margin-top:40px;
-        }
-
-        .hero-card{
-            background:#24292d;
-            border:1px solid var(--line);
-            border-radius:6px;
-            padding:18px;
-        }
-
-        .hero-card i{
-            color:var(--red);
-            font-size:24px;
-            margin-bottom:10px;
-            display:block;
-        }
-
-        .hero-card b{
-            display:block;
-            font-size:14px;
-            font-weight:900;
-            margin-bottom:4px;
-        }
-
-        .hero-card small{
-            color:#9fa5aa;
-            font-size:12px;
-            font-weight:700;
-            line-height:1.5;
-        }
-
-        .login-right{
+        /* ===== Page body ===== */
+        .login-wrap{
+            min-height:calc(100vh - 64px);
             display:flex;
             align-items:center;
             justify-content:center;
-            padding:45px;
-            background:var(--dark);
+            padding:40px 20px;
         }
 
         .login-card{
-            width:min(460px,100%);
-            background:var(--box);
-            border:1.5px solid var(--red);
-            border-radius:7px;
-            padding:34px;
-            box-shadow:0 18px 40px rgba(0,0,0,.35);
-        }
-
-        .login-card-top{
-            margin-bottom:26px;
-        }
-
-        .card-label{
-            color:var(--red);
-            font-size:12px;
-            font-weight:900;
-            letter-spacing:.14em;
-            text-transform:uppercase;
-            margin-bottom:10px;
+            width:min(400px,100%);
         }
 
         .login-card h1{
+            font-size:24px;
+            font-weight:600;
+            margin-bottom:24px;
             color:#fff;
-            font-size:34px;
-            line-height:1.15;
-            font-weight:900;
-            margin-bottom:10px;
-        }
-
-        .login-card p{
-            color:#aeb4ba;
-            font-size:14px;
-            line-height:1.6;
-            font-weight:700;
         }
 
         .error{
-            background:#3a1018;
-            border:1px solid #71313a;
-            color:#ffb4bc;
-            padding:13px 15px;
-            border-radius:4px;
+            background:rgba(239,68,68,.1);
+            border:1px solid rgba(239,68,68,.4);
+            color:#ff9b9b;
+            padding:12px 14px;
+            border-radius:6px;
             margin-bottom:18px;
-            font-size:14px;
-            font-weight:800;
+            font-size:13px;
+            font-weight:400;
             display:flex;
             align-items:flex-start;
-            gap:9px;
+            gap:8px;
+        }
+
+        .error i{
+            color:var(--red);
+            font-size:17px;
+            flex-shrink:0;
         }
 
         .field{
@@ -234,47 +153,46 @@
 
         .field label{
             display:block;
-            margin-bottom:8px;
-            color:#9fa5aa;
-            font-size:11px;
-            font-weight:900;
-            letter-spacing:.08em;
-            text-transform:uppercase;
+            margin-bottom:7px;
+            color:var(--text-secondary);
+            font-size:13px;
+            font-weight:400;
         }
 
         .input-wrap{
             position:relative;
         }
 
-        .input-wrap i{
-            position:absolute;
-            left:14px;
-            top:50%;
-            transform:translateY(-50%);
-            color:#747b82;
-            font-size:19px;
-        }
-
         .input-wrap input{
             width:100%;
-            height:52px;
-            padding:0 14px 0 45px;
+            height:46px;
+            padding:0 42px 0 14px;
             border-radius:4px;
-            border:1px solid var(--line);
-            background:#1f2428;
+            border:1px solid var(--border);
+            background:var(--surface-alt);
             color:#fff;
             outline:none;
             font-size:14px;
-            font-weight:700;
+            font-weight:400;
+            transition:.15s;
         }
 
         .input-wrap input:focus{
-            border-color:var(--red);
-            box-shadow:0 0 0 3px rgba(232,25,44,.12);
+            border-color:var(--orange);
         }
 
         .input-wrap input::placeholder{
-            color:#747b82;
+            color:#5e6673;
+        }
+
+        .input-wrap i{
+            position:absolute;
+            right:14px;
+            top:50%;
+            transform:translateY(-50%);
+            color:var(--text-secondary);
+            font-size:18px;
+            cursor:pointer;
         }
 
         .remember-row{
@@ -282,231 +200,185 @@
             justify-content:space-between;
             align-items:center;
             gap:15px;
-            margin:12px 0 20px;
+            margin:4px 0 20px;
         }
 
         .remember{
             display:flex;
             align-items:center;
-            gap:9px;
-            color:#aeb4ba;
-            font-size:14px;
-            font-weight:700;
+            gap:8px;
+            color:var(--text-secondary);
+            font-size:13px;
+            font-weight:400;
             cursor:pointer;
         }
 
         .remember input{
-            width:16px;
-            height:16px;
-            accent-color:var(--red);
+            width:15px;
+            height:15px;
+            accent-color:var(--orange);
+        }
+
+        .forgot-link{
+            color:var(--orange);
+            font-size:13px;
+            font-weight:400;
+        }
+
+        .forgot-link:hover{
+            color:var(--gold);
         }
 
         .login-btn{
             width:100%;
-            height:54px;
+            height:46px;
             border:0;
             border-radius:4px;
-            background:var(--red);
-            color:#fff;
-            font-size:15px;
-            font-weight:900;
+            background:var(--orange);
+            color:#0B0E11;
+            font-size:14px;
+            font-weight:600;
             cursor:pointer;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            gap:9px;
             transition:.15s;
         }
 
         .login-btn:hover{
-            background:var(--red2);
+            background:var(--gold);
         }
 
         .register-line{
             margin-top:22px;
             text-align:center;
-            color:#aeb4ba;
-            font-size:14px;
-            font-weight:700;
+            color:var(--text-secondary);
+            font-size:13px;
+            font-weight:400;
         }
 
         .register-line a{
-            color:var(--red);
-            font-weight:900;
+            color:var(--orange);
+            font-weight:500;
         }
 
-        .back-home{
-            display:inline-flex;
-            align-items:center;
-            gap:7px;
-            margin-top:18px;
-            color:#aeb4ba;
-            font-size:13px;
-            font-weight:800;
+        .register-line a:hover{
+            color:var(--gold);
         }
 
-        .back-home:hover{
-            color:#fff;
-        }
-
-        @media(max-width:980px){
-            .login-page{
-                grid-template-columns:1fr;
-            }
-
-            .login-left{
-                min-height:360px;
-                padding:45px 28px;
-            }
-
-            .hero-title{
-                font-size:40px;
-            }
-
-            .hero-cards{
-                grid-template-columns:1fr;
-            }
-
-            .login-right{
-                padding:30px 20px 45px;
-            }
+        .foot-note{
+            margin-top:30px;
+            text-align:center;
+            color:#5e6673;
+            font-size:12px;
+            font-weight:400;
+            line-height:1.6;
         }
 
         @media(max-width:520px){
-            .login-left{
-                padding:34px 20px;
-            }
-
-            .hero-title{
-                font-size:34px;
-            }
-
-            .hero-cards{
-                display:none;
-            }
-
-            .login-card{
-                padding:26px 20px;
+            .topnav{
+                padding:0 18px;
             }
 
             .login-card h1{
-                font-size:30px;
+                font-size:21px;
             }
         }
     </style>
 </head>
 
 <body>
-<div class="login-page">
 
-    <section class="login-left">
-        <a href="{{ route('home') }}" class="login-brand">
-            <div class="brand-icon">
-                <i class="ti ti-infinity"></i>
-            </div>
-            Xynder <span>Wallet</span>
-        </a>
+<div class="topnav">
+    <a href="{{ route('home') }}" class="topnav-brand">
+        <img src="{{ asset('images/bitxnow_logo.jpeg') }}"
+             class="brand-logo"
+             alt="BitXNow"
+             onerror="this.onerror=null;this.replaceWith(Object.assign(document.createElement('div'),{className:'brand-logo brand-logo-fallback',innerText:'B'}));">
+        BitXnow
+    </a>
 
-        <div class="hero-content">
-            <div class="eyebrow">Secure Wallet Login</div>
-
-            <h2 class="hero-title">
-                Access Your
-                <span>Wallet Account</span>
-            </h2>
-
-            <div class="hero-sub">
-                Login to manage buy/sell requests, wallet transfers, transaction chats, profile settings, and full wallet history.
-            </div>
-
-            <div class="hero-cards">
-                <div class="hero-card">
-                    <i class="ti ti-shield-lock"></i>
-                    <b>Secure Access</b>
-                    <small>Protected account login for client and merchant users.</small>
-                </div>
-
-                <div class="hero-card">
-                    <i class="ti ti-arrows-transfer-up"></i>
-                    <b>Fast Transfers</b>
-                    <small>Send and receive USD through Xynder wallet.</small>
-                </div>
-
-                <div class="hero-card">
-                    <i class="ti ti-message-2"></i>
-                    <b>Transaction Chat</b>
-                    <small>Chat directly for wallet requests and transfers.</small>
-                </div>
-            </div>
-        </div>
-
-        <div></div>
-    </section>
-
-    <section class="login-right">
-        <div class="login-card">
-            <div class="login-card-top">
-                <div class="card-label">Welcome Back</div>
-                <h1>Log In</h1>
-                <p>Enter your email and password to continue to your Xynder Wallet dashboard.</p>
-            </div>
-
-            @if ($errors->any())
-                <div class="error">
-                    <i class="ti ti-alert-circle"></i>
-                    <span>{{ $errors->first() }}</span>
-                </div>
-            @endif
-
-            <form method="POST" action="{{ route('login.submit') }}">
-                @csrf
-
-                <div class="field">
-                    <label>Email Address</label>
-                    <div class="input-wrap">
-                        <i class="ti ti-mail"></i>
-                        <input type="email"
-                               name="email"
-                               value="{{ old('email') }}"
-                               placeholder="Enter email address"
-                               required
-                               autofocus>
-                    </div>
-                </div>
-
-                <div class="field">
-                    <label>Password</label>
-                    <div class="input-wrap">
-                        <i class="ti ti-lock"></i>
-                        <input type="password"
-                               name="password"
-                               placeholder="Enter password"
-                               required>
-                    </div>
-                </div>
-
-                <div class="remember-row">
-                    <label class="remember">
-                        <input type="checkbox" name="remember" value="1">
-                        Remember me
-                    </label>
-                </div>
-
-                <button type="submit" class="login-btn">
-                    Login
-                    <i class="ti ti-arrow-right"></i>
-                </button>
-            </form>
-
-            <div class="register-line">
-                New to Xynder Wallet?
-                <a href="{{ route('register') }}">Create new account</a>
-            </div>
-
-          
-        </div>
-    </section>
-
+    <div class="topnav-lang">
+        <i class="ti ti-world"></i>
+        English
+    </div>
 </div>
+
+<div class="login-wrap">
+    <div class="login-card">
+        <h1>Log in to BitXnow</h1>
+
+        @if ($errors->any())
+            <div class="error">
+                <i class="ti ti-alert-circle"></i>
+                <span>{{ $errors->first() }}</span>
+            </div>
+        @endif
+
+        <form method="POST" action="{{ route('login.submit') }}">
+            @csrf
+
+            <div class="field">
+                <label>Email Address</label>
+                <div class="input-wrap">
+                    <input type="email"
+                           name="email"
+                           value="{{ old('email') }}"
+                           placeholder="Enter email address"
+                           required
+                           autofocus>
+                </div>
+            </div>
+
+            <div class="field">
+                <label>Password</label>
+                <div class="input-wrap">
+                    <input type="password"
+                           name="password"
+                           id="passwordInput"
+                           placeholder="Enter password"
+                           required>
+                    <i class="ti ti-eye" id="togglePassword"></i>
+                </div>
+            </div>
+
+            <div class="remember-row">
+                <label class="remember">
+                    <input type="checkbox" name="remember" value="1">
+                    Remember me
+                </label>
+
+                @if (Route::has('password.request'))
+                    <a class="forgot-link" href="{{ route('password.request') }}">Forgot password?</a>
+                @endif
+            </div>
+
+            <button type="submit" class="login-btn">
+                Login
+            </button>
+        </form>
+
+        <div class="register-line">
+            New to BitXnow?
+            <a href="{{ route('register') }}">Create an account</a>
+        </div>
+
+        <div class="foot-note">
+            By continuing, you agree to BitXnow's Terms of Service<br>and Privacy Policy.
+        </div>
+    </div>
+</div>
+
+<script>
+    const toggle = document.getElementById('togglePassword');
+    const pwd = document.getElementById('passwordInput');
+
+    if (toggle && pwd) {
+        toggle.addEventListener('click', function () {
+            const isHidden = pwd.type === 'password';
+            pwd.type = isHidden ? 'text' : 'password';
+            toggle.classList.toggle('ti-eye', !isHidden);
+            toggle.classList.toggle('ti-eye-off', isHidden);
+        });
+    }
+</script>
+
 </body>
 </html>

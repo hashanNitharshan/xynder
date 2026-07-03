@@ -7,7 +7,7 @@ use App\Http\Controllers\Api\ConfigController;
 use App\Http\Controllers\Api\SupportTicketController;
 use App\Http\Controllers\Api\ChatController;
 
-Route::options('{any}', function () {
+Route::options('/{any}', function () {
     return response()->json([], 204);
 })->where('any', '.*');
 
@@ -30,20 +30,27 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/profile', [AuthController::class, 'profile']);
     Route::post('/profile', [AuthController::class, 'updateProfile']);
     Route::put('/profile', [AuthController::class, 'updateProfile']);
+
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/ping', [AuthController::class, 'ping']);
     Route::post('/change-password', [AuthController::class, 'changePassword']);
+
     Route::get('/config', [ConfigController::class, 'current']);
     Route::get('/merchants', [AuthController::class, 'merchants']);
+
     Route::get('/requests', [AuthController::class, 'myRequests']);
     Route::post('/requests', [AuthController::class, 'createRequest']);
-    Route::post('/requests/{walletRequest}/approve', [AuthController::class, 'merchantApproveRequest']);
-    Route::post('/requests/{walletRequest}/reject', [AuthController::class, 'merchantRejectRequest']);
+    Route::match(['post', 'put', 'patch'], '/requests/{walletRequest}/approve', [AuthController::class, 'merchantApproveRequest']);
+    Route::match(['post', 'put', 'patch'], '/requests/{walletRequest}/reject', [AuthController::class, 'merchantRejectRequest']);
+    Route::match(['post', 'put', 'patch'], '/requests/{walletRequest}/close', [AuthController::class, 'merchantCloseRequest']);
+
     Route::get('/support-tickets', [SupportTicketController::class, 'index']);
     Route::post('/support-tickets', [SupportTicketController::class, 'store']);
+
     Route::post('/wallet/lookup', [AuthController::class, 'walletLookup']);
     Route::post('/wallet/transfer', [AuthController::class, 'walletTransfer']);
     Route::get('/wallet/transfers', [AuthController::class, 'walletTransfers']);
+
     Route::get('/chat/conversations', [ChatController::class, 'conversations']);
     Route::get('/chat/transfer/{transferId}/messages', [ChatController::class, 'transferMessages']);
     Route::post('/chat/transfer/{transferId}/messages', [ChatController::class, 'sendTransferMessage']);

@@ -167,76 +167,78 @@ public function showByTransfer(Request $request, WalletTransfer $walletTransfer)
         return view($view, compact('conversation', 'conversations', 'user', 'otherUser'));
     }
 
-    public function send(Request $request, Conversation $conversation)
-    {
-        try {
-            $user = $request->user();
+   public function send(Request $request, Conversation $conversation)
+{
+    try {
+        $user = $request->user();
 
-            abort_unless(in_array($user->id, [
-                (int) $conversation->user_one_id,
-                (int) $conversation->user_two_id,
-            ]), 403);
+        abort_unless(in_array($user->id, [
+            (int) $conversation->user_one_id,
+            (int) $conversation->user_two_id,
+        ], true), 403);
 
-            $conversation->load(['walletRequest', 'walletTransfer']);
-            $conversation->lockIfExpired();
+        $conversation->load(['walletRequest', 'walletTransfer']);
+        $conversation->lockIfExpired();
 
-            if ($conversation->isLocked()) {
-                return back()->withErrors([
-                    'message' => 'This chat is locked. 15 minutes completed.',
-                ]);
-            }
-
-            $data = $request->validate([
-                'message' => 'nullable|string|max:2000',
-                'attachment' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,webp,pdf,doc,docx,xls,xlsx,txt,zip',
-            ]);
-
-            if (empty($data['message']) && ! $request->hasFile('attachment')) {
-                return back()->withErrors([
-                    'message' => 'Message or attachment is required.',
-                ])->withInput();
-            }
-
-            if (! $conversation->chat_started_at) {
-                $conversation->update(['chat_started_at' => now()]);
-            }
-
-            $receiverId = $conversation->user_one_id == $user->id
-                ? $conversation->user_two_id
-                : $conversation->user_one_id;
-
-            $attachmentData = $this->storeAttachment($request);
-
-            ChatMessage::create([
-                'conversation_id' => $conversation->id,
-                'sender_id' => $user->id,
-                'receiver_id' => $receiverId,
-                'message' => $data['message'] ?? '',
-                'status' => 'sent',
-
-                'attachment_path' => $attachmentData['attachment_path'] ?? null,
-                'attachment_url' => $attachmentData['attachment_url'] ?? null,
-                'attachment_name' => $attachmentData['attachment_name'] ?? null,
-                'attachment_mime' => $attachmentData['attachment_mime'] ?? null,
-                'attachment_size' => $attachmentData['attachment_size'] ?? null,
-                'attachment_type' => $attachmentData['attachment_type'] ?? null,
-            ]);
-
-            $conversation->touch();
-
-            return back()->with('success', 'Message sent.');
-        } catch (\Throwable $e) {
-            Log::error('WEB CHAT SEND ERROR', [
-                'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-            ]);
-
+        if ($conversation->isLocked()) {
             return back()->withErrors([
-                'message' => 'Message send failed. Check laravel.log for exact error.',
+                'message' => 'This chat is locked. 15 minutes completed.',
             ]);
         }
+
+        $data = $request->validate([
+            'message'    => 'nullable|string|max:2000',
+            'attachment' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,webp,pdf,doc,docx,xls,xlsx,txt,zip',
+        ]);
+
+        if (empty($data['message']) && ! $request->hasFile('attachment')) {
+            return back()
+                ->withErrors(['message' => 'Message or attachment is required.'])
+                ->withInput();
+        }
+
+        if (! $conversation->chat_started_at) {
+            $conversation->update(['chat_started_at' => now()]);
+        }
+
+        $receiverId = (int) $conversation->user_one_id === (int) $user->id
+            ? (int) $conversation->user_two_id
+            : (int) $conversation->user_one_id;
+
+        $attachmentData = $this->storeAttachment($request);
+
+        ChatMessage::create([
+            'conversation_id'  => $conversation->id,
+            'sender_id'        => $user->id,
+            'receiver_id'      => $receiverId,
+            'message'          => $data['message'] ?? '',
+            'status'           => 'sent',
+            'attachment_path'  => $attachmentData['attachment_path'] ?? null,
+            'attachment_url'   => $attachmentData['attachment_url'] ?? null,
+            'attachment_name'  => $attachmentData['attachment_name'] ?? null,
+            'attachment_mime'  => $attachmentData['attachment_mime'] ?? null,
+            'attachment_size'  => $attachmentData['attachment_size'] ?? null,
+            'attachment_type'  => $attachmentData['attachment_type'] ?? null,
+        ]);
+
+        $conversation->touch();
+
+        return redirect()->route(
+            $user->role === 'merchant' ? 'merchant.chats.show' : 'client.chats.show',
+            $conversation
+        );
+    } catch (\Throwable $e) {
+        Log::error('WEB CHAT SEND ERROR', [
+            'message' => $e->getMessage(),
+            'file'    => $e->getFile(),
+            'line'    => $e->getLine(),
+        ]);
+
+        return back()->withErrors([
+            'message' => 'Message send failed. Check laravel.log for exact error.',
+        ]);
     }
+}
 
     private function storeAttachment(Request $request): array
     {

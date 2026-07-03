@@ -7,7 +7,7 @@ import 'profile_screen.dart';
 import 'login_screen.dart';
 
 // ─────────────────────────────────────────────────────────────
-//  DESIGN TOKENS - SAME STYLE AS OTHER SCREENS
+//  DESIGN TOKENS - SAME STYLE AS OTHER SCREENS (Dark Yellow)
 // ─────────────────────────────────────────────────────────────
 class _C {
   static const bg = Color(0xff000000);
@@ -16,10 +16,10 @@ class _C {
 
   static const border = Color(0xff2E2E2E);
 
-  // Theme
-  static const orange = Color(0xffFACC15);
-  static const amber = Color(0xffFFD700);
-  static const gold = Color(0xffFFF176);
+  // Theme (Dark Yellow / Goldenrod)
+  static const orange = Color(0xffB8860B); // dark goldenrod
+  static const amber = Color(0xff9A6B00); // deep amber
+  static const gold = Color(0xffD4A017); // muted gold highlight
 
   static const green = Color(0xff22C55E);
   static const red = Color(0xffEF4444);
@@ -33,7 +33,7 @@ class _C {
     colors: [
       Color(0xff050505),
       Color(0xff111111),
-      Color(0xff1A1600),
+      Color(0xff1A1500),
     ],
   );
 }
@@ -79,6 +79,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       user["is_verified"] == 1 ||
       user["is_verified"]?.toString() == "1";
 
+  String get _role => user["role"]?.toString() ?? "user";
+
   Future<void> _refreshUser() async {
     if (widget.onProfileUpdated != null) {
       await widget.onProfileUpdated!();
@@ -104,22 +106,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // Goes back to the Dashboard home page instead of just popping
-  // one route (this screen is shown as a dashboard tab).
-  void _goBackToDashboard() {
-    Navigator.popUntil(context, (route) => route.isFirst);
-  }
-
   void _showSnack(String msg, {bool success = true}) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       backgroundColor: success ? _C.amber : _C.red,
       content: Text(
-  msg,
-  style: TextStyle(
-    color: success ? Colors.black : Colors.white,
-    fontWeight: FontWeight.w700,
-  ),
-),
+        msg,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
     ));
   }
 
@@ -147,62 +143,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   // ═══════════════════════════════════════════
-  //  TOP BAR
-  // ═══════════════════════════════════════════
-  Widget _topBar() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: _goBackToDashboard,
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: _C.surface,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: _C.border),
-              ),
-              child: const Icon(
-                Icons.arrow_back_ios_new_rounded,
-                color: Colors.white,
-                size: 18,
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Settings",
-                  style: TextStyle(
-                    color: _C.textPrimary,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  "Manage your account",
-                  style: TextStyle(
-                    color: _C.textSecondary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ═══════════════════════════════════════════
   //  PROFILE CARD
   // ═══════════════════════════════════════════
   Widget _profileCard() {
@@ -222,7 +162,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         decoration: BoxDecoration(
           gradient: _C.gradientCard,
           borderRadius: BorderRadius.circular(22),
-       border: Border.all(color: const Color(0xff4A3B00)),
+          border: Border.all(color: const Color(0xff3A2E00)),
         ),
         child: Row(
           children: [
@@ -266,14 +206,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         isVerified
                             ? Icons.verified_rounded
                             : Icons.warning_amber_rounded,
-                        color: isVerified ? _C.green : _C.amber,
+                        color: isVerified ? _C.green : _C.gold,
                         size: 14,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         isVerified ? "Verified" : "Unverified",
                         style: TextStyle(
-                          color: isVerified ? _C.green : _C.amber,
+                          color: isVerified ? _C.green : _C.gold,
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
                         ),
@@ -405,7 +345,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: _C.orange,
-                foregroundColor: Colors.black,
+                foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
               ),
@@ -434,7 +374,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.black))
+                          strokeWidth: 2, color: Colors.white))
                   : const Text("Save"),
             ),
           ],
@@ -511,7 +451,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: _C.orange,
-                foregroundColor: Colors.black,
+                foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
               ),
@@ -540,7 +480,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.black))
+                          strokeWidth: 2, color: Colors.white))
                   : const Text("Submit"),
             ),
           ],
@@ -560,7 +500,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              _topBar(),
               _profileCard(),
               _settingsTile(
                 icon: Icons.payment_rounded,

@@ -2,452 +2,346 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Xynder Wallet Register</title>
+    <title>BITXNOW Signup</title>
+
+    <link rel="icon" type="image/jpeg" href="{{ asset('images/bitxnow_logo.jpeg') }}">
+    <link rel="shortcut icon" type="image/jpeg" href="{{ asset('images/bitxnow_logo.jpeg') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/bitxnow_logo.jpeg') }}">
+
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
 
     <style>
         :root{
-            --dark:#101518;
-            --hero:#2b2f32;
-            --box:#2b2f32;
-            --input:#1f2428;
-            --line:#3b4248;
-            --red:#e8192c;
-            --red2:#c91022;
-            --text:#fff;
-            --muted:#aeb4ba;
-            --muted2:#747b82;
+            --bg:#0B0E11;
+            --surface:#181A20;
+            --surface-alt:#1E2329;
+            --border:#2B3139;
+            --border-faint:#202020;
+            --orange:#F0B90B;
+            --amber:#C99400;
+            --gold:#FFD45A;
+            --red:#ef4444;
+            --text-primary:#ffffff;
+            --text-secondary:#848E9C;
         }
 
         *{box-sizing:border-box;margin:0;padding:0}
         html,body{min-height:100%}
 
         body{
-            font-family:Inter,Arial,sans-serif;
-            background:var(--dark);
-            color:var(--text);
+            font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+            background:var(--bg);
+            color:var(--text-primary);
         }
 
         a{text-decoration:none;color:inherit}
 
-        .register-page{
-            min-height:100vh;
-            display:grid;
-            grid-template-columns:1.05fr .95fr;
-            background:var(--dark);
-        }
-
-        .register-left{
-            position:relative;
-            background:var(--hero);
-            padding:70px 80px;
-            overflow:hidden;
+        .topnav{
+            height:64px;
             display:flex;
-            flex-direction:column;
+            align-items:center;
             justify-content:space-between;
+            padding:0 32px;
+            border-bottom:1px solid var(--border-faint);
         }
 
-        .register-left::after{
-            content:"";
-            position:absolute;
-            inset:0;
-            opacity:.08;
-            background-image:linear-gradient(120deg,transparent 20%,rgba(255,255,255,.18) 21%,transparent 22%);
-            background-size:260px 260px;
-        }
-
-        .brand{
-            position:relative;
-            z-index:2;
-            display:inline-flex;
+        .topnav-brand{
+            display:flex;
             align-items:center;
-            gap:12px;
+            gap:8px;
+            font-size:17px;
+            font-weight:600;
             color:#fff;
-            font-size:22px;
-            font-weight:900;
         }
 
-        .brand-icon{
-            width:44px;
-            height:44px;
-            border-radius:50%;
-            background:var(--red);
+        .brand-logo{
+            width:26px;
+            height:26px;
+            object-fit:contain;
+            flex-shrink:0;
+        }
+
+        .brand-logo-fallback{
             display:flex;
             align-items:center;
             justify-content:center;
-            box-shadow:0 0 0 6px rgba(232,25,44,.13);
-            font-size:23px;
-        }
-
-        .brand span{color:var(--red)}
-
-        .hero-content{
-            position:relative;
-            z-index:2;
-            max-width:620px;
-        }
-
-        .eyebrow{
-            color:var(--red);
-            font-size:12px;
-            font-weight:900;
-            letter-spacing:.14em;
-            text-transform:uppercase;
-            margin-bottom:16px;
-        }
-
-        .hero-title{
-            font-size:56px;
-            line-height:1.08;
-            font-weight:900;
-            margin-bottom:22px;
-        }
-
-        .hero-title span{
-            color:var(--red);
-            display:block;
-        }
-
-        .hero-sub{
-            color:#b8bdc2;
-            font-size:16px;
-            line-height:1.8;
+            width:26px;
+            height:26px;
+            background:var(--orange);
+            color:#0B0E11;
             font-weight:700;
-            max-width:520px;
+            font-size:13px;
+            border-radius:4px;
         }
 
-        .hero-cards{
-            position:relative;
-            z-index:2;
-            display:grid;
-            grid-template-columns:repeat(3,1fr);
-            gap:14px;
-            margin-top:40px;
+        .topnav-lang{
+            display:flex;
+            align-items:center;
+            gap:6px;
+            color:var(--text-secondary);
+            font-size:13px;
         }
 
-        .hero-card{
-            background:#24292d;
-            border:1px solid var(--line);
-            border-radius:6px;
-            padding:18px;
-        }
-
-        .hero-card i{
-            color:var(--red);
-            font-size:24px;
-            margin-bottom:10px;
-            display:block;
-        }
-
-        .hero-card b{
-            display:block;
-            font-size:14px;
-            font-weight:900;
-            margin-bottom:4px;
-        }
-
-        .hero-card small{
-            color:#9fa5aa;
-            font-size:12px;
-            font-weight:700;
-            line-height:1.5;
-        }
-
-        .register-right{
+        .register-wrap{
+            min-height:calc(100vh - 64px);
             display:flex;
             align-items:center;
             justify-content:center;
-            padding:45px;
-            background:var(--dark);
+            padding:40px 20px;
         }
 
         .register-card{
-            width:min(460px,100%);
-            background:var(--box);
-            border:1.5px solid var(--red);
-            border-radius:7px;
-            padding:34px;
-            box-shadow:0 18px 40px rgba(0,0,0,.35);
-        }
-
-        .card-label{
-            color:var(--red);
-            font-size:12px;
-            font-weight:900;
-            letter-spacing:.14em;
-            text-transform:uppercase;
-            margin-bottom:10px;
+            width:min(400px,100%);
         }
 
         .register-card h1{
+            font-size:24px;
+            font-weight:600;
+            margin-bottom:8px;
             color:#fff;
-            font-size:34px;
-            line-height:1.15;
-            font-weight:900;
-            margin-bottom:10px;
         }
 
-        .register-card p{
-            color:#aeb4ba;
-            font-size:14px;
-            line-height:1.6;
-            font-weight:700;
+        .sub-text{
+            color:var(--text-secondary);
+            font-size:13px;
             margin-bottom:24px;
+            line-height:1.6;
         }
 
         .error{
-            background:#3a1018;
-            border:1px solid #71313a;
-            color:#ffb4bc;
-            padding:13px 15px;
-            border-radius:4px;
+            background:rgba(239,68,68,.1);
+            border:1px solid rgba(239,68,68,.4);
+            color:#ff9b9b;
+            padding:12px 14px;
+            border-radius:6px;
             margin-bottom:18px;
-            font-size:14px;
-            font-weight:800;
+            font-size:13px;
+            display:flex;
+            gap:8px;
+        }
+
+        .error i{
+            color:var(--red);
+            font-size:17px;
+            flex-shrink:0;
+            margin-top:1px;
         }
 
         .field{margin-bottom:16px}
 
         .field label{
             display:block;
-            margin-bottom:8px;
-            color:#9fa5aa;
-            font-size:11px;
-            font-weight:900;
-            letter-spacing:.08em;
-            text-transform:uppercase;
+            margin-bottom:7px;
+            color:var(--text-secondary);
+            font-size:13px;
         }
 
-        .input-wrap{position:relative}
-
-        .input-wrap i{
-            position:absolute;
-            left:14px;
-            top:50%;
-            transform:translateY(-50%);
-            color:#747b82;
-            font-size:19px;
+        .input-wrap{
+            position:relative;
         }
 
         .input-wrap input{
             width:100%;
-            height:52px;
-            padding:0 14px 0 45px;
+            height:46px;
+            padding:0 42px 0 14px;
             border-radius:4px;
-            border:1px solid var(--line);
-            background:var(--input);
+            border:1px solid var(--border);
+            background:var(--surface-alt);
             color:#fff;
             outline:none;
             font-size:14px;
-            font-weight:700;
+            transition:.15s;
         }
 
         .input-wrap input:focus{
-            border-color:var(--red);
-            box-shadow:0 0 0 3px rgba(232,25,44,.12);
+            border-color:var(--orange);
         }
 
-        .input-wrap input::placeholder{color:#747b82}
+        .input-wrap input::placeholder{
+            color:#5e6673;
+        }
+
+        .input-wrap .right-icon{
+            position:absolute;
+            right:14px;
+            top:50%;
+            transform:translateY(-50%);
+            color:var(--text-secondary);
+            font-size:18px;
+            cursor:pointer;
+        }
 
         .register-btn{
             width:100%;
-            height:54px;
+            height:46px;
             border:0;
             border-radius:4px;
-            background:var(--red);
-            color:#fff;
-            font-size:15px;
-            font-weight:900;
+            background:linear-gradient(135deg,var(--amber),var(--orange),var(--gold));
+            color:#0B0E11;
+            font-size:14px;
+            font-weight:600;
             cursor:pointer;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            gap:9px;
             transition:.15s;
-            margin-top:6px;
+            margin-top:4px;
         }
 
-        .register-btn:hover{background:var(--red2)}
+        .register-btn:hover{
+            filter:brightness(1.06);
+        }
 
         .login-line{
             margin-top:22px;
             text-align:center;
-            color:#aeb4ba;
-            font-size:14px;
-            font-weight:700;
+            color:var(--text-secondary);
+            font-size:13px;
         }
 
         .login-line a{
-            color:var(--red);
-            font-weight:900;
+            color:var(--orange);
+            font-weight:500;
         }
 
-        .back-home{
-            display:inline-flex;
-            align-items:center;
-            gap:7px;
-            margin-top:18px;
-            color:#aeb4ba;
-            font-size:13px;
-            font-weight:800;
+        .login-line a:hover{
+            color:var(--gold);
         }
 
-        .back-home:hover{color:#fff}
-
-        @media(max-width:980px){
-            .register-page{grid-template-columns:1fr}
-            .register-left{
-                min-height:360px;
-                padding:45px 28px;
-            }
-            .hero-title{font-size:40px}
-            .hero-cards{grid-template-columns:1fr}
-            .register-right{padding:30px 20px 45px}
+        .foot-note{
+            margin-top:30px;
+            text-align:center;
+            color:#5e6673;
+            font-size:12px;
+            line-height:1.6;
         }
 
         @media(max-width:520px){
-            .register-left{padding:34px 20px}
-            .hero-title{font-size:34px}
-            .hero-cards{display:none}
-            .register-card{padding:26px 20px}
-            .register-card h1{font-size:30px}
+            .topnav{padding:0 18px}
+            .register-card h1{font-size:21px}
         }
     </style>
 </head>
 
 <body>
-<div class="register-page">
 
-    <section class="register-left">
-        <a href="{{ route('home') }}" class="brand">
-            <div class="brand-icon">
-                <i class="ti ti-infinity"></i>
-            </div>
-            Xynder <span>Wallet</span>
-        </a>
+<div class="topnav">
+    <a href="{{ route('home') }}" class="topnav-brand">
+        <img src="{{ asset('images/bitxnow_logo.jpeg') }}"
+             class="brand-logo"
+             alt="BitXNow"
+             onerror="this.onerror=null;this.replaceWith(Object.assign(document.createElement('div'),{className:'brand-logo brand-logo-fallback',innerText:'B'}));">
+        BitXnow
+    </a>
 
-        <div class="hero-content">
-            <div class="eyebrow">Create Wallet Account</div>
+    <div class="topnav-lang">
+        <i class="ti ti-world"></i>
+        English
+    </div>
+</div>
 
-            <h2 class="hero-title">
-                Join
-                <span>Xynder Wallet</span>
-            </h2>
-
-            <div class="hero-sub">
-                Create your account to access wallet requests, USD transfers, transaction chats, profile settings, and full history.
-            </div>
-
-            <div class="hero-cards">
-                <div class="hero-card">
-                    <i class="ti ti-user-plus"></i>
-                    <b>Simple Signup</b>
-                    <small>Only basic account details are needed to get started.</small>
-                </div>
-
-                <div class="hero-card">
-                    <i class="ti ti-shield-lock"></i>
-                    <b>Secure Access</b>
-                    <small>Your account is protected with password security.</small>
-                </div>
-
-                <div class="hero-card">
-                    <i class="ti ti-wallet"></i>
-                    <b>Wallet Ready</b>
-                    <small>Login after signup and complete your profile later.</small>
-                </div>
-            </div>
+<div class="register-wrap">
+    <div class="register-card">
+        <h1>Create BitXnow account</h1>
+        <div class="sub-text">
+            Create your account to access wallet.
         </div>
 
-        <div></div>
-    </section>
-
-    <section class="register-right">
-        <div class="register-card">
-            <div class="card-label">New Account</div>
-
-            <h1>Create Account</h1>
-            <p>Enter your basic details to create your Xynder Wallet account.</p>
-
-            @if ($errors->any())
-                <div class="error">
+        @if ($errors->any())
+            <div class="error">
+                <i class="ti ti-alert-circle"></i>
+                <div>
                     @foreach ($errors->all() as $error)
                         <div>{{ $error }}</div>
                     @endforeach
                 </div>
-            @endif
+            </div>
+        @endif
 
-            <form method="POST" action="{{ route('register.submit') }}">
-                @csrf
+        <form method="POST" action="{{ route('register.submit') }}">
+            @csrf
 
-                <input type="hidden" name="role" value="client">
+            <input type="hidden" name="role" value="client">
 
-                <div class="field">
-                    <label>Full Name</label>
-                    <div class="input-wrap">
-                        <i class="ti ti-user"></i>
-                        <input type="text"
-                               name="name"
-                               value="{{ old('name') }}"
-                               placeholder="Enter full name"
-                               required
-                               autofocus>
-                    </div>
+            <div class="field">
+                <label>Full Name</label>
+                <div class="input-wrap">
+                    <input type="text"
+                           name="name"
+                           value="{{ old('name') }}"
+                           placeholder="Enter full name"
+                           required
+                           autofocus>
                 </div>
-
-                <div class="field">
-                    <label>Email Address</label>
-                    <div class="input-wrap">
-                        <i class="ti ti-mail"></i>
-                        <input type="email"
-                               name="email"
-                               value="{{ old('email') }}"
-                               placeholder="Enter email address"
-                               required>
-                    </div>
-                </div>
-
-                <div class="field">
-                    <label>Password</label>
-                    <div class="input-wrap">
-                        <i class="ti ti-lock"></i>
-                        <input type="password"
-                               name="password"
-                               placeholder="Enter password"
-                               required>
-                    </div>
-                </div>
-
-                <div class="field">
-                    <label>Confirm Password</label>
-                    <div class="input-wrap">
-                        <i class="ti ti-lock-check"></i>
-                        <input type="password"
-                               name="password_confirmation"
-                               placeholder="Confirm password"
-                               required>
-                    </div>
-                </div>
-
-                <button type="submit" class="register-btn">
-                    Create Account
-                    <i class="ti ti-arrow-right"></i>
-                </button>
-            </form>
-
-            <div class="login-line">
-                Already have account?
-                <a href="{{ route('login') }}">Login</a>
             </div>
 
-            <a class="back-home" href="{{ route('home') }}">
-                <i class="ti ti-arrow-left"></i>
-                Back to home
-            </a>
-        </div>
-    </section>
+            <div class="field">
+                <label>Email Address</label>
+                <div class="input-wrap">
+                    <input type="email"
+                           name="email"
+                           value="{{ old('email') }}"
+                           placeholder="Enter email address"
+                           required>
+                </div>
+            </div>
 
+            <div class="field">
+                <label>Password</label>
+                <div class="input-wrap">
+                    <input type="password"
+                           name="password"
+                           id="passwordInput"
+                           placeholder="Enter password"
+                           required>
+                    <i class="ti ti-eye right-icon" id="togglePassword"></i>
+                </div>
+            </div>
+
+            <div class="field">
+                <label>Confirm Password</label>
+                <div class="input-wrap">
+                    <input type="password"
+                           name="password_confirmation"
+                           id="confirmPasswordInput"
+                           placeholder="Confirm password"
+                           required>
+                    <i class="ti ti-eye right-icon" id="toggleConfirmPassword"></i>
+                </div>
+            </div>
+
+            <button type="submit" class="register-btn">
+                Create Account
+            </button>
+        </form>
+
+        <div class="login-line">
+            Already have an account?
+            <a href="{{ route('login') }}">Login</a>
+        </div>
+
+        <div class="foot-note">
+            By continuing, you agree to BitXnow's Terms of Service<br>and Privacy Policy.
+        </div>
+    </div>
 </div>
+
+<script>
+    function setupPasswordToggle(toggleId, inputId) {
+        const toggle = document.getElementById(toggleId);
+        const input = document.getElementById(inputId);
+
+        if (toggle && input) {
+            toggle.addEventListener('click', function () {
+                const isHidden = input.type === 'password';
+                input.type = isHidden ? 'text' : 'password';
+                toggle.classList.toggle('ti-eye', !isHidden);
+                toggle.classList.toggle('ti-eye-off', isHidden);
+            });
+        }
+    }
+
+    setupPasswordToggle('togglePassword', 'passwordInput');
+    setupPasswordToggle('toggleConfirmPassword', 'confirmPasswordInput');
+</script>
+
 </body>
 </html>

@@ -22,15 +22,15 @@ class WalletApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Xynder',
+      title: 'BitXnow',
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color(0xff050805),
-        primaryColor: const Color(0xff00ff5a),
+        scaffoldBackgroundColor: const Color(0xff0B0E11),
+        primaryColor: const Color(0xffF0B90B),
         colorScheme: const ColorScheme.dark(
-          primary: Color(0xff00ff5a),
-          secondary: Color(0xff00ff5a),
-          surface: Color(0xff101510),
+          primary: Color(0xffF0B90B),
+          secondary: Color(0xffF0B90B),
+          surface: Color(0xff1E2329),
         ),
       ),
       home: const AuthGate(),

@@ -678,6 +678,49 @@ public function createRequest(Request $request)
     }
 
     // -----------------------------------------------------------------------
+    // Merchant closes a request (removes it from the active pending/approved
+    // list without reversing any balance changes already applied by
+    // approve/reject). Blocked only if the request is already closed.
+    // -----------------------------------------------------------------------
+    public function merchantCloseRequest(Request $request, WalletRequest $walletRequest)
+    {
+        $merchant = $request->user();
+
+        if ($merchant->role !== 'merchant') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only merchant can close this request.',
+            ], 403);
+        }
+
+        if ($walletRequest->merchant_id != $merchant->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized request.',
+            ], 403);
+        }
+
+        if ($walletRequest->status === 'closed') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This request is already closed.',
+            ], 422);
+        }
+
+        $walletRequest->update([
+            'status'      => 'closed',
+            'approved_by' => $merchant->id,
+            'approved_at' => $walletRequest->approved_at ?? now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Request closed successfully.',
+            'request' => $walletRequest->fresh(['user', 'merchant']),
+        ]);
+    }
+
+    // -----------------------------------------------------------------------
     // FIX: Also unset null values — not just '0', 0, ''.
     //
     // When a Flutter profile-update request omits an image field entirely,

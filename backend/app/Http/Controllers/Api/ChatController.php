@@ -29,7 +29,7 @@ class ChatController extends Controller
             ->latest('updated_at')
             ->get()
             ->map(function ($conversation) use ($userId) {
-                $conversation->lockIfExpired();
+                $conversation = $this->syncRequestChatLock($conversation);
 
                 $other = $conversation->user_one_id == $userId
                     ? $conversation->userTwo
@@ -71,7 +71,6 @@ class ChatController extends Controller
                         'email'        => $other->email,
                         'role'         => $other->role,
                         'photo'        => $other->photo,
-                        // FIX: use the User model accessor so null/'0'/'' are all handled correctly
                         'photo_url'    => $other->photo_url,
                         'is_online'    => $other->is_online,
                         'last_seen_at' => $other->last_seen_at,
@@ -123,7 +122,7 @@ class ChatController extends Controller
     public function requestMessages(Request $request, $requestId)
     {
         $conversation = $this->getOrCreateRequestConversation($request, $requestId);
-        $conversation->lockIfExpired();
+        $conversation = $this->syncRequestChatLock($conversation);
 
         if ($conversation->isLocked()) {
             return $this->lockedResponse($conversation);
@@ -132,18 +131,47 @@ class ChatController extends Controller
         $this->markSeen($conversation->id, $request->user()->id);
 
         return response()->json([
-            'success'           => true,
-            'is_locked'         => false,
-            'remaining_seconds' => $conversation->remainingSeconds(),
-            'conversation'      => $conversation,
-            'other_user'        => $this->userData($this->otherUser($conversation, $request->user()->id)),
-            'messages'          => $this->messages($conversation->id),
+            'success'            => true,
+            'is_locked'          => false,
+            'can_open'           => true,
+            'remaining_seconds'  => $conversation->remainingSeconds(),
+            'conversation'       => $conversation,
+            'other_user'         => $this->userData($this->otherUser($conversation, $request->user()->id)),
+            'messages'           => $this->messages($conversation->id),
         ]);
     }
 
     public function sendRequestMessage(Request $request, $requestId)
     {
-        return $this->sendMessage($request, $this->getOrCreateRequestConversation($request, $requestId));
+        $conversation = $this->getOrCreateRequestConversation($request, $requestId);
+        $conversation = $this->syncRequestChatLock($conversation);
+
+        return $this->sendMessage($request, $conversation);
+    }
+
+    /**
+     * Auto-close a request that has been sitting "pending" for 10+ minutes,
+     * then let the Conversation model apply the lock based on the (possibly
+     * just-updated) request status. This is the ONLY place the 10-minute
+     * pending timeout is enforced, and it runs on every chat fetch/send —
+     * so it self-heals regardless of which controller approved/rejected/
+     * closed the request.
+     */
+    private function syncRequestChatLock(Conversation $conversation): Conversation
+    {
+        if ($conversation->wallet_request_id) {
+            $walletRequest = WalletRequest::find($conversation->wallet_request_id);
+
+            if ($walletRequest && strtolower((string) $walletRequest->status) === 'pending'
+                && $walletRequest->created_at
+                && now()->diffInMinutes($walletRequest->created_at) >= 10) {
+                $walletRequest->update(['status' => 'closed']);
+            }
+        }
+
+        $conversation->lockIfExpired();
+
+        return $conversation->fresh();
     }
 
     private function sendMessage(Request $request, Conversation $conversation)
@@ -205,19 +233,6 @@ class ChatController extends Controller
             ]);
 
         return response()->json(['success' => true]);
-    }
-
-    private function lockedResponse(Conversation $conversation)
-    {
-        return response()->json([
-            'success'           => false,
-            'is_locked'         => true,
-            'can_open'          => false,
-            'message'           => 'This chat is locked. 15 minutes completed after first message.',
-            'locked_at'         => $conversation->locked_at,
-            'lock_reason'       => $conversation->lock_reason,
-            'remaining_seconds' => 0,
-        ], 423);
     }
 
     private function messages($conversationId)
@@ -294,12 +309,6 @@ class ChatController extends Controller
             ]);
     }
 
-    // -----------------------------------------------------------------------
-    // FIX: attachment_url was using url('/api/storage/' . $path) which routed
-    // through a Laravel controller and often returned wrong/broken URLs.
-    // Changed to asset('storage/' . $path) which resolves directly to the
-    // public symlink — same approach as WebChatController (already correct).
-    // -----------------------------------------------------------------------
     private function storeAttachment(Request $request): array
     {
         if (! $request->hasFile('attachment')) {
@@ -317,7 +326,7 @@ class ChatController extends Controller
 
         return [
             'attachment_path' => $path,
-            'attachment_url'  => asset('storage/' . $path),  // FIX: was url('/api/storage/' . $path)
+            'attachment_url'  => asset('storage/' . $path),
             'attachment_name' => $file->getClientOriginalName(),
             'attachment_mime' => $mime,
             'attachment_size' => $file->getSize(),
@@ -325,11 +334,6 @@ class ChatController extends Controller
         ];
     }
 
-    // -----------------------------------------------------------------------
-    // FIX: use User model's photo_url accessor so null / '0' / '' values
-    // are handled consistently instead of generating broken URLs like
-    // https://wallet.bitxnow.com/storage/0
-    // -----------------------------------------------------------------------
     private function userData($user): array
     {
         return [
@@ -338,9 +342,24 @@ class ChatController extends Controller
             'email'        => $user->email,
             'role'         => $user->role,
             'photo'        => $user->photo,
-            'photo_url'    => $user->photo_url,  // FIX: was manually constructed with url('/storage/...')
+            'photo_url'    => $user->photo_url,
             'is_online'    => $user->is_online,
             'last_seen_at' => $user->last_seen_at,
         ];
+    }
+
+    private function lockedResponse(Conversation $conversation)
+    {
+        return response()->json([
+            'success'            => false,
+            'is_locked'          => true,
+            'can_open'           => false,
+            'message'            => 'This chat is closed / locked.',
+            'locked_at'          => $conversation->locked_at,
+            'lock_reason'        => $conversation->lock_reason,
+            'remaining_seconds'  => 0,
+            'conversation'       => $conversation,
+            'messages'           => $this->messages($conversation->id),
+        ], 423);
     }
 }

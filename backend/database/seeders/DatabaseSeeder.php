@@ -10,32 +10,30 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        $adminEmail = env('ADMIN_EMAIL');
-        $adminPassword = env('ADMIN_PASSWORD');
+        $adminEmail = env('ADMIN_EMAIL', 'admin@gmail.com');
+        $adminPassword = env('ADMIN_PASSWORD', '12345');
 
-        if (! $adminEmail || ! $adminPassword) {
-            $this->command->error('');
-            $this->command->error('⛔ ADMIN_EMAIL and ADMIN_PASSWORD must be set in .env before seeding.');
-            $this->command->error('');
-            return;
+        $admin = User::where('email', $adminEmail)
+            ->orWhere('wallet_id', 'XYWADMIN001')
+            ->first();
+
+        if (! $admin) {
+            $admin = new User();
         }
 
-        User::updateOrCreate(
-            ['email' => $adminEmail],
-            [
-                'name' => 'Admin',
-                'role' => 'admin',
-                'phone' => null,
-                'balance' => 0,
-                'status' => 'active',
-                'is_active' => true,
-                'is_verified' => true,
-                'is_online' => false,
-                'wallet_id' => 'XYWADMIN001',
-                'email_verified_at' => now(),
-                'password' => Hash::make($adminPassword),
-            ]
-        );
+        $admin->name = env('ADMIN_NAME', 'Super Admin');
+        $admin->email = $adminEmail;
+        $admin->role = 'admin';
+        $admin->phone = env('ADMIN_PHONE', null);
+        $admin->balance = 0;
+        $admin->status = 'active';
+        $admin->is_active = true;
+        $admin->is_verified = true;
+        $admin->is_online = false;
+        $admin->wallet_id = 'XYWADMIN001';
+        $admin->email_verified_at = now();
+        $admin->password = Hash::make($adminPassword);
+        $admin->save();
 
         $this->command->info('✅ Admin user created/updated successfully.');
     }

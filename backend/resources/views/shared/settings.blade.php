@@ -1,455 +1,434 @@
-@extends('layouts.admin', ['title' => $title ?? 'Settings'])
+@extends('layouts.admin', ['title' => 'Settings'])
 
 @push('styles')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
 <style>
 :root{
-    --dark:#101518;
-    --hero:#2b2f32;
-    --box:#2b2f32;
-    --panel:#24292d;
-    --input:#1f2428;
-    --line:#3b4248;
-    --red:#e8192c;
-    --red2:#c91022;
+    --bg:#0B0E11;
+    --surface:#181A20;
+    --surface-alt:#1E2329;
+    --border:#2B3139;
+
+    --yellow:#F0B90B;
+    --yellow-dark:#C99400;
+    --gold:#FFD45A;
+
     --green:#0ecb81;
-    --gold:#ffc933;
+    --red:#ef4444;
+
     --text:#fff;
-    --muted:#aeb4ba;
-    --muted2:#747b82;
+    --muted:#848E9C;
+    --muted2:#5e6673;
+
+    --shadow:0 18px 45px rgba(0,0,0,.35);
 }
 
 *{box-sizing:border-box}
 
 .set-page{
-    margin:-24px;
+    margin:-28px;
     min-height:100vh;
-    background:var(--dark);
+    background:var(--bg);
     color:var(--text);
-    font-family:Inter,Arial,sans-serif;
-    padding-bottom:60px;
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    padding:24px 36px 48px;
 }
 
-.set-hero{
-    position:relative;
-    min-height:330px;
-    padding:65px 85px 120px;
-    background:var(--hero);
-    overflow:hidden;
+/* Top Header */
+.set-simple-head{
+    background:radial-gradient(circle at 92% 0%,rgba(240,185,11,.20),transparent 38%),linear-gradient(135deg,#181A20,#0B0E11);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:18px 20px;
+    box-shadow:var(--shadow);
+    margin-bottom:20px;
 }
 
-.set-hero::after{
-    content:"";
-    position:absolute;
-    inset:0;
-    opacity:.08;
-    background-image:linear-gradient(120deg,transparent 20%,rgba(255,255,255,.18) 21%,transparent 22%);
-    background-size:260px 260px;
-}
-
-.set-content{
-    position:relative;
-    z-index:2;
-    max-width:650px;
-}
-
-.set-eyebrow{
-    color:var(--red);
-    font-size:12px;
-    font-weight:900;
+.set-simple-kicker{
+    color:var(--yellow);
+    font-size:11px;
+    font-weight:800;
     letter-spacing:.14em;
     text-transform:uppercase;
-    margin-bottom:14px;
+    margin-bottom:5px;
 }
 
-.set-title{
-    font-size:48px;
-    line-height:1.15;
-    font-weight:900;
-    margin:0 0 20px;
-}
-
-.set-title span{color:var(--red)}
-
-.set-sub{
-    color:#b8bdc2;
-    font-size:15px;
-    line-height:1.7;
-    font-weight:700;
-}
-
-.set-profile{
-    position:relative;
-    z-index:5;
-    margin:-70px 85px 0;
-    background:var(--box);
-    border:1.5px solid var(--red);
-    border-radius:7px;
-    padding:24px;
-    display:flex;
-    align-items:center;
-    gap:20px;
-    box-shadow:0 18px 40px rgba(0,0,0,.28);
-}
-
-.set-avatar{
-    width:90px;
-    height:90px;
-    border-radius:50%;
-    background:var(--red);
-    padding:4px;
-    flex-shrink:0;
-}
-
-.set-avatar img,
-.set-avatar-inner{
-    width:100%;
-    height:100%;
-    border-radius:50%;
-    object-fit:cover;
-}
-
-.set-avatar-inner{
-    background:#1f2428;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:34px;
-    font-weight:900;
+.set-simple-head h1{
+    margin:0;
+    font-size:19px;
+    font-weight:800;
+    letter-spacing:-.2px;
     color:#fff;
 }
 
-.set-profile-info h2{
-    margin:0 0 6px;
-    font-size:24px;
-    font-weight:900;
+.set-simple-head p{
+    margin:4px 0 0;
+    color:var(--muted);
+    font-size:12px;
+    font-weight:600;
 }
 
-.set-profile-info p{
-    margin:4px 0;
-    color:#aeb4ba;
-    font-size:14px;
-    font-weight:700;
-}
-
-.set-badge{
-    display:inline-flex;
-    align-items:center;
-    gap:6px;
-    margin-top:9px;
-    padding:6px 12px;
-    border-radius:20px;
-    font-size:11px;
-    font-weight:900;
-}
-
-.set-badge.verified{
-    background:#0d2b1e;
-    color:var(--green);
-}
-
-.set-badge.unverified{
-    background:#3b2a09;
-    color:var(--gold);
-}
-
-.set-alerts{
-    margin:24px 85px 0;
-}
+/* Alerts */
+.set-alerts{margin-bottom:20px}
 
 .set-alert{
-    padding:14px 16px;
-    border-radius:4px;
-    font-weight:800;
-    margin-bottom:12px;
+    border-radius:10px;
+    padding:13px 15px;
+    margin-bottom:10px;
+    font-size:13px;
+    font-weight:700;
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
 }
 
 .set-alert.ok{
-    background:#0d2b1e;
+    background:rgba(14,203,129,.12);
     color:var(--green);
-    border:1px solid #1a4a35;
+    border:1px solid rgba(14,203,129,.35);
 }
 
 .set-alert.err{
-    background:#3a1018;
-    color:#ff6b7b;
-    border:1px solid #71313a;
+    background:rgba(239,68,68,.12);
+    color:#ff9b9b;
+    border:1px solid rgba(239,68,68,.35);
 }
 
+.set-alert i{font-size:17px}
+
+/* Sections */
 .set-grid{
-    margin:26px 85px 0;
     display:grid;
     grid-template-columns:1fr 1fr;
-    gap:22px;
+    gap:20px;
 }
 
 .set-section{
-    background:var(--box);
-    border:1px solid var(--line);
-    border-radius:6px;
-    padding:24px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:14px;
+    box-shadow:var(--shadow);
     overflow:hidden;
 }
 
 .set-section:hover{
-    border-color:rgba(232,25,44,.55);
+    border-color:rgba(240,185,11,.42);
 }
 
-.set-section-title{
+.set-section-head{
+    padding:16px 20px;
+    border-bottom:1px solid var(--border);
+    background:var(--surface);
     display:flex;
     align-items:center;
-    gap:10px;
+    gap:9px;
+    font-size:15px;
+    font-weight:800;
+    color:#fff;
+}
+
+.set-section-head i{
+    color:var(--yellow);
     font-size:18px;
-    font-weight:900;
-    margin-bottom:20px;
 }
 
-.set-section-title i{
-    color:var(--red);
-    font-size:22px;
-}
+.set-section-body{padding:20px}
 
+.set-full{margin-top:20px}
+
+/* Payment */
 .set-pay-list{
-    display:flex;
-    flex-direction:column;
-    gap:10px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
 }
 
 .set-pay-row{
-    display:flex;
-    justify-content:space-between;
-    gap:16px;
-    background:#1f2428;
-    border:1px solid var(--line);
-    border-radius:4px;
-    padding:13px 14px;
+    background:var(--surface-alt);
+    border:1px solid var(--border);
+    border-radius:9px;
+    padding:12px;
 }
 
 .set-pay-row span{
-    color:#9fa5aa;
-    font-size:13px;
-    font-weight:900;
+    display:block;
+    color:var(--muted);
+    font-size:11px;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    margin-bottom:6px;
 }
 
 .set-pay-row strong{
     color:#fff;
-    font-size:13px;
-    text-align:right;
+    font-size:13.5px;
+    font-weight:700;
     word-break:break-word;
 }
 
+/* Forms */
 .set-form-grid{
     display:grid;
-    grid-template-columns:repeat(3,minmax(0,1fr));
+    grid-template-columns:repeat(3,1fr);
     gap:14px;
 }
 
 .set-form-grid.two{
-    grid-template-columns:repeat(2,minmax(0,1fr));
+    grid-template-columns:repeat(2,1fr);
+}
+
+.set-field{
+    margin-bottom:14px;
 }
 
 .set-field label{
     display:block;
-    font-size:11px;
-    color:#9fa5aa;
-    font-weight:900;
-    text-transform:uppercase;
-    letter-spacing:.08em;
-    margin-bottom:8px;
+    color:#fff;
+    font-size:12.5px;
+    font-weight:700;
+    margin-bottom:7px;
 }
 
 .set-field input,
 .set-field textarea{
     width:100%;
-    background:#1f2428;
-    border:1px solid var(--line);
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:9px;
     color:#fff;
-    border-radius:4px;
-    padding:13px 14px;
+    padding:10px 12px;
     outline:none;
-    font-weight:700;
+    font-size:13.5px;
+    font-weight:500;
+    font-family:inherit;
+    transition:.15s;
+}
+
+.set-field textarea{
+    min-height:110px;
+    resize:vertical;
 }
 
 .set-field input:focus,
 .set-field textarea:focus{
-    border-color:var(--red);
-    box-shadow:0 0 0 3px rgba(232,25,44,.12);
+    border-color:var(--yellow);
+    box-shadow:0 0 0 3px rgba(240,185,11,.12);
 }
 
-.set-field textarea{
-    resize:vertical;
-    min-height:110px;
-}
-
+/* Buttons */
 .set-btn{
     border:0;
-    border-radius:4px;
-    padding:13px 20px;
-    font-weight:900;
+    border-radius:9px;
+    padding:10px 18px;
+    font-size:13px;
+    font-weight:700;
     cursor:pointer;
-    margin-top:16px;
     display:inline-flex;
     align-items:center;
+    justify-content:center;
     gap:8px;
+    text-decoration:none;
+    font-family:inherit;
 }
 
 .set-btn.primary{
-    background:var(--red);
-    color:#fff;
+    background:var(--yellow);
+    color:#0B0E11;
+    box-shadow:0 10px 24px rgba(240,185,11,.20);
 }
 
 .set-btn.primary:hover{
-    background:var(--red2);
+    background:var(--yellow-dark);
 }
 
-.set-btn.danger{
-    background:var(--red);
+.set-btn.dark{
+    background:var(--surface-alt);
     color:#fff;
+    border:1px solid var(--border);
 }
 
-.set-btn.danger:hover{
-    background:var(--red2);
-}
-
-.set-full{
-    margin:22px 85px 0;
-}
-
-.set-table-wrap{
-    overflow-x:auto;
-}
+/* Table */
+.set-table-wrap{overflow-x:auto}
 
 .set-table{
     width:100%;
-    min-width:760px;
+    min-width:780px;
     border-collapse:collapse;
 }
 
 .set-table th{
-    color:#9fa5aa;
+    color:var(--muted);
+    background:var(--surface-alt);
     font-size:11px;
-    text-transform:uppercase;
     text-align:left;
-    padding:14px 16px;
-    background:#24292d;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    padding:13px 16px;
+    font-weight:800;
 }
 
 .set-table td{
-    padding:16px;
-    border-top:1px solid #3a4147;
-    color:#c9ced3;
+    border-top:1px solid var(--border);
+    padding:15px 16px;
+    color:#d5dade;
     font-size:13px;
-    font-weight:700;
+    font-weight:600;
     vertical-align:top;
 }
 
 .set-table tr:hover td{
-    background:#30363a;
+    background:var(--surface-alt);
 }
 
 .set-status{
-    display:inline-block;
+    display:inline-flex;
     padding:6px 11px;
-    border-radius:20px;
+    border-radius:999px;
     font-size:11px;
-    font-weight:900;
+    font-weight:800;
+    text-transform:uppercase;
 }
 
-.set-status.open,
-.set-status.pending{
-    background:#3b2a09;
-    color:var(--gold);
+.set-status.pending,
+.set-status.open{
+    background:rgba(240,185,11,.12);
+    color:var(--yellow);
+    border:1px solid rgba(240,185,11,.35);
 }
 
 .set-status.closed,
 .set-status.resolved,
 .set-status.approved{
-    background:#0d2b1e;
+    background:rgba(14,203,129,.12);
     color:var(--green);
+    border:1px solid rgba(14,203,129,.35);
 }
 
 .set-status.rejected{
-    background:#3a1018;
-    color:#ff6b7b;
+    background:rgba(239,68,68,.12);
+    color:#ff9b9b;
+    border:1px solid rgba(239,68,68,.35);
 }
 
 .set-empty{
-    text-align:center;
-    padding:40px!important;
-    color:#9fa5aa!important;
+    text-align:center!important;
+    padding:42px!important;
+    color:var(--muted)!important;
 }
 
-.set-logout{
-    margin:22px 85px 0;
-    background:#3a1018;
-    border:1px solid rgba(232,25,44,.45);
-    border-radius:6px;
-    padding:22px;
+/* Pager */
+.set-pager{
+    padding:16px 20px;
+    border-top:1px solid var(--border);
     display:flex;
     align-items:center;
     justify-content:space-between;
-    gap:20px;
-}
-
-.set-logout h3{
-    margin:0 0 5px;
-    font-size:19px;
-    font-weight:900;
-}
-
-.set-logout p{
-    margin:0;
-    color:#ffb4bc;
+    gap:12px;
+    flex-wrap:wrap;
+    color:var(--muted);
     font-size:13px;
+    font-weight:600;
+}
+
+.set-page-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:8px 13px;
+    background:var(--surface-alt);
+    border:1px solid var(--border);
+    color:#fff;
+    text-decoration:none;
+    border-radius:8px;
+    font-size:12.5px;
     font-weight:700;
+    margin-left:6px;
+}
+
+.set-page-btn:hover{
+    border-color:var(--yellow);
+}
+
+.set-page-btn.disabled{
+    opacity:.4;
+    pointer-events:none;
 }
 
 @media(max-width:1100px){
     .set-grid{
         grid-template-columns:1fr;
     }
+}
 
+@media(max-width:760px){
+    .set-page{
+        margin:-18px;
+        padding:16px 14px 30px;
+    }
+
+    .set-simple-head{
+        border-radius:14px;
+    }
+
+    .set-pay-list,
     .set-form-grid,
     .set-form-grid.two{
         grid-template-columns:1fr;
     }
-}
 
-@media(max-width:760px){
-    .set-page{margin:-16px}
-
-    .set-hero{
-        padding:45px 24px 110px;
+    .set-table{
+        min-width:0;
     }
 
-    .set-title{
-        font-size:36px;
+    .set-table thead{
+        display:none;
     }
 
-    .set-profile,
-    .set-alerts,
-    .set-grid,
-    .set-full,
-    .set-logout{
-        margin-left:20px;
-        margin-right:20px;
+    .set-table,
+    .set-table tbody,
+    .set-table tr,
+    .set-table td{
+        display:block;
+        width:100%;
     }
 
-    .set-profile{
-        flex-direction:column;
-        text-align:center;
+    .set-table tr{
+        border-top:1px solid var(--border);
+        padding:14px 16px;
     }
 
-    .set-logout{
-        flex-direction:column;
+    .set-table td{
+        border-top:0;
+        padding:6px 0;
+        display:flex;
+        justify-content:space-between;
+        gap:12px;
+        white-space:normal;
+    }
+
+    .set-table td::before{
+        content:attr(data-label);
+        color:var(--muted2);
+        font-size:11px;
+        font-weight:800;
+        text-transform:uppercase;
+        flex-shrink:0;
+    }
+
+    .set-pager{
         align-items:flex-start;
+        flex-direction:column;
     }
 }
 </style>
 @endpush
 
 @section('content')
+
 @php
     $passwordRoute = $user->role === 'merchant'
         ? route('merchant.settings.password')
@@ -458,218 +437,159 @@
     $supportRoute = $user->role === 'merchant'
         ? route('merchant.settings.support')
         : route('client.settings.support');
-
-    $photo = $user->photo ? url('/api/storage/'.$user->photo) : null;
 @endphp
 
 <div class="set-page">
 
-    <section class="set-hero">
-        <div class="set-content">
-            <div class="set-eyebrow">Xynder Wallet</div>
-
-            <h1 class="set-title">
-                Account
-                <span>Settings</span>
-            </h1>
-
-            <div class="set-sub">
-                Manage your profile security, payment details, support tickets, and account session safely.
-            </div>
-        </div>
-    </section>
-
-    <section class="set-profile">
-        <div class="set-avatar">
-            @if($photo)
-                <img src="{{ $photo }}" alt="Profile Photo">
-            @else
-                <div class="set-avatar-inner">
-                    {{ strtoupper(substr($user->name ?? 'U', 0, 1)) }}
-                </div>
-            @endif
-        </div>
-
-        <div class="set-profile-info">
-            <h2>{{ $user->name }}</h2>
-            <p><i class="ti ti-mail"></i> {{ $user->email }}</p>
-            <p><i class="ti ti-phone"></i> {{ $user->phone ?? '-' }}</p>
-
-            @if($user->is_verified)
-                <span class="set-badge verified">
-                    <i class="ti ti-circle-check"></i>
-                    VERIFIED ACCOUNT
-                </span>
-            @else
-                <span class="set-badge unverified">
-                    <i class="ti ti-alert-circle"></i>
-                    UNVERIFIED ACCOUNT
-                </span>
-            @endif
-        </div>
+    <section class="set-simple-head">
+        <div class="set-simple-kicker">BITXNOW</div>
+        <h1>Settings</h1>
+        <p>Manage password, payment methods, and support tickets.</p>
     </section>
 
     <div class="set-alerts">
         @if(session('success'))
             <div class="set-alert ok">
                 <i class="ti ti-circle-check"></i>
-                {{ session('success') }}
+                <div>{{ session('success') }}</div>
             </div>
         @endif
 
         @if($errors->any())
             <div class="set-alert err">
                 <i class="ti ti-alert-triangle"></i>
-                @foreach($errors->all() as $error)
-                    <div>{{ $error }}</div>
-                @endforeach
+                <div>
+                    @foreach($errors->all() as $error)
+                        <div>{{ $error }}</div>
+                    @endforeach
+                </div>
             </div>
         @endif
     </div>
 
     <section class="set-grid">
-
         <div class="set-section">
-            <div class="set-section-title">
+            <div class="set-section-head">
                 <i class="ti ti-credit-card"></i>
                 Payment Methods
             </div>
 
-            <div class="set-pay-list">
-                <div class="set-pay-row">
-                    <span>Bank</span>
-                    <strong>{{ $user->bank_name ?? '-' }}</strong>
-                </div>
-
-                <div class="set-pay-row">
-                    <span>Branch</span>
-                    <strong>{{ $user->branch ?? '-' }}</strong>
-                </div>
-
-                <div class="set-pay-row">
-                    <span>Account No</span>
-                    <strong>{{ $user->account_number ?? '-' }}</strong>
-                </div>
-
-                <div class="set-pay-row">
-                    <span>Account Type</span>
-                    <strong>{{ $user->account_type ?? '-' }}</strong>
-                </div>
-
-                <div class="set-pay-row">
-                    <span>IFSC</span>
-                    <strong>{{ $user->ifsc ?? '-' }}</strong>
-                </div>
-
-                <div class="set-pay-row">
-                    <span>UPI Name</span>
-                    <strong>{{ $user->upi_name ?? '-' }}</strong>
-                </div>
-
-                <div class="set-pay-row">
-                    <span>UPI ID</span>
-                    <strong>{{ $user->upi_id ?? '-' }}</strong>
+            <div class="set-section-body">
+                <div class="set-pay-list">
+                    <div class="set-pay-row"><span>Bank</span><strong>{{ $user->bank_name ?? '-' }}</strong></div>
+                    <div class="set-pay-row"><span>Branch</span><strong>{{ $user->branch ?? '-' }}</strong></div>
+                    <div class="set-pay-row"><span>Account No</span><strong>{{ $user->account_number ?? '-' }}</strong></div>
+                    <div class="set-pay-row"><span>Account Type</span><strong>{{ $user->account_type ?? '-' }}</strong></div>
+                    <div class="set-pay-row"><span>IFSC</span><strong>{{ $user->ifsc ?? '-' }}</strong></div>
+                    <div class="set-pay-row"><span>UPI Name</span><strong>{{ $user->upi_name ?? '-' }}</strong></div>
+                    <div class="set-pay-row"><span>UPI ID</span><strong>{{ $user->upi_id ?? '-' }}</strong></div>
+                    <div class="set-pay-row"><span>Phone</span><strong>{{ $user->phone ?? '-' }}</strong></div>
                 </div>
             </div>
         </div>
 
         <div class="set-section">
-            <div class="set-section-title">
+            <div class="set-section-head">
                 <i class="ti ti-lock-password"></i>
                 Change Password
             </div>
 
-            <form method="POST" action="{{ $passwordRoute }}">
-                @csrf
+            <div class="set-section-body">
+                <form method="POST" action="{{ $passwordRoute }}">
+                    @csrf
 
-                <div class="set-form-grid">
-                    <div class="set-field">
-                        <label>Current Password</label>
-                        <input type="password" name="current_password" required>
+                    <div class="set-form-grid">
+                        <div class="set-field">
+                            <label>Current Password</label>
+                            <input type="password" name="current_password" required autocomplete="current-password">
+                        </div>
+
+                        <div class="set-field">
+                            <label>New Password</label>
+                            <input type="password" name="password" required autocomplete="new-password">
+                        </div>
+
+                        <div class="set-field">
+                            <label>Confirm Password</label>
+                            <input type="password" name="password_confirmation" required autocomplete="new-password">
+                        </div>
                     </div>
 
-                    <div class="set-field">
-                        <label>New Password</label>
-                        <input type="password" name="password" required>
-                    </div>
-
-                    <div class="set-field">
-                        <label>Confirm Password</label>
-                        <input type="password" name="password_confirmation" required>
-                    </div>
-                </div>
-
-                <button type="submit" class="set-btn primary">
-                    <i class="ti ti-shield-check"></i>
-                    Update Password
-                </button>
-            </form>
+                    <button type="submit" class="set-btn primary">
+                        <i class="ti ti-shield-check"></i>
+                        Update Password
+                    </button>
+                </form>
+            </div>
         </div>
-
     </section>
 
     <section class="set-section set-full">
-        <div class="set-section-title">
+        <div class="set-section-head">
             <i class="ti ti-headset"></i>
             Help & Support
         </div>
 
-        <form method="POST" action="{{ $supportRoute }}">
-            @csrf
+        <div class="set-section-body">
+            <form method="POST" action="{{ $supportRoute }}">
+                @csrf
 
-            <div class="set-form-grid two">
-                <div class="set-field">
-                    <label>Name</label>
-                    <input type="text" name="name" value="{{ old('name', $user->name) }}" required>
+                <div class="set-form-grid two">
+                    <div class="set-field">
+                        <label>Name</label>
+                        <input type="text" name="name" value="{{ old('name', $user->name) }}" required>
+                    </div>
+
+                    <div class="set-field">
+                        <label>Email</label>
+                        <input type="email" name="email" value="{{ old('email', $user->email) }}" required>
+                    </div>
                 </div>
 
                 <div class="set-field">
-                    <label>Email</label>
-                    <input type="email" name="email" value="{{ old('email', $user->email) }}" required>
+                    <label>Message</label>
+                    <textarea name="message" required placeholder="Tell us your issue...">{{ old('message') }}</textarea>
                 </div>
-            </div>
 
-            <div class="set-field" style="margin-top:14px;">
-                <label>Message</label>
-                <textarea name="message" rows="4" required>{{ old('message') }}</textarea>
-            </div>
-
-            <button type="submit" class="set-btn primary">
-                <i class="ti ti-send"></i>
-                Submit Ticket
-            </button>
-        </form>
+                <button type="submit" class="set-btn primary">
+                    <i class="ti ti-send"></i>
+                    Submit Ticket
+                </button>
+            </form>
+        </div>
     </section>
 
     <section class="set-section set-full">
-        <div class="set-section-title">
+        <div class="set-section-head">
             <i class="ti ti-ticket"></i>
-            Your Tickets
+            Your Support Tickets
         </div>
 
         <div class="set-table-wrap">
             <table class="set-table">
                 <thead>
                     <tr>
+                        <th>Date</th>
                         <th>Message</th>
                         <th>Status</th>
-                        <th>Date</th>
                     </tr>
                 </thead>
 
                 <tbody>
                     @forelse($tickets as $ticket)
                         <tr>
-                            <td>{{ $ticket->message }}</td>
+                            <td data-label="Date" style="color:var(--muted)">
+                                {{ $ticket->created_at?->format('d M Y, H:i') }}
+                            </td>
 
-                            <td>
+                            <td data-label="Message">
+                                {{ $ticket->message }}
+                            </td>
+
+                            <td data-label="Status">
                                 <span class="set-status {{ strtolower($ticket->status) }}">
                                     {{ strtoupper($ticket->status) }}
                                 </span>
-                            </td>
-
-                            <td style="color:#9fa5aa;">
-                                {{ $ticket->created_at?->format('Y-m-d H:i') }}
                             </td>
                         </tr>
                     @empty
@@ -682,26 +602,40 @@
                 </tbody>
             </table>
         </div>
+
+        @if(method_exists($tickets, 'hasPages') && $tickets->hasPages())
+            <div class="set-pager">
+                <div>
+                    Page {{ $tickets->currentPage() }} of {{ $tickets->lastPage() }}
+                    @if($tickets->total())
+                        · {{ $tickets->firstItem() }}–{{ $tickets->lastItem() }} of {{ $tickets->total() }}
+                    @endif
+                </div>
+
+                <div>
+                    @if($tickets->onFirstPage())
+                        <span class="set-page-btn disabled">
+                            <i class="ti ti-chevron-left"></i> Previous
+                        </span>
+                    @else
+                        <a class="set-page-btn" href="{{ $tickets->previousPageUrl() }}">
+                            <i class="ti ti-chevron-left"></i> Previous
+                        </a>
+                    @endif
+
+                    @if($tickets->hasMorePages())
+                        <a class="set-page-btn" href="{{ $tickets->nextPageUrl() }}">
+                            Next <i class="ti ti-chevron-right"></i>
+                        </a>
+                    @else
+                        <span class="set-page-btn disabled">
+                            Next <i class="ti ti-chevron-right"></i>
+                        </span>
+                    @endif
+                </div>
+            </div>
+        @endif
     </section>
-
-    <section class="set-logout">
-        <div>
-            <h3>
-                <i class="ti ti-logout"></i>
-                Logout Account
-            </h3>
-            <p>End your current session safely.</p>
-        </div>
-
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
-
-            <button type="submit" class="set-btn danger" style="margin-top:0;">
-                <i class="ti ti-power"></i>
-                Logout
-            </button>
-        </form>
-    </section>
-
 </div>
+
 @endsection

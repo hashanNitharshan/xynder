@@ -10,18 +10,21 @@ class WebProfileController extends Controller
     public function clientIndex(Request $request)
     {
         abort_unless($request->user()->role === 'client', 403);
+
         return $this->index($request, 'client.profile');
     }
 
     public function merchantIndex(Request $request)
     {
         abort_unless($request->user()->role === 'merchant', 403);
+
         return $this->index($request, 'merchant.profile');
     }
 
     private function index(Request $request, string $view)
     {
         $user = $request->user()->fresh();
+
         return view($view, compact('user'));
     }
 
@@ -63,6 +66,7 @@ class WebProfileController extends Controller
                     'photo' => 'users/photos',
                     'aadhaar_photo' => 'users/aadhaar',
                     'upi_qr' => 'users/upi_qr',
+                    default => 'users',
                 };
 
                 $data[$field] = $request->file($field)->store($folder, 'public');

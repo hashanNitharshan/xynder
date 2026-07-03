@@ -21,119 +21,82 @@ class Conversation extends Model
         'locked_at' => 'datetime',
     ];
 
-    public function userOne()
-    {
-        return $this->belongsTo(User::class, 'user_one_id');
-    }
-
-    public function userTwo()
-    {
-        return $this->belongsTo(User::class, 'user_two_id');
-    }
-
-    public function walletTransfer()
-    {
-        return $this->belongsTo(WalletTransfer::class, 'wallet_transfer_id');
-    }
-
-    public function walletRequest()
-    {
-        return $this->belongsTo(WalletRequest::class, 'wallet_request_id');
-    }
-
-    public function messages()
-    {
-        return $this->hasMany(ChatMessage::class);
-    }
-
-    private function shouldApplyLock(): bool
-    {
-        if (! $this->wallet_request_id) {
-            return false;
-        }
-
-        $request = $this->walletRequest;
-
-        if (! $request) {
-            return false;
-        }
-
-        return $request->status === 'pending';
-    }
-
-    private function clearLockIfNotPending(): void
-    {
-        if ($this->shouldApplyLock()) {
-            return;
-        }
-
-        if ($this->locked_at || $this->lock_reason) {
-            $this->update([
-                'locked_at' => null,
-                'lock_reason' => null,
-            ]);
-
-            $this->refresh();
-        }
-    }
+    public function userOne() { return $this->belongsTo(User::class, 'user_one_id'); }
+    public function userTwo() { return $this->belongsTo(User::class, 'user_two_id'); }
+    public function walletTransfer() { return $this->belongsTo(WalletTransfer::class, 'wallet_transfer_id'); }
+    public function walletRequest() { return $this->belongsTo(WalletRequest::class, 'wallet_request_id'); }
+    public function messages() { return $this->hasMany(ChatMessage::class); }
 
     public function isLocked(): bool
     {
-        $this->clearLockIfNotPending();
-
-        if (! $this->shouldApplyLock()) {
-            return false;
-        }
-
-        if ($this->locked_at) {
-            return true;
-        }
-
-        if (! $this->chat_started_at) {
-            return false;
-        }
-
-        return $this->chat_started_at->copy()->addMinutes(15)->isPast();
+        $this->lockIfExpired();
+        return ! is_null($this->locked_at);
     }
 
+    /**
+     * Single source of truth for auto-locking.
+     *
+     * - Request-linked conversations: lock state is driven ENTIRELY by the
+     *   linked WalletRequest's status. As soon as a request is approved,
+     *   rejected, or closed (by admin, merchant, or client — any controller),
+     *   the chat locks the next time this is checked. No controller needs to
+     *   call anything explicitly.
+     *
+     * - Transfer-linked conversations: unrelated feature, keeps its own
+     *   15-minute-from-first-message timer.
+     */
     public function lockIfExpired(): void
     {
-        $this->clearLockIfNotPending();
-
-        if (! $this->shouldApplyLock()) {
+        if ($this->locked_at) {
             return;
         }
 
-        if ($this->locked_at || ! $this->chat_started_at) {
+        if ($this->wallet_request_id) {
+            $this->loadMissing('walletRequest');
+
+            if ($this->walletRequest && in_array($this->walletRequest->status, ['approved', 'rejected', 'closed'], true)) {
+                $this->forceFill([
+                    'locked_at' => now(),
+                    'lock_reason' => 'request_' . $this->walletRequest->status,
+                ])->save();
+            }
+
             return;
         }
 
-        if ($this->chat_started_at->copy()->addMinutes(15)->isPast()) {
-            $this->update([
+        if ($this->wallet_transfer_id && $this->chat_started_at
+            && $this->chat_started_at->copy()->addMinutes(15)->isPast()) {
+            $this->forceFill([
                 'locked_at' => now(),
-                'lock_reason' => 'Pending request chat locked automatically after 15 minutes.',
-            ]);
+                'lock_reason' => 'timeout_15_minutes',
+            ])->save();
         }
     }
 
     public function remainingSeconds(): int
     {
-        $this->clearLockIfNotPending();
-
-        if (! $this->shouldApplyLock()) {
+        if ($this->isLocked()) {
             return 0;
         }
 
-        if ($this->isLocked() || ! $this->chat_started_at) {
+        // Request-linked: countdown is 10 minutes from the request's creation time.
+        if ($this->wallet_request_id) {
+            $this->loadMissing('walletRequest');
+
+            if (! $this->walletRequest || ! $this->walletRequest->created_at) {
+                return 0;
+            }
+
+            $deadline = $this->walletRequest->created_at->copy()->addMinutes(10);
+            return max(0, (int) now()->diffInSeconds($deadline, false));
+        }
+
+        // Transfer-linked: countdown is 15 minutes from chat start.
+        if (! $this->chat_started_at) {
             return 0;
         }
 
-        return max(
-            0,
-            now()->diffInSeconds(
-                $this->chat_started_at->copy()->addMinutes(15),
-                false
-            )
-        );
+        $deadline = $this->chat_started_at->copy()->addMinutes(15);
+        return max(0, (int) now()->diffInSeconds($deadline, false));
     }
 }

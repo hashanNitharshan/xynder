@@ -3,37 +3,39 @@
 
 @push('styles')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
 <style>
 :root{
-    --dark:#101518;
-    --hero:#2b2f32;
-    --box:#2b2f32;
-    --panel:#24292d;
-    --input:#1f2428;
-    --line:#3b4248;
-    --red:#e8192c;
-    --red2:#c91022;
+    --bg:#0B0E11;
+    --surface:#181A20;
+    --surface-alt:#1E2329;
+    --border:#2B3139;
+    --yellow:#F0B90B;
+    --yellow-dark:#C99400;
+    --gold:#FFD45A;
     --green:#0ecb81;
-    --gold:#ffc933;
-    --text:#fff;
-    --muted:#aeb4ba;
-    --muted2:#747b82;
+    --red:#ef4444;
+    --text:#ffffff;
+    --muted:#848E9C;
+    --muted2:#5e6673;
+    --shadow:0 18px 45px rgba(0,0,0,.35);
 }
 
 *{box-sizing:border-box}
 
 .uf-page{
-    margin:-24px;
+    margin:-28px;
     min-height:100vh;
-    background:var(--dark);
+    background:var(--bg);
     color:var(--text);
-    font-family:Inter,Arial,sans-serif;
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
     padding-bottom:60px;
 }
 
 .uf-hero{
-    background:var(--hero);
+    background:var(--surface);
     padding:65px 85px 120px;
     position:relative;
     overflow:hidden;
@@ -44,7 +46,7 @@
     position:absolute;
     inset:0;
     opacity:.07;
-    background-image:linear-gradient(120deg,transparent 20%,rgba(255,255,255,.18) 21%,transparent 22%);
+    background-image:linear-gradient(120deg,transparent 20%,rgba(240,185,11,.18) 21%,transparent 22%);
     background-size:260px 260px;
 }
 
@@ -55,7 +57,7 @@
 }
 
 .uf-eyebrow{
-    color:var(--red);
+    color:var(--yellow);
     font-size:12px;
     font-weight:900;
     letter-spacing:.14em;
@@ -63,21 +65,22 @@
     margin-bottom:14px;
 }
 
+
 .uf-title{
-    font-size:46px;
+    font-size:32px;
     line-height:1.12;
     font-weight:900;
     margin:0 0 18px;
 }
 
 .uf-title span{
-    color:var(--red);
+    color:var(--yellow);
     display:block;
 }
 
 .uf-subtitle{
     color:#b8bdc2;
-    font-size:15px;
+    font-size:13px;
     line-height:1.7;
     font-weight:700;
     max-width:560px;
@@ -92,16 +95,16 @@
 }
 
 .uf-card{
-    background:var(--box);
-    border:1.5px solid var(--red);
-    border-radius:7px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:14px;
     overflow:hidden;
     box-shadow:0 18px 40px rgba(0,0,0,.28);
 }
 
 .uf-head{
-    background:var(--panel);
-    border-bottom:1px solid var(--line);
+    background:var(--surface-alt);
+    border-bottom:1px solid var(--border);
     padding:18px 22px;
     display:flex;
     justify-content:space-between;
@@ -111,25 +114,25 @@
 
 .uf-head-title{
     margin:0;
-    font-size:20px;
+    font-size:15px;
     font-weight:900;
     display:flex;
     align-items:center;
     gap:10px;
 }
 
-.uf-head-title i{color:var(--red)}
+.uf-head-title i{color:var(--yellow)}
 
 .uf-body{
     padding:32px;
 }
 
 .uf-error{
-    background:#3a1018;
-    border:1px solid rgba(232,25,44,.45);
-    color:#ff9aaa;
+    background:rgba(240,185,11,.12);
+    border:1px solid rgba(240,185,11,.35);
+    color:#FFD45A;
     padding:14px 16px;
-    border-radius:4px;
+    border-radius:9px;
     margin-bottom:22px;
     font-weight:800;
 }
@@ -144,8 +147,8 @@
     grid-column:1/-1;
     margin-top:12px;
     padding:14px 0 10px;
-    border-bottom:1px solid var(--line);
-    color:var(--red);
+    border-bottom:1px solid var(--border);
+    color:var(--yellow);
     font-size:12px;
     font-weight:900;
     text-transform:uppercase;
@@ -175,10 +178,10 @@
 .uf-select{
     width:100%;
     height:46px;
-    background:var(--input);
-    border:1px solid var(--line);
+    background:var(--surface-alt);
+    border:1px solid var(--border);
     color:var(--text);
-    border-radius:4px;
+    border-radius:9px;
     padding:0 14px;
     outline:0;
     font-weight:700;
@@ -186,8 +189,8 @@
 
 .uf-input:focus,
 .uf-select:focus{
-    border-color:var(--red);
-    box-shadow:0 0 0 3px rgba(232,25,44,.12);
+    border-color:var(--yellow);
+    box-shadow:0 0 0 3px rgba(240,185,11,.12);
 }
 
 .uf-file{
@@ -201,14 +204,14 @@
     height:95px;
     border-radius:6px;
     object-fit:cover;
-    border:1px solid var(--line);
-    background:var(--input);
+    border:1px solid var(--border);
+    background:var(--surface-alt);
 }
 
 .uf-actions{
     margin-top:28px;
     padding-top:22px;
-    border-top:1px solid var(--line);
+    border-top:1px solid var(--border);
     display:flex;
     justify-content:flex-end;
     gap:12px;
@@ -217,7 +220,7 @@
 
 .uf-btn{
     border:0;
-    border-radius:4px;
+    border-radius:9px;
     padding:12px 18px;
     font-weight:900;
     cursor:pointer;
@@ -230,23 +233,23 @@
 }
 
 .uf-btn-red{
-    background:var(--red);
-    color:#fff;
+    background:var(--yellow);
+    color:#0B0E11;
 }
 
 .uf-btn-red:hover{
-    background:var(--red2);
-    color:#fff;
+    background:var(--gold);
+    color:#0B0E11;
 }
 
 .uf-btn-dark{
-    background:var(--input);
+    background:var(--surface-alt);
     color:#fff;
-    border:1px solid var(--line);
+    border:1px solid var(--border);
 }
 
 .uf-btn-dark:hover{
-    border-color:var(--red);
+    border-color:var(--yellow);
     color:#fff;
 }
 
@@ -268,7 +271,7 @@
 
     <section class="uf-hero">
         <div class="uf-hero-inner">
-            <div class="uf-eyebrow">Xynder Wallet Admin</div>
+            <div class="uf-eyebrow">BITXNOW Admin</div>
 
             <h1 class="uf-title">
                 {{ $user->exists ? 'Edit User' : 'Add User' }}

@@ -8,39 +8,23 @@ import 'package:url_launcher/url_launcher.dart';
 import '../services/api_service.dart';
 
 class _C {
-  static const bg = Color(0xff0a0a0a);
-  static const surface = Color(0xff141414);
-  static const surfaceAlt = Color(0xff1c1c1e);
-  static const border = Color(0xff2a2a2a);
-  static const borderFaint = Color(0xff1e1e1e);
+  static const bg = Color(0xff0B0E11);
+  static const surface = Color(0xff181A20);
+  static const surfaceAlt = Color(0xff1E2329);
+  static const border = Color(0xff2B3139);
 
-  static const orange = Color(0xffFF4500);
-  static const amber = Color(0xffFFB800);
-  static const gold = Color(0xffFFD700);
+  static const yellow = Color(0xffF0B90B);
+  static const yellowDark = Color(0xffC99400);
 
-  static const success = Color(0xff22c55e);
-  static const red = Color(0xffef4444);
-  static const blue = Color(0xff3b82f6);
+  static const green = Color(0xff02C076);
+  static const red = Color(0xffF6465D);
+  static const blue = Color(0xff3B82F6);
 
-  static const textPrimary = Colors.white;
-  static const textSecondary = Color(0xff8E8E93);
+  static const text = Colors.white;
+  static const muted = Color(0xff848E9C);
 
-  static const gradientAccent = LinearGradient(
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
-    colors: [orange, amber, gold],
-  );
-
-  static const gradientCard = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [Color(0xff1a0a00), Color(0xff2d1200), Color(0xff1a0800)],
-  );
-
-  static const gradientGlow = RadialGradient(
-    center: Alignment(-0.2, -0.6),
-    radius: 1.25,
-    colors: [Color(0x55FF4500), Color(0x22FFB800), Color(0x00000000)],
+  static const yellowGradient = LinearGradient(
+    colors: [Color(0xffD8A800), Color(0xffF0B90B)],
   );
 }
 
@@ -75,19 +59,18 @@ class _ChatScreenState extends State<ChatScreen> {
   Timer? _timer;
   String? _myUserId;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadMyProfile();
-    _loadMessages();
-    ApiService.chatDelivered();
+ @override
+void initState() {
+  super.initState();
 
-    _timer = Timer.periodic(const Duration(seconds: 3), (_) {
-      if (!_isLocked) {
-        _loadMessages(showLoading: false);
-      }
-    });
-  }
+  _loadMyProfile();
+  _loadMessages();
+  ApiService.chatDelivered();
+
+  _timer = Timer.periodic(const Duration(seconds: 3), (_) {
+    _loadMessages(showLoading: false);
+  });
+}
 
   @override
   void dispose() {
@@ -99,7 +82,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _loadMyProfile() async {
     final res = await ApiService.profile();
-
     if (!mounted) return;
 
     if (res["success"] == true && res["user"] != null) {
@@ -108,273 +90,226 @@ class _ChatScreenState extends State<ChatScreen> {
       });
     }
   }
-
-  Future<void> _loadMessages({bool showLoading = true}) async {
-    if (showLoading) setState(() => _loading = true);
-
-    final res = widget.chatType == "transfer"
-        ? await ApiService.transferChatMessages(widget.chatId)
-        : await ApiService.requestChatMessages(widget.chatId);
-
-    if (!mounted) return;
-
-    if (res["is_locked"] == true || res["status_code"] == 423) {
-      setState(() {
-        _isLocked = true;
-        _loading = false;
-      });
-
-      if (showLoading) {
-        _snack(res["message"]?.toString() ?? "This chat is locked.");
-      }
-      return;
-    }
-
-    if (res["success"] == true) {
-      final newMessages = List.from(res["messages"] ?? []);
-      final grew = newMessages.length > _messages.length;
-
-      setState(() {
-        _messages = newMessages;
-        _remainingSeconds =
-            int.tryParse(res["remaining_seconds"]?.toString() ?? "0") ?? 0;
-        _isLocked = false;
-        _loading = false;
-      });
-
-      if (grew || showLoading) {
-        Future.delayed(const Duration(milliseconds: 120), _scrollToBottom);
-      }
-    } else {
-      setState(() => _loading = false);
-
-      if (showLoading) {
-        _snack(res["message"]?.toString() ?? "Failed to load chat");
-      }
-    }
+Future<void> _loadMessages({bool showLoading = true}) async {
+  if (showLoading && mounted) {
+    setState(() => _loading = true);
   }
 
-  Future<void> _sendMessage() async {
-    if (_isLocked) {
-      _snack("This chat is locked. 15 minutes completed.");
-      return;
-    }
+  final res = widget.chatType == "transfer"
+      ? await ApiService.transferChatMessages(widget.chatId)
+      : await ApiService.requestChatMessages(widget.chatId);
 
-    final text = _messageCtrl.text.trim();
-    if (text.isEmpty || _sending) return;
+  if (!mounted) return;
 
-    setState(() => _sending = true);
-    _messageCtrl.clear();
+  final bool locked =
+      res["is_locked"] == true ||
+      res["locked"] == true ||
+      res["chat_locked"] == true ||
+      res["chat_is_locked"] == true ||
+      res["status_code"] == 423;
 
-    final res = await ApiService.sendChatMessageMultipart(
-      chatType: widget.chatType,
-      chatId: widget.chatId,
-      message: text,
-    );
+  final newMessages = List.from(res["messages"] ?? []);
+  final grew = newMessages.length > _messages.length;
 
-    if (!mounted) return;
+  setState(() {
+    _messages = newMessages;
+    _isLocked = locked;
+    _remainingSeconds =
+        int.tryParse(res["remaining_seconds"]?.toString() ?? "0") ?? 0;
+    _loading = false;
+  });
 
-    setState(() => _sending = false);
-
-    if (res["is_locked"] == true || res["status_code"] == 423) {
-      setState(() => _isLocked = true);
-      _snack(res["message"]?.toString() ?? "This chat is locked.");
-      return;
-    }
-
-    if (res["success"] == true) {
-      await _loadMessages(showLoading: false);
-      Future.delayed(const Duration(milliseconds: 80), _scrollToBottom);
-    } else {
-      _snack(res["message"]?.toString() ?? "Failed to send message");
-    }
+  if (grew || showLoading) {
+    Future.delayed(const Duration(milliseconds: 120), _scrollToBottom);
   }
+}
 
-  Future<void> _sendImage(ImageSource source) async {
-    if (_isLocked) {
-      _snack("This chat is locked. 15 minutes completed.");
-      return;
+Future<void> _sendMessage() async {
+  if (_isLocked || _sending) return;
+
+  final text = _messageCtrl.text.trim();
+  if (text.isEmpty) return;
+
+  setState(() => _sending = true);
+  _messageCtrl.clear();
+
+  final res = await ApiService.sendChatMessageMultipart(
+    chatType: widget.chatType,
+    chatId: widget.chatId,
+    message: text,
+  );
+
+  if (!mounted) return;
+
+  final bool locked =
+      res["is_locked"] == true ||
+      res["locked"] == true ||
+      res["chat_locked"] == true ||
+      res["chat_is_locked"] == true ||
+      res["status_code"] == 423;
+
+  setState(() {
+    _sending = false;
+    if (locked) {
+      _isLocked = true;
+      _remainingSeconds = 0;
     }
+  });
 
-    if (_sending) return;
+  if (locked) return;
 
-    final image = await _picker.pickImage(source: source, imageQuality: 80);
-    if (image == null) return;
-
-    setState(() => _sending = true);
-
-    final res = await ApiService.sendChatMessageMultipart(
-      chatType: widget.chatType,
-      chatId: widget.chatId,
-      message: _messageCtrl.text.trim(),
-      image: image,
-    );
-
-    if (!mounted) return;
-
-    _messageCtrl.clear();
-    setState(() => _sending = false);
-
-    if (res["is_locked"] == true || res["status_code"] == 423) {
-      setState(() => _isLocked = true);
-      _snack(res["message"]?.toString() ?? "This chat is locked.");
-      return;
-    }
-
-    if (res["success"] == true) {
-      await _loadMessages(showLoading: false);
-      Future.delayed(const Duration(milliseconds: 80), _scrollToBottom);
-    } else {
-      _snack(res["message"]?.toString() ?? "Failed to upload image");
-    }
+  if (res["success"] == true) {
+    await _loadMessages(showLoading: false);
+    Future.delayed(const Duration(milliseconds: 80), _scrollToBottom);
   }
+}
 
-  Future<void> _sendFile() async {
-    if (_isLocked) {
-      _snack("This chat is locked. 15 minutes completed.");
-      return;
+Future<void> _sendImage(ImageSource source) async {
+  if (_isLocked || _sending) return;
+
+  final image = await _picker.pickImage(source: source, imageQuality: 80);
+  if (image == null) return;
+
+  setState(() => _sending = true);
+
+  final res = await ApiService.sendChatMessageMultipart(
+    chatType: widget.chatType,
+    chatId: widget.chatId,
+    message: _messageCtrl.text.trim(),
+    image: image,
+  );
+
+  if (!mounted) return;
+
+  _messageCtrl.clear();
+
+  final bool locked =
+      res["is_locked"] == true ||
+      res["locked"] == true ||
+      res["chat_locked"] == true ||
+      res["chat_is_locked"] == true ||
+      res["status_code"] == 423;
+
+  setState(() {
+    _sending = false;
+    if (locked) {
+      _isLocked = true;
+      _remainingSeconds = 0;
     }
+  });
 
-    if (_sending) return;
+  if (locked) return;
 
-    final result = await FilePicker.platform.pickFiles(
-      withData: true,
-      type: FileType.custom,
-      allowedExtensions: [
-        'jpg',
-        'jpeg',
-        'png',
-        'webp',
-        'pdf',
-        'doc',
-        'docx',
-        'xls',
-        'xlsx',
-        'txt',
-        'zip',
-      ],
-    );
-
-    if (result == null || result.files.isEmpty) return;
-
-    final file = result.files.first;
-
-    setState(() => _sending = true);
-
-    final res = await ApiService.sendChatMessageMultipart(
-      chatType: widget.chatType,
-      chatId: widget.chatId,
-      message: _messageCtrl.text.trim(),
-      file: file,
-    );
-
-    if (!mounted) return;
-
-    _messageCtrl.clear();
-    setState(() => _sending = false);
-
-    if (res["is_locked"] == true || res["status_code"] == 423) {
-      setState(() => _isLocked = true);
-      _snack(res["message"]?.toString() ?? "This chat is locked.");
-      return;
-    }
-
-    if (res["success"] == true) {
-      await _loadMessages(showLoading: false);
-      Future.delayed(const Duration(milliseconds: 80), _scrollToBottom);
-    } else {
-      _snack(res["message"]?.toString() ?? "Failed to upload file");
-    }
+  if (res["success"] == true) {
+    await _loadMessages(showLoading: false);
+    Future.delayed(const Duration(milliseconds: 80), _scrollToBottom);
   }
+}
 
-  void _snack(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: _C.red,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        content: Text(
-          message,
-          style: const TextStyle(fontWeight: FontWeight.w800),
-        ),
-      ),
-    );
+Future<void> _sendFile() async {
+  if (_isLocked || _sending) return;
+
+  final result = await FilePicker.platform.pickFiles(
+    withData: true,
+    type: FileType.custom,
+    allowedExtensions: [
+      'jpg',
+      'jpeg',
+      'png',
+      'webp',
+      'pdf',
+      'doc',
+      'docx',
+      'xls',
+      'xlsx',
+      'txt',
+      'zip',
+    ],
+  );
+
+  if (result == null || result.files.isEmpty) return;
+
+  setState(() => _sending = true);
+
+  final res = await ApiService.sendChatMessageMultipart(
+    chatType: widget.chatType,
+    chatId: widget.chatId,
+    message: _messageCtrl.text.trim(),
+    file: result.files.first,
+  );
+
+  if (!mounted) return;
+
+  _messageCtrl.clear();
+
+  final bool locked =
+      res["is_locked"] == true ||
+      res["locked"] == true ||
+      res["chat_locked"] == true ||
+      res["chat_is_locked"] == true ||
+      res["status_code"] == 423;
+
+  setState(() {
+    _sending = false;
+    if (locked) {
+      _isLocked = true;
+      _remainingSeconds = 0;
+    }
+  });
+
+  if (locked) return;
+
+  if (res["success"] == true) {
+    await _loadMessages(showLoading: false);
+    Future.delayed(const Duration(milliseconds: 80), _scrollToBottom);
   }
-
+}
   void _openAttachment(String url) async {
-    final fixedUrl = ApiService.fixUrl(url);
-    final uri = Uri.parse(fixedUrl);
+    final uri = Uri.parse(ApiService.fixUrl(url));
     await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   void _showAttachmentMenu() {
-    if (_isLocked) {
-      _snack("This chat is locked. 15 minutes completed.");
-      return;
-    }
+    if (_isLocked) return;
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
+      backgroundColor: _C.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (_) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: _C.surfaceAlt,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 44,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: _C.border,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      "Send Attachment",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  _attachmentTile(
-                    icon: Icons.photo_library_rounded,
-                    title: "Photo Gallery",
-                    onTap: () {
-                      Navigator.pop(context);
-                      _sendImage(ImageSource.gallery);
-                    },
-                  ),
-                  _attachmentTile(
-                    icon: Icons.camera_alt_rounded,
-                    title: "Camera",
-                    onTap: () {
-                      Navigator.pop(context);
-                      _sendImage(ImageSource.camera);
-                    },
-                  ),
-                  _attachmentTile(
-                    icon: Icons.attach_file_rounded,
-                    title: "File",
-                    onTap: () {
-                      Navigator.pop(context);
-                      _sendFile();
-                    },
-                  ),
-                ],
-              ),
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _attachmentTile(
+                  icon: Icons.photo_library_rounded,
+                  title: "Gallery",
+                  onTap: () {
+                    Navigator.pop(context);
+                    _sendImage(ImageSource.gallery);
+                  },
+                ),
+                _attachmentTile(
+                  icon: Icons.camera_alt_rounded,
+                  title: "Camera",
+                  onTap: () {
+                    Navigator.pop(context);
+                    _sendImage(ImageSource.camera);
+                  },
+                ),
+                _attachmentTile(
+                  icon: Icons.attach_file_rounded,
+                  title: "File",
+                  onTap: () {
+                    Navigator.pop(context);
+                    _sendFile();
+                  },
+                ),
+              ],
             ),
           ),
         );
@@ -390,25 +325,17 @@ class _ChatScreenState extends State<ChatScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: _C.surface,
+        color: _C.surfaceAlt,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: _C.border),
       ),
       child: ListTile(
         onTap: onTap,
-        leading: Container(
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            gradient: _C.gradientAccent,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: Colors.black, size: 20),
-        ),
+        leading: Icon(icon, color: _C.yellow),
         title: Text(
           title,
           style: const TextStyle(
-            color: Colors.white,
+            color: _C.text,
             fontWeight: FontWeight.w800,
           ),
         ),
@@ -433,15 +360,16 @@ class _ChatScreenState extends State<ChatScreen> {
     return "$m:$s";
   }
 
-  String _transactionNo() {
-    final raw = widget.chatId;
-    final padded = raw.padLeft(9, '0');
-    return widget.chatType == "transfer" ? "TRA$padded" : "TNS$padded";
-  }
+String _transactionNo() {
+  final raw = widget.chatId.padLeft(9, '0');
+  return "TNS$raw";
+}
 
+  // ═══════════════════════════════════════════
+  //  TOP BAR - status shown as a dot on the photo, no text
+  // ═══════════════════════════════════════════
   Widget _topBar() {
     final name = widget.otherUser["name"]?.toString() ?? "User";
-    final role = widget.otherUser["role"]?.toString() ?? "";
     final photoUrl = ApiService.fixUrl(
       widget.otherUser["photo_url"] ?? widget.otherUser["photo"],
     );
@@ -450,13 +378,13 @@ class _ChatScreenState extends State<ChatScreen> {
         widget.otherUser["is_online"] == 1 ||
         widget.otherUser["is_online"]?.toString() == "1";
 
+    final statusColor = _isLocked ? _C.red : (isOnline ? _C.green : _C.red);
+
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
       decoration: const BoxDecoration(
-        gradient: _C.gradientCard,
-        border: Border(
-          bottom: BorderSide(color: Color(0xff3a1500), width: 1),
-        ),
+        color: _C.bg,
+        border: Border(bottom: BorderSide(color: _C.border)),
       ),
       child: SafeArea(
         bottom: false,
@@ -464,134 +392,60 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [
             GestureDetector(
               onTap: () => Navigator.maybePop(context),
-              child: Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.25),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.white.withOpacity(0.08)),
-                ),
-                child: const Icon(
+              child: const SizedBox(
+                width: 38,
+                height: 38,
+                child: Icon(
                   Icons.arrow_back_ios_new_rounded,
-                  color: Colors.white,
+                  color: _C.text,
                   size: 18,
                 ),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
             Stack(
+              clipBehavior: Clip.none,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: _isLocked ? null : _C.gradientAccent,
-                    color: _isLocked ? _C.red : null,
-                  ),
-                  child: CircleAvatar(
-                    radius: 24,
-                    backgroundColor: _C.surfaceAlt,
-                    backgroundImage:
-                        photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
-                    child: photoUrl.isEmpty
-                        ? Text(
-                            name.isNotEmpty ? name[0].toUpperCase() : "U",
-                            style: const TextStyle(
-                              color: _C.amber,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 18,
-                            ),
-                          )
-                        : null,
-                  ),
+                CircleAvatar(
+                  radius: 21,
+                  backgroundColor: _C.surfaceAlt,
+                  backgroundImage:
+                      photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
+                  child: photoUrl.isEmpty
+                      ? Text(
+                          name.isNotEmpty ? name[0].toUpperCase() : "U",
+                          style: const TextStyle(
+                            color: _C.yellow,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        )
+                      : null,
                 ),
                 Positioned(
-                  right: 0,
-                  bottom: 0,
+                  bottom: -1,
+                  right: -1,
                   child: Container(
                     width: 13,
                     height: 13,
                     decoration: BoxDecoration(
-                      color: _isLocked
-                          ? _C.red
-                          : isOnline
-                              ? _C.success
-                              : _C.textSecondary,
+                      color: statusColor,
                       shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xff1a0a00), width: 2),
+                      border: Border.all(color: _C.bg, width: 2),
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 11),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Text(
-                        _isLocked
-                            ? "Locked"
-                            : isOnline
-                                ? "Online"
-                                : "Offline",
-                        style: TextStyle(
-                          color: _isLocked
-                              ? _C.red
-                              : isOnline
-                                  ? _C.success
-                                  : _C.textSecondary,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      if (role.isNotEmpty) ...[
-                        const SizedBox(width: 6),
-                        const Text(
-                          "•",
-                          style: TextStyle(color: Colors.white38, fontSize: 11),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          role.toUpperCase(),
-                          style: const TextStyle(
-                            color: Colors.white54,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                gradient: _C.gradientAccent,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(
-                widget.chatType == "transfer"
-                    ? Icons.swap_horiz_rounded
-                    : Icons.receipt_long_rounded,
-                color: Colors.black,
-                size: 21,
+              child: Text(
+                name,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: _C.text,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
             ),
           ],
@@ -600,114 +454,51 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Widget _buildTransactionBanner() {
-    final bool isTransfer = widget.chatType == "transfer";
+  Widget _transactionBar() {
+    final time = _remainingLabel();
 
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        gradient: _isLocked ? null : _C.gradientCard,
-        color: _isLocked ? _C.surface : null,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: _isLocked ? _C.red : const Color(0xff3a1500)),
-        boxShadow: [
-          BoxShadow(
-            color: _C.orange.withOpacity(0.10),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        color: _C.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _C.border),
       ),
-      child: Stack(
+      child: Row(
         children: [
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                gradient: _C.gradientGlow,
+          const Icon(Icons.receipt_long_rounded, color: _C.yellow, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              _transactionNo(),
+              style: const TextStyle(
+                color: _C.yellow,
+                fontSize: 13,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.4,
               ),
             ),
           ),
-          Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: _isLocked ? _C.red.withOpacity(0.15) : null,
-                  gradient: _isLocked ? null : _C.gradientAccent,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Icon(
-                  _isLocked
-                      ? Icons.lock_rounded
-                      : isTransfer
-                          ? Icons.swap_horiz_rounded
-                          : Icons.receipt_long_rounded,
-                  color: _isLocked ? _C.red : Colors.black,
-                  size: 24,
-                ),
+          if (!_isLocked && time.isNotEmpty)
+            Text(
+              time,
+              style: const TextStyle(
+                color: _C.muted,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
               ),
-              const SizedBox(width: 13),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isTransfer ? "Wallet Transfer" : "Buy / Sell Request",
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _transactionNo(),
-                      style: TextStyle(
-                        color: _isLocked ? _C.red : _C.amber,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 13,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _isLocked
-                          ? "Chat locked after 15 minutes"
-                          : _remainingLabel().isEmpty
-                              ? "Chat linked to this transaction"
-                              : "Time left: ${_remainingLabel()}",
-                      style: const TextStyle(
-                        color: _C.textSecondary,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
+            ),
+          if (_isLocked)
+            const Text(
+              "Locked",
+              style: TextStyle(
+                color: _C.red,
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.28),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.white.withOpacity(0.08)),
-                ),
-                child: Text(
-                  _isLocked ? "LOCKED" : isTransfer ? "TRANSFER" : "REQUEST",
-                  style: TextStyle(
-                    color: _isLocked ? _C.red : _C.amber,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
         ],
       ),
     );
@@ -726,33 +517,16 @@ class _ChatScreenState extends State<ChatScreen> {
       return GestureDetector(
         onTap: () => _openAttachment(fixedUrl),
         child: Container(
-          margin: EdgeInsets.only(
-            top: msg["message"] != null && msg["message"].toString().isNotEmpty
-                ? 8
-                : 0,
-          ),
+          margin: const EdgeInsets.only(bottom: 4),
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            color: Colors.black26,
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(color: isMe ? Colors.black26 : _C.border),
           ),
           child: Image.network(
             fixedUrl,
-            width: 220,
+            width: 200,
             fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) {
-              return Container(
-                width: 220,
-                padding: const EdgeInsets.all(14),
-                child: Text(
-                  "Image not available",
-                  style: TextStyle(
-                    color: isMe ? Colors.black87 : Colors.white60,
-                  ),
-                ),
-              );
-            },
           ),
         ),
       );
@@ -761,11 +535,7 @@ class _ChatScreenState extends State<ChatScreen> {
     return GestureDetector(
       onTap: () => _openAttachment(fixedUrl),
       child: Container(
-        margin: EdgeInsets.only(
-          top: msg["message"] != null && msg["message"].toString().isNotEmpty
-              ? 8
-              : 0,
-        ),
+        margin: const EdgeInsets.only(bottom: 4),
         padding: const EdgeInsets.all(11),
         decoration: BoxDecoration(
           color: isMe ? Colors.black.withOpacity(0.08) : _C.bg,
@@ -777,7 +547,7 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [
             Icon(
               Icons.insert_drive_file_rounded,
-              color: isMe ? Colors.black87 : _C.amber,
+              color: isMe ? Colors.black87 : _C.yellow,
               size: 22,
             ),
             const SizedBox(width: 8),
@@ -798,6 +568,9 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  // ═══════════════════════════════════════════
+  //  BUBBLE - single line: message, time, and tick together
+  // ═══════════════════════════════════════════
   Widget _buildBubble(Map msg) {
     final senderId = msg["sender_id"]?.toString();
     final bool isMe = _myUserId != null && senderId == _myUserId;
@@ -805,6 +578,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final text = msg["message"]?.toString() ?? "";
     final status = msg["status"]?.toString() ?? "sent";
     final createdAt = msg["created_at"]?.toString() ?? "";
+    final hasAttachment = (msg["attachment_url"]?.toString() ?? "").isNotEmpty;
 
     String timeLabel = "";
     try {
@@ -813,93 +587,78 @@ class _ChatScreenState extends State<ChatScreen> {
           "${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
     } catch (_) {}
 
-    final isAdmin = msg["sender"]?["role"] == "admin";
+    final metaRow = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          timeLabel,
+          style: TextStyle(
+            color: isMe ? Colors.black54 : Colors.white38,
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        if (isMe) ...[
+          const SizedBox(width: 3),
+          Icon(
+            status == "seen" || status == "delivered"
+                ? Icons.done_all_rounded
+                : Icons.done_rounded,
+            size: 13,
+            color: status == "seen" ? _C.blue : Colors.black.withOpacity(0.55),
+          ),
+        ],
+      ],
+    );
 
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.fromLTRB(14, 11, 14, 8),
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.fromLTRB(14, 9, 10, 9),
         constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.76,
+          maxWidth: MediaQuery.of(context).size.width * 0.78,
         ),
         decoration: BoxDecoration(
-          gradient: isMe ? _C.gradientAccent : null,
+          gradient: isMe ? _C.yellowGradient : null,
           color: isMe ? null : _C.surface,
           borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(20),
-            topRight: const Radius.circular(20),
-            bottomLeft: Radius.circular(isMe ? 20 : 5),
-            bottomRight: Radius.circular(isMe ? 5 : 20),
+            topLeft: const Radius.circular(18),
+            topRight: const Radius.circular(18),
+            bottomLeft: Radius.circular(isMe ? 18 : 5),
+            bottomRight: Radius.circular(isMe ? 5 : 18),
           ),
           border: Border.all(
-            color: isMe
-                ? Colors.transparent
-                : isAdmin
-                    ? _C.amber
-                    : _C.border,
-            width: isAdmin ? 1.2 : 0.9,
+            color: isMe ? Colors.transparent : _C.border,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.22),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
         ),
         child: Column(
           crossAxisAlignment:
               isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            if (!isMe && isAdmin) ...[
-              const Text(
-                "Admin",
-                style: TextStyle(
-                  color: _C.amber,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 3),
-            ],
+            if (hasAttachment) _buildAttachment(msg, isMe),
             if (text.isNotEmpty)
-              Text(
-                text,
-                style: TextStyle(
-                  color: isMe ? Colors.black : Colors.white,
-                  fontSize: 15,
-                  height: 1.35,
-                  fontWeight: isMe ? FontWeight.w800 : FontWeight.w500,
-                ),
-              ),
-            _buildAttachment(msg, isMe),
-            const SizedBox(height: 6),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  timeLabel,
-                  style: TextStyle(
-                    color: isMe ? Colors.black54 : Colors.white38,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Flexible(
+                    child: Text(
+                      text,
+                      style: TextStyle(
+                        color: isMe ? Colors.black : Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
-                ),
-                if (isMe) ...[
-                  const SizedBox(width: 4),
-                  Icon(
-                    status == "seen" || status == "delivered"
-                        ? Icons.done_all_rounded
-                        : Icons.done_rounded,
-                    size: 14,
-                    color: status == "seen"
-                        ? _C.blue
-                        : Colors.black.withOpacity(0.55),
-                  ),
+                  const SizedBox(width: 8),
+                  metaRow,
                 ],
-              ],
-            ),
+              )
+            else
+              metaRow,
           ],
         ),
       ),
@@ -909,27 +668,23 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _buildDateDivider(String label) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Row(
-        children: [
-          const Expanded(child: Divider(color: _C.border)),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-            decoration: BoxDecoration(
-              color: _C.surface,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: _C.border),
-            ),
-            child: Text(
-              label,
-              style: const TextStyle(
-                color: _C.textSecondary,
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-              ),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+          decoration: BoxDecoration(
+            color: _C.surface,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: _C.border),
+          ),
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: _C.muted,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
             ),
           ),
-          const Expanded(child: Divider(color: _C.border)),
-        ],
+        ),
       ),
     );
   }
@@ -964,94 +719,47 @@ class _ChatScreenState extends State<ChatScreen> {
     return widgets;
   }
 
-  Widget _emptyState(String name) {
-    return Center(
-      child: Container(
-        margin: const EdgeInsets.all(22),
-        padding: const EdgeInsets.all(26),
-        decoration: BoxDecoration(
-          color: _C.surface,
-          borderRadius: BorderRadius.circular(26),
-          border: Border.all(color: _C.border),
+  Widget _emptyState() {
+    return const Center(
+      child: Text(
+        "No messages yet",
+        style: TextStyle(
+          color: _C.muted,
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+      ),
+    );
+  }
+Widget _lockedInput() {
+  return Container(
+    width: double.infinity,
+    padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+    decoration: const BoxDecoration(
+      color: _C.surface,
+      border: Border(top: BorderSide(color: _C.border)),
+    ),
+    child: const SafeArea(
+      top: false,
+      child: Center(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 76,
-              height: 76,
-              decoration: BoxDecoration(
-                gradient: _C.gradientAccent,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                widget.chatType == "transfer"
-                    ? Icons.swap_horiz_rounded
-                    : Icons.receipt_long_rounded,
-                color: Colors.black,
-                size: 36,
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              "No messages yet",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 17,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 7),
+            Icon(Icons.lock_rounded, color: _C.red, size: 17),
+            SizedBox(width: 8),
             Text(
-              "Start the conversation with $name",
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: _C.textSecondary,
-                fontSize: 12,
+              "Chat closed / locked",
+              style: TextStyle(
+                color: _C.red,
+                fontWeight: FontWeight.w900,
               ),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _lockedInput() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-      decoration: const BoxDecoration(
-        color: _C.surface,
-        border: Border(top: BorderSide(color: _C.border)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-          decoration: BoxDecoration(
-            color: _C.red.withOpacity(0.10),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: _C.red.withOpacity(0.35)),
-          ),
-          child: const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.lock_rounded, color: _C.red, size: 18),
-              SizedBox(width: 8),
-              Text(
-                "Chat locked after 15 minutes",
-                style: TextStyle(
-                  color: _C.red,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
+    ),
+  );
+}
   Widget _messageInput() {
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 9, 12, 11),
@@ -1075,7 +783,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 child: const Icon(
                   Icons.add_rounded,
-                  color: _C.amber,
+                  color: _C.yellow,
                   size: 25,
                 ),
               ),
@@ -1092,7 +800,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 maxLines: 4,
                 decoration: InputDecoration(
                   hintText: "Message",
-                  hintStyle: const TextStyle(color: _C.textSecondary),
+                  hintStyle: const TextStyle(color: _C.muted),
                   filled: true,
                   fillColor: _C.bg,
                   contentPadding: const EdgeInsets.symmetric(
@@ -1105,10 +813,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
-                    borderSide: const BorderSide(color: _C.orange, width: 1.4),
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
+                    borderSide: const BorderSide(color: _C.yellow, width: 1.4),
                   ),
                 ),
                 onSubmitted: (_) => _sendMessage(),
@@ -1121,7 +826,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 width: 46,
                 height: 46,
                 decoration: const BoxDecoration(
-                  gradient: _C.gradientAccent,
+                  gradient: _C.yellowGradient,
                   shape: BoxShape.circle,
                 ),
                 child: Center(
@@ -1150,24 +855,22 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final name = widget.otherUser["name"]?.toString() ?? "User";
-
     return Scaffold(
       backgroundColor: _C.bg,
       body: Column(
         children: [
           _topBar(),
-          _buildTransactionBanner(),
+          _transactionBar(),
           Expanded(
             child: _loading
                 ? const Center(
                     child: CircularProgressIndicator(
-                      color: _C.orange,
+                      color: _C.yellow,
                       strokeWidth: 2.5,
                     ),
                   )
                 : _messages.isEmpty
-                    ? _emptyState(name)
+                    ? _emptyState()
                     : ListView(
                         controller: _scrollCtrl,
                         padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),

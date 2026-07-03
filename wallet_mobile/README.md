@@ -4,77 +4,65 @@ X/
 │   │   ├── Http/
 │   │   │   ├── Controllers/
 │   │   │   │   ├── Admin/
-│   │   │   │   │   ├── ChatController.php                  # UPDATED - attachment URL uses /storage
+│   │   │   │   │   ├── ChatController.php
 │   │   │   │   │   ├── ConfigController.php
 │   │   │   │   │   ├── SettingController.php
 │   │   │   │   │   ├── SupportTicketController.php
 │   │   │   │   │   ├── UserController.php
 │   │   │   │   │   ├── WalletRequestController.php
 │   │   │   │   │   └── WalletTransferController.php
-│   │   │   │   │
 │   │   │   │   ├── Api/
-│   │   │   │   │   ├── AuthController.php                   # UPDATED - mobile profile upload support
-│   │   │   │   │   ├── ChatController.php                   # UPDATED - attachment_url uses /storage
+│   │   │   │   │   ├── AuthController.php
+│   │   │   │   │   ├── ChatController.php
 │   │   │   │   │   ├── ConfigController.php
-│   │   │   │   │   ├── StorageController.php                # OLD /api/storage fallback
+│   │   │   │   │   ├── StorageController.php
 │   │   │   │   │   └── SupportTicketController.php
-│   │   │   │   │
 │   │   │   │   ├── Auth/
 │   │   │   │   │   ├── LoginController.php
 │   │   │   │   │   └── RegisterController.php
-│   │   │   │   │
 │   │   │   │   ├── Client/
 │   │   │   │   │   └── RequestController.php
-│   │   │   │   │
 │   │   │   │   ├── Merchant/
 │   │   │   │   │   └── RequestController.php
-│   │   │   │   │
 │   │   │   │   ├── Controller.php
 │   │   │   │   ├── DashboardController.php
 │   │   │   │   ├── HistoryController.php
 │   │   │   │   ├── WalletTransferController.php
 │   │   │   │   ├── WebChatController.php
-│   │   │   │   ├── WebProfileController.php                 # NEW / UPDATED - client + merchant profile upload
+│   │   │   │   ├── WebProfileController.php
 │   │   │   │   └── WebSettingsController.php
-│   │   │   │
 │   │   │   └── Middleware/
 │   │   │       ├── AdminOnly.php
-│   │   │       └── HandleCors.php / Laravel HandleCors       # ADDED in bootstrap/app.php
-│   │   │
+│   │   │       └── HandleCors.php
 │   │   ├── Models/
-│   │   │   ├── ChatMessage.php                              # UPDATED - /api/storage converted to /storage
+│   │   │   ├── ChatMessage.php
 │   │   │   ├── Conversation.php
 │   │   │   ├── SupportTicket.php
 │   │   │   ├── SystemConfig.php
-│   │   │   ├── User.php                                     # UPDATED - photo_url, aadhaar_photo_url, upi_qr_url
-│   │   │   ├── WalletRequest.php                            # UPDATED - payment_slip_url uses /storage
+│   │   │   ├── User.php
+│   │   │   ├── WalletRequest.php
 │   │   │   └── WalletTransfer.php
-│   │   │
 │   │   └── Providers/
 │   │       └── AppServiceProvider.php
-│   │
 │   ├── bootstrap/
-│   │   ├── app.php                                          # UPDATED - CORS middleware added
+│   │   ├── app.php
 │   │   └── providers.php
-│   │
 │   ├── config/
 │   │   ├── app.php
 │   │   ├── auth.php
 │   │   ├── cache.php
-│   │   ├── cors.php                                         # UPDATED - allowed_origins ['*']
+│   │   ├── cors.php
 │   │   ├── database.php
-│   │   ├── filesystems.php                                  # UPDATED - public disk + storage link
+│   │   ├── filesystems.php
 │   │   ├── logging.php
 │   │   ├── mail.php
 │   │   ├── queue.php
 │   │   ├── sanctum.php
 │   │   ├── services.php
 │   │   └── session.php
-│   │
 │   ├── database/
 │   │   ├── factories/
 │   │   │   └── UserFactory.php
-│   │   │
 │   │   ├── migrations/
 │   │   │   ├── 0001_01_01_000000_create_users_table.php
 │   │   │   ├── 0001_01_01_000001_create_cache_table.php
@@ -97,29 +85,29 @@ X/
 │   │   │   ├── 2026_06_09_153533_create_conversations_table.php
 │   │   │   ├── 2026_06_10_023710_create_chat_messages_table.php
 │   │   │   ├── 2026_06_10_111452_fix_conversations_chat_columns.php
-│   │   │   ├── xxxx_xx_xx_xxxxxx_add_transaction_no_to_wallet_transfers_table.php
-│   │   │   └── xxxx_xx_xx_xxxxxx_add_attachment_and_lock_columns_to_chat_tables.php
-│   │   │
+│   │   │   ├── 2026_06_11_124406_add_attachments_to_chat_messages_table.php
+│   │   │   ├── 2026_06_16_074000_add_chat_lock_fields_to_conversations_table.php
+│   │   │   ├── 2026_06_18_052400_add_transaction_no_to_wallet_requests_and_transfers.php
+│   │   │   ├── 2026_06_23_071904_add_transaction_no_to_wallet_transfers_table.php
+│   │   │   ├── 2026_06_23_073254_add_attachment_and_lock_columns_to_chat_tables.php
+│   │   │   └── 2026_07_01_141804_add_closed_status_to_wallet_requests_table.php
 │   │   ├── seeders/
 │   │   │   └── DatabaseSeeder.php
-│   │   │
 │   │   └── database.sqlite
-│   │
 │   ├── public/
 │   │   ├── apk/
-│   │   │   └── wallet-mobile.apk                            # RELEASE APK hosted here
-│   │   │
-│   │   ├── storage/                                         # SYMLINK to storage/app/public
+│   │   │   └── wallet-mobile.apk
+│   │   ├── images/
+│   │   │   └── bitxnow_logo.jpeg
+│   │   ├── storage/
+│   │   ├── favicon.ico
 │   │   ├── index.php
 │   │   └── robots.txt
-│   │
 │   ├── resources/
 │   │   ├── css/
 │   │   │   └── app.css
-│   │   │
 │   │   ├── js/
 │   │   │   └── app.js
-│   │   │
 │   │   └── views/
 │   │       ├── admin/
 │   │       │   ├── chats/
@@ -135,14 +123,12 @@ X/
 │   │       │   │   ├── form.blade.php
 │   │       │   │   └── index.blade.php
 │   │       │   ├── wallet_requests/
-│   │       │   │   └── index.blade.php                       # UPDATED slip image URL
+│   │       │   │   └── index.blade.php
 │   │       │   └── wallet_transfers/
 │   │       │       └── index.blade.php
-│   │       │
 │   │       ├── auth/
 │   │       │   ├── login.blade.php
 │   │       │   └── register.blade.php
-│   │       │
 │   │       ├── client/
 │   │       │   ├── dashboard.blade.php
 │   │       │   ├── requests.blade.php
@@ -150,9 +136,8 @@ X/
 │   │       │   ├── chats.blade.php
 │   │       │   ├── chat_show.blade.php
 │   │       │   ├── history.blade.php
-│   │       │   ├── profile.blade.php                         # NEW / UPDATED profile page
-│   │       │   └── settings.blade.php                        # UPDATED profile image URL
-│   │       │
+│   │       │   ├── profile.blade.php
+│   │       │   └── settings.blade.php
 │   │       ├── merchant/
 │   │       │   ├── dashboard.blade.php
 │   │       │   ├── requests.blade.php
@@ -160,56 +145,48 @@ X/
 │   │       │   ├── chats.blade.php
 │   │       │   ├── chat_show.blade.php
 │   │       │   ├── history.blade.php
-│   │       │   ├── profile.blade.php                         # NEW / UPDATED profile page
-│   │       │   └── settings.blade.php                        # UPDATED profile image URL
-│   │       │
+│   │       │   ├── profile.blade.php
+│   │       │   └── settings.blade.php
 │   │       ├── shared/
 │   │       │   ├── chats_index.blade.php
 │   │       │   ├── chat_show.blade.php
 │   │       │   ├── dark_dashboard.blade.php
 │   │       │   ├── history.blade.php
-│   │       │   ├── settings.blade.php                        # UPDATED profile image URL
+│   │       │   ├── profile.blade.php
+│   │       │   ├── settings.blade.php
+│   │       │   ├── transaction_detail.blade.php
 │   │       │   └── transfers.blade.php
-│   │       │
 │   │       ├── dashboards/
 │   │       │   ├── admin.blade.php
 │   │       │   ├── client.blade.php
 │   │       │   └── merchant.blade.php
-│   │       │
 │   │       ├── layouts/
-│   │       │   └── admin.blade.php                           # UPDATED sidebar/topbar profile photo URL
-│   │       │
+│   │       │   └── admin.blade.php
 │   │       └── welcome.blade.php
-│   │
 │   ├── routes/
-│   │   ├── api.php                                           # UPDATED OPTIONS + /version + /storage route
+│   │   ├── api.php
 │   │   ├── console.php
-│   │   └── web.php                                           # UPDATED client/merchant profile routes
-│   │
+│   │   └── web.php
 │   ├── storage/
 │   │   ├── app/
 │   │   │   └── public/
 │   │   │       ├── users/
-│   │   │       │   ├── photos/                               # profile photos saved here
-│   │   │       │   ├── aadhaar/                              # aadhaar photos saved here
-│   │   │       │   └── upi_qr/                               # UPI QR images saved here
+│   │   │       │   ├── photos/
+│   │   │       │   ├── aadhaar/
+│   │   │       │   └── upi_qr/
 │   │   │       ├── wallet/
-│   │   │       │   └── slips/                                # payment slips saved here
-│   │   │       └── chat_attachments/                         # chat files/images saved here
-│   │   │
+│   │   │       │   └── slips/
+│   │   │       └── chat_attachments/
 │   │   ├── framework/
 │   │   │   ├── cache/
 │   │   │   ├── sessions/
 │   │   │   ├── testing/
 │   │   │   └── views/
-│   │   │
 │   │   └── logs/
 │   │       └── laravel.log
-│   │
 │   ├── tests/
 │   │   ├── Feature/
 │   │   └── Unit/
-│   │
 │   ├── vendor/
 │   ├── .editorconfig
 │   ├── .env
@@ -224,45 +201,91 @@ X/
 │   ├── phpunit.xml
 │   ├── README.md
 │   └── vite.config.js
-│
 ├── cloudpanel-nginx/
-│   └── wallet.bitxnow.com.conf                              # UPDATED
-│       ├── root backend/public                              # FIXED from wrong public root
-│       └── location ^~ /storage/                            # FINAL FIX
-│           └── alias backend/storage/app/public/
-│
+│   └── wallet.bitxnow.com.conf
 └── wallet_mobile/
+    ├── .dart_tool/
+    ├── .idea/
+    ├── .vscode/
+    │   └── launch.json
+    ├── android/
+    │   ├── .gradle/
+    │   ├── app/
+    │   │   ├── src/
+    │   │   │   ├── debug/
+    │   │   │   └── main/
+    │   │   │       ├── java/
+    │   │   │       ├── kotlin/
+    │   │   │       ├── res/
+    │   │   │       │   ├── drawable/
+    │   │   │       │   ├── drawable-hdpi/
+    │   │   │       │   ├── drawable-mdpi/
+    │   │   │       │   ├── drawable-v21/
+    │   │   │       │   ├── drawable-xhdpi/
+    │   │   │       │   ├── drawable-xxhdpi/
+    │   │   │       │   ├── drawable-xxxhdpi/
+    │   │   │       │   ├── mipmap-anydpi-v26/
+    │   │   │       │   ├── mipmap-hdpi/
+    │   │   │       │   ├── mipmap-mdpi/
+    │   │   │       │   ├── mipmap-xhdpi/
+    │   │   │       │   ├── mipmap-xxhdpi/
+    │   │   │       │   ├── mipmap-xxxhdpi/
+    │   │   │       │   ├── values/
+    │   │   │       │   ├── values-night/
+    │   │   │       │   └── xml/
+    │   │   │       └── AndroidManifest.xml
+    │   │   └── build.gradle
+    │   ├── gradle/
+    │   │   └── wrapper/
+    │   │       └── gradle-wrapper.properties
+    │   ├── build.gradle
+    │   ├── gradle.properties
+    │   ├── local.properties
+    │   └── settings.gradle
     ├── assets/
     │   └── images/
-    │       └── xynder_logo.png
-    │
+    │       ├── bitxnow_logo.jpeg
+    │       ├── bitxnow_logo2.jpeg
+    │       ├── bitxnow_logo4.jpeg
+    │       ├── bitxnow_logo5.jpeg
+    │       ├── compressed-original.webp
+    │       └── xynder_logo.jpg
+    ├── build/
+    ├── ios/
+    │   ├── Flutter/
+    │   ├── Runner/
+    │   ├── Runner.xcodeproj/
+    │   └── Runner.xcworkspace/
     ├── lib/
     │   ├── main.dart
-    │   │
     │   ├── screens/
     │   │   ├── admin_dashboard.dart
-    │   │   ├── auth_gate.dart                               # UPDATED removed duplicate initState
+    │   │   ├── auth_gate.dart
+    │   │   ├── chat_detail_screen.dart
+    │   │   ├── chat_list_screen.dart
     │   │   ├── chat_screen.dart
     │   │   ├── chat_users_screen.dart
     │   │   ├── client_dashboard.dart
-    │   │   ├── login_screen.dart                            # UPDATED UpdateService check + XynderLogo
+    │   │   ├── history_screen.dart
+    │   │   ├── login_screen.dart
     │   │   ├── merchant_dashboard.dart
     │   │   ├── merchant_requests_screen.dart
-    │   │   ├── profile_screen.dart                          # USES ApiService.fixUrl()
+    │   │   ├── profile_screen.dart
     │   │   ├── register_screen.dart
     │   │   ├── request_screen.dart
+    │   │   ├── settings_screen.dart
     │   │   ├── transaction_detail_screen.dart
-    │   │   └── wallet_transfer_screen.dart,history_screen.dart,settings_screen.dart
-    │   │
+    │   │   ├── update_screen.dart
+    │   │   └── wallet_transfer_screen.dart
     │   ├── services/
-    │   │   ├── api_service.dart                             # UPDATED fixUrl /storage path
-    │   │   └── update_service.dart                          # NEW auto update + force update + download + install
-    │   │
+    │   │   ├── api_service.dart
+    │   │   └── update_service.dart
     │   ├── utils/
+    │   │   ├── page_transitions.dart
     │   │   ├── tv_iframe_registry.dart
     │   │   └── tv_iframe_registry_stub.dart
-    │   │
     │   └── widgets/
+    │       ├── animated_page.dart
     │       ├── app_drawer.dart
     │       ├── bottom_nav.dart
     │       ├── dashboard_layout.dart
@@ -273,56 +296,31 @@ X/
     │       ├── tv_widgets.dart
     │       ├── tv_widgets_stub.dart
     │       └── tv_widgets_web.dart
-    │
-    ├── android/
-    │   ├── app/
-    │   │   ├── src/
-    │   │   │   └── main/
-    │   │   │       └── AndroidManifest.xml                  # UPDATED INTERNET + INSTALL_PACKAGES
-    │   │   └── build.gradle                                 # UPDATED lint disabled, minify off
-    │   │
-    │   ├── gradle/
-    │   │   └── wrapper/
-    │   │       └── gradle-wrapper.properties                # UPDATED gradle-8.13-bin.zip
-    │   │
-    │   ├── build.gradle
-    │   ├── gradle.properties                                # UPDATED JAVA_HOME JDK 17
-    │   └── settings.gradle
-    │
-    ├── ios/
-    │   ├── Runner/
-    │   ├── Runner.xcodeproj/
-    │   └── Runner.xcworkspace/
-    │
     ├── linux/
     │   ├── flutter/
     │   ├── runner/
     │   └── CMakeLists.txt
-    │
     ├── macos/
     │   ├── Flutter/
     │   ├── Runner/
     │   ├── Runner.xcodeproj/
     │   └── Runner.xcworkspace/
-    │
     ├── test/
     │   └── widget_test.dart
-    │
     ├── web/
     │   ├── favicon.png
     │   ├── icons/
     │   ├── index.html
     │   └── manifest.json
-    │
     ├── windows/
     │   ├── flutter/
     │   ├── runner/
     │   └── CMakeLists.txt
-    │
     ├── .flutter-plugins-dependencies
     ├── .gitignore
-    ├── pubspec.yaml                                         # UPDATED added packages
-    └── README.md
+    ├── pubspec.yaml
+    ├── README.md
+    └── wallet_mobile_android.iml
 
 flutter run -d chrome
 
