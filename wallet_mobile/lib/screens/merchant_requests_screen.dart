@@ -691,8 +691,9 @@ class _MerchantRequestsScreenState extends State<MerchantRequestsScreen>
             ),
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
 
+          // Compact action row - Accept / Reject shrunk down.
           Row(
             children: [
               Expanded(
@@ -709,7 +710,7 @@ class _MerchantRequestsScreenState extends State<MerchantRequestsScreen>
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Expanded(
                 child: _solidButton(
                   label: "Reject",
@@ -727,8 +728,9 @@ class _MerchantRequestsScreenState extends State<MerchantRequestsScreen>
             ],
           ),
 
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
 
+          // Compact secondary row - Chat / Close shrunk down.
           Row(
             children: [
               Expanded(
@@ -749,7 +751,7 @@ class _MerchantRequestsScreenState extends State<MerchantRequestsScreen>
                   },
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Expanded(
                 child: _outlineButton(
                   label: "Close",
@@ -778,23 +780,23 @@ class _MerchantRequestsScreenState extends State<MerchantRequestsScreen>
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 38,
+        height: 32,
         decoration: BoxDecoration(
           color: _C.bg,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(9),
           border: Border.all(color: _C.amber),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: _C.amber, size: 15),
-            const SizedBox(width: 7),
+            Icon(icon, color: _C.amber, size: 13),
+            const SizedBox(width: 5),
             Text(
               label,
               style: const TextStyle(
                 color: _C.amber,
                 fontWeight: FontWeight.w900,
-                fontSize: 13,
+                fontSize: 12,
               ),
             ),
           ],
@@ -812,29 +814,29 @@ class _MerchantRequestsScreenState extends State<MerchantRequestsScreen>
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 38,
+        height: 32,
         decoration: BoxDecoration(
           color: color,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(9),
           boxShadow: [
             BoxShadow(
               color: color.withOpacity(0.22),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: Colors.white, size: 15),
-            const SizedBox(width: 6),
+            Icon(icon, color: Colors.white, size: 13),
+            const SizedBox(width: 5),
             Text(
               label,
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w900,
-                fontSize: 13,
+                fontSize: 12,
               ),
             ),
           ],
