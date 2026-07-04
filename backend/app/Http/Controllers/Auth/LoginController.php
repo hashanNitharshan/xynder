@@ -28,11 +28,35 @@ class LoginController extends Controller
 
         $request->session()->regenerate();
 
+        $user = $request->user();
+
+        if (($user->status ?? 'active') !== 'active' || ! $user->is_active) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return back()
+                ->withErrors(['email' => 'Your account has been blocked. Please contact admin.'])
+                ->onlyInput('email');
+        }
+
+        $user->forceFill([
+            'is_online' => true,
+            'last_seen_at' => now(),
+        ])->save();
+
         return redirect()->intended(route('dashboard'));
     }
 
     public function logout(Request $request)
     {
+        if ($request->user()) {
+            $request->user()->forceFill([
+                'is_online' => false,
+                'last_seen_at' => now(),
+            ])->save();
+        }
+
         Auth::logout();
 
         $request->session()->invalidate();
