@@ -51,6 +51,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/wallet/transfer', [AuthController::class, 'walletTransfer']);
     Route::get('/wallet/transfers', [AuthController::class, 'walletTransfers']);
 
+Route::get('/payment-methods', [AuthController::class, 'paymentMethods']);
+Route::post('/bank-accounts', [AuthController::class, 'storeBankAccount']);
+Route::put('/bank-accounts/{bankAccount}', [AuthController::class, 'updateBankAccount']);
+Route::delete('/bank-accounts/{bankAccount}', [AuthController::class, 'deleteBankAccount']);
+Route::put('/payment-upi', [AuthController::class, 'updateUpi']);
+    
+
+
     Route::get('/chat/conversations', [ChatController::class, 'conversations']);
     Route::get('/chat/transfer/{transferId}/messages', [ChatController::class, 'transferMessages']);
     Route::post('/chat/transfer/{transferId}/messages', [ChatController::class, 'sendTransferMessage']);

@@ -250,6 +250,7 @@ class _WalletTransferScreenState extends State<WalletTransferScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _formHeader(),
+          _myWalletCard(),
           const SizedBox(height: 20),
           _field(
             controller: walletCtrl,
@@ -540,129 +541,131 @@ class _WalletTransferScreenState extends State<WalletTransferScreen>
       ),
     );
   }
-void _showSuccessDialog({
-  String? transferId,
-  String? transferNo,
-  Map<String, dynamic>? receiverUser,
-  required String message,
-}) {
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (_) {
-      return AlertDialog(
-        backgroundColor: _C.surfaceAlt,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(26),
-        ),
-        contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-        titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
-        title: Column(
-          children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: _C.gold.withOpacity(0.12),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: _C.gold.withOpacity(0.3),
-                  width: 2,
-                ),
-              ),
-              child: const Icon(
-                Icons.check_rounded,
-                color: _C.gold,
-                size: 32,
-              ),
-            ),
-            const SizedBox(height: 14),
-            const Text(
-              "Transfer Sent!",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
-                fontSize: 20,
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: _C.textSecondary,
-                fontSize: 13,
-              ),
-            ),
-            if (transferId != null) ...[
-              const SizedBox(height: 16),
+
+  void _showSuccessDialog({
+    String? transferId,
+    String? transferNo,
+    Map<String, dynamic>? receiverUser,
+    required String message,
+  }) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) {
+        return AlertDialog(
+          backgroundColor: _C.surfaceAlt,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(26),
+          ),
+          contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+          titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
+          title: Column(
+            children: [
               Container(
-                padding: const EdgeInsets.all(14),
+                width: 64,
+                height: 64,
                 decoration: BoxDecoration(
-                  color: _C.bg,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: _C.border),
+                  color: _C.gold.withOpacity(0.12),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: _C.gold.withOpacity(0.3),
+                    width: 2,
+                  ),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.tag_rounded,
-                      color: _C.gold,
-                      size: 16,
-                    ),
-                    const SizedBox(width: 7),
-                    Text(
-                      "Transfer ${transferNo ?? transferId}",
-                      style: const TextStyle(
-                        color: _C.gold,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
+                child: const Icon(
+                  Icons.check_rounded,
+                  color: _C.gold,
+                  size: 32,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
               const Text(
-                "Transfer completed successfully.",
+                "Transfer Sent!",
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.white38,
-                  fontSize: 11,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 20,
                 ),
               ),
             ],
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: TextButton(
-                onPressed: () => Navigator.pop(context),
-                style: TextButton.styleFrom(
-                  foregroundColor: _C.textSecondary,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    side: const BorderSide(color: _C.border),
-                  ),
-                ),
-                child: const Text(
-                  "Close",
-                  style: TextStyle(fontWeight: FontWeight.w700),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: _C.textSecondary,
+                  fontSize: 13,
                 ),
               ),
-            ),
-          ],
-        ),
-      );
-    },
-  );
-}
+              if (transferId != null) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: _C.bg,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: _C.border),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.tag_rounded,
+                        color: _C.gold,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 7),
+                      Text(
+                        "Transfer ${transferNo ?? transferId}",
+                        style: const TextStyle(
+                          color: _C.gold,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  "Transfer completed successfully.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white38,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: TextButton.styleFrom(
+                    foregroundColor: _C.textSecondary,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      side: const BorderSide(color: _C.border),
+                    ),
+                  ),
+                  child: const Text(
+                    "Close",
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -676,6 +679,60 @@ void _showSuccessDialog({
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════
+  //  STANDARD WALLET SUMMARY CARD (redesigned)
+  // ═══════════════════════════════════════════
+  Widget _myWalletCard() {
+    final walletId = widget.user["wallet_id"]?.toString() ?? "Not available";
+    final balance = toDouble(widget.user["balance"]);
+
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: _C.surfaceAlt,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _C.border),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  walletId,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: _C.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            width: 1,
+            height: 28,
+            margin: const EdgeInsets.symmetric(horizontal: 14),
+            color: _C.border,
+          ),
+          Text(
+            "\$${balance.toStringAsFixed(2)}",
+            style: const TextStyle(
+              color: _C.gold,
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
       ),
     );
   }

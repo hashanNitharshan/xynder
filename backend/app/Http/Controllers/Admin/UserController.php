@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use App\Models\UserBankAccount;
 
 class UserController extends Controller
 {
@@ -34,11 +35,14 @@ class UserController extends Controller
 
         $type = $request->get('type', 'client');
 
-        if (! in_array($type, ['client', 'merchant'])) {
+        if (! in_array($type, ['client', 'merchant'], true)) {
             $type = 'client';
         }
 
         $users = User::query()
+            ->with(['bankAccounts' => function ($q) {
+                $q->orderByDesc('is_default')->latest();
+            }])
             ->where('role', $type)
             ->when($request->filled('search'), function ($q) use ($request) {
                 $search = $request->search;
@@ -51,7 +55,14 @@ class UserController extends Controller
                         ->orWhere('wallet_id', 'like', "%{$search}%")
                         ->orWhere('aadhaar', 'like', "%{$search}%")
                         ->orWhere('upi_id', 'like', "%{$search}%")
-                        ->orWhere('account_number', 'like', "%{$search}%");
+                        ->orWhere('account_number', 'like', "%{$search}%")
+                        ->orWhereHas('bankAccounts', function ($bankQuery) use ($search) {
+                            $bankQuery->where('bank_name', 'like', "%{$search}%")
+                                ->orWhere('branch', 'like', "%{$search}%")
+                                ->orWhere('account_number', 'like', "%{$search}%")
+                                ->orWhere('account_type', 'like', "%{$search}%")
+                                ->orWhere('ifsc', 'like', "%{$search}%");
+                        });
                 });
             })
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
@@ -79,12 +90,7 @@ class UserController extends Controller
         ]);
     }
 
-    public function edit(User $user)
-    {
-        $this->adminOnly();
 
-        return view('admin.users.form', compact('user'));
-    }
 
     public function destroy(User $user)
     {
@@ -96,7 +102,7 @@ class UserController extends Controller
 
         $user->delete();
 
-        return back()->with('success', 'User deleted successfully.');
+        return back()->with('success');
     }
 
     public function toggleStatus(User $user)
@@ -144,9 +150,9 @@ class UserController extends Controller
             'role'           => 'required|in:client,merchant',
             'phone'          => ['nullable', 'string', 'max:30', Rule::unique('users', 'phone')->ignore($userId)],
 
-            'address'  => 'nullable|string|max:255',
-            'country'  => 'nullable|string|max:100',
-            'state'    => 'nullable|string|max:100',
+            'address' => 'nullable|string|max:255',
+            'country' => 'nullable|string|max:100',
+            'state'   => 'nullable|string|max:100',
 
             'nic'         => 'nullable|string|max:50',
             'aadhaar'     => 'nullable|string|max:50',
@@ -177,8 +183,6 @@ class UserController extends Controller
 
         $data = $this->validateUser($request);
 
-        // Image fields: only store path when a file is actually uploaded.
-        // Otherwise keep null (new user, no photo yet — that is fine).
         $imageFolders = [
             'photo'         => 'users/photos',
             'aadhaar_photo' => 'users/aadhaar',
@@ -186,15 +190,13 @@ class UserController extends Controller
         ];
 
         foreach ($imageFolders as $field => $folder) {
-            if ($request->hasFile($field)) {
-                $data[$field] = $request->file($field)->store($folder, 'public');
-            } else {
-                $data[$field] = null;
-            }
+            $data[$field] = $request->hasFile($field)
+                ? $request->file($field)->store($folder, 'public')
+                : null;
         }
 
         $data['password'] = Hash::make($data['password']);
-        $data['status']    = $request->input('status', 'active');
+        $data['status'] = $request->input('status', 'active');
         $data['is_active'] = $data['status'] === 'active';
         $data['wallet_id'] = $this->generateWalletId();
 
@@ -202,7 +204,7 @@ class UserController extends Controller
 
         return redirect()
             ->route('admin.users.index', ['type' => $data['role']])
-            ->with('success', 'User created successfully.');
+            ->with('success');
     }
 
     public function update(Request $request, User $user)
@@ -211,14 +213,6 @@ class UserController extends Controller
 
         $data = $this->validateUser($request, $user->id);
 
-        // ---------------------------------------------------------------
-        // FIX: Only overwrite image columns when a new file is uploaded.
-        //
-        // Without this, $data contains null for image fields (from Laravel
-        // validation) whenever no file is submitted.  Calling $user->update($data)
-        // would then set photo / aadhaar_photo / upi_qr to NULL, wiping the
-        // existing stored path — the root cause of images disappearing.
-        // ---------------------------------------------------------------
         $imageFolders = [
             'photo'         => 'users/photos',
             'aadhaar_photo' => 'users/aadhaar',
@@ -229,7 +223,7 @@ class UserController extends Controller
             if ($request->hasFile($field)) {
                 $data[$field] = $request->file($field)->store($folder, 'public');
             } else {
-                unset($data[$field]); // Leave existing DB value untouched
+                unset($data[$field]);
             }
         }
 
@@ -243,13 +237,106 @@ class UserController extends Controller
             $data['wallet_id'] = $this->generateWalletId();
         }
 
-        $data['status']    = $request->input('status', $user->status);
+        $data['status'] = $request->input('status', $user->status ?? 'active');
         $data['is_active'] = $data['status'] === 'active';
 
         $user->update($data);
 
         return redirect()
             ->route('admin.users.index', ['type' => $data['role']])
-            ->with('success', 'User updated successfully.');
+            ->with('success');
     }
+
+
+    public function storeBank(Request $request, User $user)
+{
+    $this->adminOnly();
+
+    $data = $request->validate([
+        'bank_name' => 'required|string|max:255',
+        'branch' => 'nullable|string|max:255',
+        'account_number' => 'required|string|max:255',
+        'account_type' => 'nullable|string|max:255',
+        'ifsc' => 'nullable|string|max:255',
+        'is_default' => 'nullable|boolean',
+    ]);
+
+    $data['user_id'] = $user->id;
+
+    if ($request->boolean('is_default') || $user->bankAccounts()->count() === 0) {
+        $user->bankAccounts()->update(['is_default' => false]);
+        $data['is_default'] = true;
+    } else {
+        $data['is_default'] = false;
+    }
+
+    UserBankAccount::create($data);
+
+    return back()->with('success');
+}
+
+public function updateBank(Request $request, User $user, UserBankAccount $bankAccount)
+{
+    $this->adminOnly();
+
+    abort_unless((int) $bankAccount->user_id === (int) $user->id, 403);
+
+    $data = $request->validate([
+        'bank_name' => 'required|string|max:255',
+        'branch' => 'nullable|string|max:255',
+        'account_number' => 'required|string|max:255',
+        'account_type' => 'nullable|string|max:255',
+        'ifsc' => 'nullable|string|max:255',
+    ]);
+
+    $bankAccount->update($data);
+
+    return back()->with('success');
+}
+
+public function deleteBank(User $user, UserBankAccount $bankAccount)
+{
+    $this->adminOnly();
+
+    abort_unless((int) $bankAccount->user_id === (int) $user->id, 403);
+
+    $wasDefault = (bool) $bankAccount->is_default;
+
+    $bankAccount->delete();
+
+    if ($wasDefault) {
+        $nextBank = $user->bankAccounts()->oldest()->first();
+
+        if ($nextBank) {
+            $nextBank->update(['is_default' => true]);
+        }
+    }
+
+    return back()->with('success');
+}
+
+public function setDefaultBank(User $user, UserBankAccount $bankAccount)
+{
+    $this->adminOnly();
+
+    abort_unless((int) $bankAccount->user_id === (int) $user->id, 403);
+
+    $user->bankAccounts()->update(['is_default' => false]);
+
+    $bankAccount->update([
+        'is_default' => true,
+    ]);
+
+    return back()->with('success');
+}
+public function edit(User $user)
+{
+    $this->adminOnly();
+
+    $user->load(['bankAccounts' => function ($q) {
+        $q->orderByDesc('is_default')->latest();
+    }]);
+
+    return view('admin.users.form', compact('user'));
+}
 }

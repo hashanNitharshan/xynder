@@ -5,6 +5,7 @@ import '../services/api_service.dart';
 import '../services/update_service.dart';
 import 'profile_screen.dart';
 import 'login_screen.dart';
+import 'payment_methods_screen.dart';
 
 // ─────────────────────────────────────────────────────────────
 //  DESIGN TOKENS - SAME STYLE AS OTHER SCREENS (Dark Yellow)
@@ -502,14 +503,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               _profileCard(),
               _settingsTile(
-                icon: Icons.payment_rounded,
-                label: "Payment Methods",
-                sub: "Bank, UPI and card details",
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => ProfileScreen(user: user)),
-                ).then((_) => _refreshUser()),
-              ),
+  icon: Icons.payment_rounded,
+  label: "Payment Methods",
+  sub: "Bank accounts and UPI details",
+  onTap: () => Navigator.push(
+    context,
+    MaterialPageRoute(builder: (_) => PaymentMethodsScreen(user: user)),
+  ).then((_) => _refreshUser()),
+),
               _settingsTile(
                 icon: Icons.lock_reset_rounded,
                 label: "Change Password",

@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\WalletRequest;
 use App\Models\SystemConfig;
 use App\Models\WalletTransfer;
+use App\Models\UserBankAccount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -15,6 +16,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Conversation;
 class AuthController extends Controller
+
 {
     private function ensureVerified(User $user)
     {
@@ -741,4 +743,141 @@ public function createRequest(Request $request)
 
         return $data;
     }
+
+
+
+public function storeBankAccount(Request $request)
+{
+    $user = $request->user();
+
+    $data = $request->validate([
+        'bank_name' => 'nullable|string|max:100',
+        'branch' => 'nullable|string|max:100',
+        'account_number' => 'nullable|string|max:100',
+        'account_type' => 'nullable|string|max:100',
+        'ifsc' => 'nullable|string|max:100',
+        'is_default' => 'nullable|boolean',
+    ]);
+
+    $data['user_id'] = $user->id;
+
+    if (($data['is_default'] ?? false) == true) {
+        UserBankAccount::where('user_id', $user->id)->update(['is_default' => false]);
+    }
+
+    $bank = UserBankAccount::create($data);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Bank account added successfully',
+        'bank_account' => $bank,
+    ]);
+}
+
+public function updateBankAccount(Request $request, UserBankAccount $bankAccount)
+{
+    $user = $request->user();
+
+    if ($bankAccount->user_id !== $user->id) {
+        return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+    }
+
+    $data = $request->validate([
+        'bank_name' => 'nullable|string|max:100',
+        'branch' => 'nullable|string|max:100',
+        'account_number' => 'nullable|string|max:100',
+        'account_type' => 'nullable|string|max:100',
+        'ifsc' => 'nullable|string|max:100',
+        'is_default' => 'nullable|boolean',
+    ]);
+
+    if (($data['is_default'] ?? false) == true) {
+        UserBankAccount::where('user_id', $user->id)->update(['is_default' => false]);
+    }
+
+    $bankAccount->update($data);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Bank account updated successfully',
+        'bank_account' => $bankAccount->fresh(),
+    ]);
+}
+
+public function deleteBankAccount(Request $request, UserBankAccount $bankAccount)
+{
+    if ($bankAccount->user_id !== $request->user()->id) {
+        return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+    }
+
+    $bankAccount->delete();
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Bank account deleted successfully',
+    ]);
+}
+
+public function updateUpi(Request $request)
+{
+    $user = $request->user();
+
+    $data = $request->validate([
+        'upi_name' => 'nullable|string|max:100',
+        'upi_id' => 'nullable|string|max:100',
+        'upi_qr' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:10240',
+    ]);
+
+    if ($request->hasFile('upi_qr')) {
+        if ($user->upi_qr && $user->upi_qr !== '0') {
+            Storage::disk('public')->delete($user->upi_qr);
+        }
+
+        $data['upi_qr'] = $request->file('upi_qr')->store('users/upi_qr', 'public');
+    }
+
+    $user->update($data);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'UPI details updated successfully',
+        'user' => $user->fresh(),
+    ]);
+}
+
+public function paymentMethods(Request $request)
+{
+    $user = $request->user()->fresh();
+
+    $banks = UserBankAccount::where('user_id', $user->id)
+        ->latest()
+        ->get();
+
+    if ($banks->isEmpty() && (
+        $user->bank_name ||
+        $user->branch ||
+        $user->account_number ||
+        $user->account_type ||
+        $user->ifsc
+    )) {
+        $banks = collect([
+            [
+                'id' => 'old',
+                'bank_name' => $user->bank_name,
+                'branch' => $user->branch,
+                'account_number' => $user->account_number,
+                'account_type' => $user->account_type,
+                'ifsc' => $user->ifsc,
+                'is_default' => true,
+                'old_user_bank' => true,
+            ]
+        ]);
+    }
+
+    return response()->json([
+        'success' => true,
+        'user' => $user,
+        'bank_accounts' => $banks,
+    ]);
+}
 }

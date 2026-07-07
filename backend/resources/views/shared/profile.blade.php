@@ -78,6 +78,7 @@
 
 .xprof-pill.verified{background:var(--green-soft);border-color:#CDEFDA;color:var(--green)}
 .xprof-pill.pending{background:var(--amber-soft);border-color:#F5E2BB;color:var(--amber)}
+.xprof-pill.locked{background:var(--amber-soft);border-color:rgba(240,185,11,.35);color:var(--amber)}
 
 .xprof-btn-save{
     display:inline-flex;align-items:center;gap:8px;
@@ -88,6 +89,7 @@
 }
 
 .xprof-btn-save:hover{background:var(--blue-dark)}
+.xprof-btn-save[disabled]{opacity:.45;cursor:not-allowed;box-shadow:none}
 
 /* Layout */
 .xprof-wrap{
@@ -115,6 +117,11 @@
 .xprof-card-head{
     padding:16px 20px;
     border-bottom:1px solid var(--border);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    flex-wrap:wrap;
 }
 
 .xprof-card-head h3{margin:0;font-size:14px;font-weight:800}
@@ -163,6 +170,12 @@
 
 .xprof-upload-btn:hover{background:var(--surface-soft)}
 
+.xprof-upload-btn.disabled{
+    opacity:.45;
+    cursor:not-allowed;
+    pointer-events:none;
+}
+
 .xprof-divider{height:1px;background:var(--border);margin:18px 0}
 
 .xprof-field{margin-bottom:14px}
@@ -182,7 +195,11 @@
     border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,109,240,.12);
 }
 
-.xprof-field input:disabled{background:var(--surface-soft);color:var(--muted2);cursor:not-allowed}
+.xprof-field input:disabled,.xprof-field textarea:disabled{background:var(--surface-soft);color:var(--muted2);cursor:not-allowed}
+
+.xprof-field .xprof-readonly-hint{
+    color:var(--muted2);font-weight:600;font-size:11.5px;margin-left:6px;
+}
 
 .xprof-btn-secondary{
     width:100%;padding:11px;border-radius:9px;border:1px solid var(--border);
@@ -220,6 +237,12 @@
 
 .xprof-mini-doc .chg input{position:absolute;inset:0;opacity:0;cursor:pointer}
 
+.xprof-mini-doc .chg.disabled{
+    opacity:.45;
+    cursor:not-allowed;
+    pointer-events:none;
+}
+
 /* Right column */
 .xprof-right{display:flex;flex-direction:column;gap:20px}
 
@@ -238,6 +261,71 @@
     padding-top:8px;
 }
 
+.xprof-lock-alert{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:var(--amber-soft);
+    color:var(--amber);
+    border:1px solid rgba(240,185,11,.35);
+    border-radius:10px;
+    padding:13px 15px;
+    font-size:13px;
+    font-weight:700;
+    margin-bottom:20px;
+}
+
+/* Aadhaar card section (replaces Payment Details) */
+.xprof-aadhaar-row{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    flex-wrap:wrap;
+}
+
+.xprof-aadhaar-thumb{
+    width:110px;
+    height:78px;
+    border-radius:10px;
+    overflow:hidden;
+    flex-shrink:0;
+    background:var(--surface-soft);
+    border:1px solid var(--border);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:var(--muted2);
+    font-size:26px;
+}
+
+.xprof-aadhaar-thumb img{width:100%;height:100%;object-fit:cover}
+
+.xprof-aadhaar-info{flex:1;min-width:180px}
+.xprof-aadhaar-info .t{font-size:13.5px;font-weight:800;color:var(--text)}
+.xprof-aadhaar-info .s{font-size:12px;color:var(--muted);font-weight:600;margin-top:2px}
+
+.xprof-aadhaar-upload{
+    display:inline-flex;align-items:center;gap:8px;
+    border:1px solid var(--border);border-radius:9px;
+    background:var(--blue);color:#0B0E11;
+    padding:10px 18px;font-size:13px;font-weight:800;cursor:pointer;
+    position:relative;overflow:hidden;white-space:nowrap;
+    box-shadow:0 10px 24px rgba(240,185,11,.20);
+}
+
+.xprof-aadhaar-upload:hover{background:var(--blue-dark)}
+
+.xprof-aadhaar-upload input[type=file]{
+    position:absolute;inset:0;opacity:0;cursor:pointer;
+}
+
+.xprof-aadhaar-upload.disabled{
+    opacity:.45;
+    cursor:not-allowed;
+    pointer-events:none;
+    box-shadow:none;
+}
+
 @media(max-width:1100px){
     .xprof-wrap{grid-template-columns:1fr}
 }
@@ -247,6 +335,8 @@
     .xprof-grid{grid-template-columns:1fr}
     .xprof-topbar{flex-direction:column;align-items:flex-start}
     .xprof-topbar-right{width:100%;justify-content:space-between}
+    .xprof-aadhaar-row{flex-direction:column;align-items:flex-start}
+    .xprof-aadhaar-upload{width:100%;justify-content:center}
 }
 </style>
 @endpush
@@ -260,9 +350,10 @@
 
     $photo = $user->photo_url ?? ($user->photo ? url('/api/storage/'.$user->photo) : null);
     $aadhaarPhoto = $user->aadhaar_photo_url ?? ($user->aadhaar_photo ? url('/api/storage/'.$user->aadhaar_photo) : null);
-    $upiQr = $user->upi_qr_url ?? ($user->upi_qr ? url('/api/storage/'.$user->upi_qr) : null);
     $initial = strtoupper(substr($user->name ?? 'U', 0, 1));
     $walletId = $user->wallet_id ?? '—';
+
+    $isLocked = ! empty($user->profile_locked_at);
 @endphp
 
 <form method="POST" action="{{ $profileRoute }}" enctype="multipart/form-data" id="profileForm">
@@ -287,11 +378,45 @@
                     <span class="xprof-pill pending"><i class="ti ti-clock"></i> Verification Pending</span>
                 @endif
 
+                @if($isLocked)
+                    <span class="xprof-pill locked"><i class="ti ti-lock"></i> Profile Locked</span>
+                @endif
+
                 <span class="xprof-pill"><i class="ti ti-wallet"></i> {{ $walletId }}</span>
 
-                <button type="submit" class="xprof-btn-save"><i class="ti ti-device-floppy"></i> Save Changes</button>
+                @if(! $isLocked)
+                    <button type="submit" class="xprof-btn-save"><i class="ti ti-device-floppy"></i> Save Changes</button>
+                @else
+                    <button type="button" class="xprof-btn-save" disabled title="Profile already updated once">
+                        <i class="ti ti-lock"></i> Locked
+                    </button>
+                @endif
             </div>
         </div>
+
+        @if($isLocked)
+            <div class="xprof-lock-alert">
+                <i class="ti ti-lock"></i>
+                Your profile has already been updated once and is now locked for editing. Contact support if you need a change.
+            </div>
+        @endif
+
+        @if(session('success'))
+            <div class="xprof-lock-alert" style="background:var(--green-soft);color:var(--green);border-color:rgba(14,203,129,.35)">
+                <i class="ti ti-circle-check"></i> {{ session('success') }}
+            </div>
+        @endif
+
+        @if($errors->any())
+            <div class="xprof-lock-alert" style="background:rgba(239,68,68,.12);color:#ff9b9b;border-color:rgba(239,68,68,.35)">
+                <i class="ti ti-alert-triangle"></i>
+                <div>
+                    @foreach($errors->all() as $error)
+                        <div>{{ $error }}</div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
 
         <div class="xprof-wrap">
 
@@ -312,10 +437,16 @@
                             @endif
                         </div>
 
-                        <label class="xprof-upload-btn">
-                            <i class="ti ti-upload"></i> Upload Photo
-                            <input type="file" name="photo" accept="image/*" data-preview="photoPreview">
-                        </label>
+                        @if(! $isLocked)
+                            <label class="xprof-upload-btn">
+                                <i class="ti ti-upload"></i> Upload Photo
+                                <input type="file" name="photo" accept="image/*" data-preview="photoPreview">
+                            </label>
+                        @else
+                            <label class="xprof-upload-btn disabled">
+                                <i class="ti ti-lock"></i> Photo Locked
+                            </label>
+                        @endif
 
                         <div class="xprof-divider"></div>
 
@@ -326,55 +457,6 @@
                         <div class="xprof-field">
                             <label>Email</label>
                             <div style="font-size:13.5px;font-weight:700;color:var(--muted)">{{ $user->email ?? '—' }}</div>
-                        </div>
-                        <div class="xprof-field">
-                            <label>Role</label>
-                            <div style="font-size:13.5px;font-weight:700">{{ ucfirst($user->role ?? 'User') }}</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="xprof-card">
-                    <div class="xprof-card-head">
-                        <h3>KYC Documents</h3>
-                        <p>Verification images on file</p>
-                    </div>
-
-                    <div class="xprof-card-body">
-                        <div class="xprof-mini-doc">
-                            <div class="thumb" id="aadhaarThumb">
-                                @if($aadhaarPhoto)
-                                    <img src="{{ $aadhaarPhoto }}" alt="Aadhaar">
-                                @else
-                                    <i class="ti ti-id"></i>
-                                @endif
-                            </div>
-                            <div class="info">
-                                <div class="t">Aadhaar Card</div>
-                                <div class="s">{{ $aadhaarPhoto ? 'Uploaded' : 'Not uploaded' }}</div>
-                            </div>
-                            <label class="chg">
-                                Change
-                                <input type="file" name="aadhaar_photo" accept="image/*" data-preview-img="aadhaarThumb">
-                            </label>
-                        </div>
-
-                        <div class="xprof-mini-doc">
-                            <div class="thumb" id="upiThumb">
-                                @if($upiQr)
-                                    <img src="{{ $upiQr }}" alt="UPI QR">
-                                @else
-                                    <i class="ti ti-qrcode"></i>
-                                @endif
-                            </div>
-                            <div class="info">
-                                <div class="t">UPI QR Code</div>
-                                <div class="s">{{ $upiQr ? 'Uploaded' : 'Not uploaded' }}</div>
-                            </div>
-                            <label class="chg">
-                                Change
-                                <input type="file" name="upi_qr" accept="image/*" data-preview-img="upiThumb">
-                            </label>
                         </div>
                     </div>
                 </div>
@@ -392,91 +474,105 @@
                         <div class="xprof-grid">
                             <div class="xprof-field">
                                 <label>Full Name</label>
-                                <input type="text" name="name" value="{{ old('name', $user->name) }}" required>
+                                @if(! $isLocked)
+                                    <input type="text" name="name" value="{{ old('name', $user->name) }}">
+                                @else
+                                    <input type="text" value="{{ $user->name }}" disabled>
+                                @endif
                             </div>
                             <div class="xprof-field">
                                 <label>Original / Legal Name</label>
-                                <input type="text" name="original_name" value="{{ old('original_name', $user->original_name) }}">
+                                @if(! $isLocked)
+                                    <input type="text" name="original_name" value="{{ old('original_name', $user->original_name) }}">
+                                @else
+                                    <input type="text" value="{{ $user->original_name }}" disabled>
+                                @endif
                             </div>
                             <div class="xprof-field">
                                 <label>Phone Number</label>
-                                <input type="text" name="phone" value="{{ old('phone', $user->phone) }}">
+                                @if(! $isLocked)
+                                    <input type="text" name="phone" value="{{ old('phone', $user->phone) }}">
+                                @else
+                                    <input type="text" value="{{ $user->phone }}" disabled>
+                                @endif
                             </div>
                             <div class="xprof-field">
-                                <label>Email <span style="color:var(--muted2);font-weight:600">(cannot change)</span></label>
+                                <label>Email <span class="xprof-readonly-hint">(cannot change)</span></label>
                                 <input type="email" value="{{ $user->email }}" disabled>
                             </div>
                             <div class="xprof-field">
                                 <label>Country</label>
-                                <input type="text" name="country" value="{{ old('country', $user->country) }}">
+                                @if(! $isLocked)
+                                    <input type="text" name="country" value="{{ old('country', $user->country) }}">
+                                @else
+                                    <input type="text" value="{{ $user->country }}" disabled>
+                                @endif
                             </div>
                             <div class="xprof-field">
                                 <label>State</label>
-                                <input type="text" name="state" value="{{ old('state', $user->state) }}">
+                                @if(! $isLocked)
+                                    <input type="text" name="state" value="{{ old('state', $user->state) }}">
+                                @else
+                                    <input type="text" value="{{ $user->state }}" disabled>
+                                @endif
                             </div>
                         </div>
 
                         <div class="xprof-grid one" style="margin-top:16px">
                             <div class="xprof-field">
                                 <label>Address</label>
-                                <textarea name="address" rows="3">{{ old('address', $user->address) }}</textarea>
+                                @if(! $isLocked)
+                                    <textarea rows="3" name="address">{{ old('address', $user->address) }}</textarea>
+                                @else
+                                    <textarea rows="3" disabled>{{ $user->address }}</textarea>
+                                @endif
                             </div>
                         </div>
                     </div>
                 </div>
 
+                {{-- Aadhaar Card Photo (replaces Payment Details) --}}
                 <div class="xprof-card">
                     <div class="xprof-card-head">
-                        <h3 class="xprof-section-title"><i class="ti ti-building-bank"></i> Bank Details</h3>
+                        <h3 class="xprof-section-title"><i class="ti ti-id"></i> Aadhaar Card</h3>
+                        <p>Upload your Aadhaar card photo for KYC verification</p>
                     </div>
 
                     <div class="xprof-card-body">
-                        <div class="xprof-grid">
-                            <div class="xprof-field">
-                                <label>Bank Name</label>
-                                <input type="text" name="bank_name" value="{{ old('bank_name', $user->bank_name) }}">
+                        <div class="xprof-aadhaar-row">
+                            <div class="xprof-aadhaar-thumb" id="aadhaarThumb">
+                                @if($aadhaarPhoto)
+                                    <img src="{{ $aadhaarPhoto }}" alt="Aadhaar Card">
+                                @else
+                                    <i class="ti ti-id"></i>
+                                @endif
                             </div>
-                            <div class="xprof-field">
-                                <label>Branch</label>
-                                <input type="text" name="branch" value="{{ old('branch', $user->branch) }}">
-                            </div>
-                            <div class="xprof-field">
-                                <label>Account Number</label>
-                                <input type="text" name="account_number" value="{{ old('account_number', $user->account_number) }}">
-                            </div>
-                            <div class="xprof-field">
-                                <label>Account Type</label>
-                                <input type="text" name="account_type" value="{{ old('account_type', $user->account_type) }}">
-                            </div>
-                            <div class="xprof-field">
-                                <label>IFSC Code</label>
-                                <input type="text" name="ifsc" value="{{ old('ifsc', $user->ifsc) }}">
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="xprof-card">
-                    <div class="xprof-card-head">
-                        <h3 class="xprof-section-title"><i class="ti ti-brand-paypal"></i> UPI Details</h3>
-                    </div>
+                            <div class="xprof-aadhaar-info">
+                                <div class="t">Aadhaar Card Photo</div>
+                                <div class="s">{{ $aadhaarPhoto ? 'Uploaded' : 'Not uploaded yet' }}</div>
+                            </div>
 
-                    <div class="xprof-card-body">
-                        <div class="xprof-grid">
-                            <div class="xprof-field">
-                                <label>UPI Account Name</label>
-                                <input type="text" name="upi_name" value="{{ old('upi_name', $user->upi_name) }}">
-                            </div>
-                            <div class="xprof-field">
-                                <label>UPI ID</label>
-                                <input type="text" name="upi_id" value="{{ old('upi_id', $user->upi_id) }}">
-                            </div>
+                            @if(! $isLocked)
+                                <label class="xprof-aadhaar-upload">
+                                    <i class="ti ti-upload"></i> {{ $aadhaarPhoto ? 'Change Photo' : 'Upload Photo' }}
+                                    <input type="file" name="aadhaar_photo" accept="image/*" data-preview-img="aadhaarThumb">
+                                </label>
+                            @else
+                                <span class="xprof-aadhaar-upload disabled">
+                                    <i class="ti ti-lock"></i> Locked
+                                </span>
+                            @endif
                         </div>
                     </div>
                 </div>
 
                 <div class="xprof-footer-note">
-                    All changes are saved together when you click "Save Changes" above.
+                    @if(! $isLocked)
+                        Only your profile photo and Aadhaar card photo can be updated. Save changes once you're ready.
+                    @else
+                        Your profile is locked and shown here for reference only.
+                    @endif
                 </div>
             </main>
         </div>
@@ -502,7 +598,7 @@ document.querySelectorAll('input[type="file"][data-preview]').forEach(function(i
     });
 });
 
-// Live preview for mini doc thumbnails
+// Live preview for Aadhaar thumbnail
 document.querySelectorAll('input[type="file"][data-preview-img]').forEach(function(input){
     input.addEventListener('change', function(){
         const file = input.files && input.files[0];

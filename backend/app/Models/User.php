@@ -63,4 +63,8 @@ class User extends Authenticatable
 
         return url('/storage/' . ltrim($path, '/'));
     }
+    public function bankAccounts()
+{
+    return $this->hasMany(\App\Models\UserBankAccount::class);
+}
 }

@@ -53,6 +53,6 @@ class SupportTicketController extends Controller
 
         $supportTicket->update($data);
 
-        return back()->with('success', 'Ticket status updated successfully.');
+        return back()->with('success');
     }
 }

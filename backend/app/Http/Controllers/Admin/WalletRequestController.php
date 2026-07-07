@@ -130,7 +130,7 @@ class WalletRequestController extends Controller
             ]);
         });
 
-        return back()->with('success', 'Request approved successfully.');
+        return back()->with('success');
     }
 
     public function reject(WalletRequest $walletRequest)
@@ -147,7 +147,7 @@ class WalletRequestController extends Controller
             'approved_at' => now(),
         ]);
 
-        return back()->with('success', 'Request rejected successfully.');
+        return back()->with('success');
     }
 
     public function close(WalletRequest $walletRequest)
@@ -164,6 +164,6 @@ class WalletRequestController extends Controller
             'approved_at' => now(),
         ]);
 
-        return back()->with('success', 'Request closed successfully.');
+        return back()->with('success');
     }
 }

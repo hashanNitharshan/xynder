@@ -652,9 +652,10 @@
                             $isBuy = $r->type === 'deposit';
                             $isClosed = $r->status === 'closed';
                             $refNo = $r->transaction_no ?? 'TNS'.str_pad($r->id, 9, '0', STR_PAD_LEFT);
+                            $historyUrl = route('client.history.show', ['request', $r->id]);
                         @endphp
 
-                        <tr class="rq-click-row" onclick="window.location='{{ route('client.chats.request', $r) }}'">
+                        <tr class="rq-click-row" onclick="window.location='{{ $historyUrl }}'">
                             <td data-label="Date">{{ $r->created_at?->format('d M Y, H:i') }}</td>
 
                             <td data-label="Ref No">

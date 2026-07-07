@@ -114,7 +114,7 @@ class RequestController extends Controller
                 ]);
             });
 
-            return back()->with('success', 'Request approved successfully.');
+            return back()->with('success');
         } catch (\Throwable $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
         }
@@ -137,7 +137,7 @@ class RequestController extends Controller
             'approved_at' => now(),
         ]);
 
-        return back()->with('success', 'Request rejected successfully.');
+        return back()->with('success');
     }
 
 
@@ -160,7 +160,7 @@ class RequestController extends Controller
         'approved_at' => now(),
     ]);
 
-    return back()->with('success', 'Request closed successfully.');
+    return back()->with('success');
 }
 
 private function lockRequestChat(WalletRequest $walletRequest, string $reason): void

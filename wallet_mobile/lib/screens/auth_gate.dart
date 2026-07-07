@@ -8,7 +8,7 @@ import 'admin_dashboard.dart';
 import '../utils/page_transitions.dart';
 
 // BitXnow / Binance-style palette
-const _kBg = Color(0xff161A1E);
+const _kBg = Color(0xff0B0E11);
 const _kYellow = Color(0xffF0B90B);
 
 class AuthGate extends StatefulWidget {
@@ -116,7 +116,6 @@ class _AuthGateState extends State<AuthGate>
       backgroundColor: _kBg,
       body: Stack(
         children: [
-          // Bottom trading chart (curve + bars) — full width
           Positioned(
             left: 0,
             right: 0,
@@ -129,8 +128,6 @@ class _AuthGateState extends State<AuthGate>
               ),
             ),
           ),
-
-          // Centered logo + wordmark
           Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -153,9 +150,7 @@ class _AuthGateState extends State<AuthGate>
                     fit: BoxFit.contain,
                   ),
                 ),
-
                 const SizedBox(height: 18),
-
                 FadeTransition(
                   opacity: _textFade,
                   child: SlideTransition(
@@ -180,15 +175,12 @@ class _AuthGateState extends State<AuthGate>
   }
 }
 
-/// Paints a subtle trading chart at the bottom: faint candlestick-style
-/// bars plus a smooth yellow price curve — matching the Binance splash.
 class _TradingChartPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final w = size.width;
     final h = size.height;
 
-    // ---- Faint vertical bars (volume / candles) ----
     final barPaint = Paint()
       ..color = Colors.white.withOpacity(0.05)
       ..style = PaintingStyle.fill;
@@ -217,7 +209,6 @@ class _TradingChartPainter extends CustomPainter {
       );
     }
 
-    // ---- Smooth yellow price curve ----
     final linePaint = Paint()
       ..color = _kYellow
       ..strokeWidth = 2.2
@@ -225,7 +216,6 @@ class _TradingChartPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
 
     final path = Path();
-    // Curve points (normalized 0..1 across width; y is height fraction from bottom)
     final pts = <Offset>[
       Offset(0.00, 0.18),
       Offset(0.12, 0.16),
@@ -247,7 +237,6 @@ class _TradingChartPainter extends CustomPainter {
     }
     canvas.drawPath(path, linePaint);
 
-    // Soft glow under the curve
     final glowPaint = Paint()
       ..color = _kYellow.withOpacity(0.10)
       ..strokeWidth = 6

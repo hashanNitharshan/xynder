@@ -2,571 +2,330 @@
 
 @push('styles')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
 <style>
 :root{
-    --bg:#0B0E11;
-    --surface:#181A20;
-    --surface-alt:#1E2329;
-    --border:#2B3139;
-
-    --yellow:#F0B90B;
-    --yellow-dark:#C99400;
-    --gold:#FFD45A;
-
-    --green:#0ecb81;
-    --red:#ef4444;
-
-    --text:#fff;
-    --muted:#848E9C;
-    --muted2:#5e6673;
-
-    --shadow:0 18px 45px rgba(0,0,0,.35);
+    --bg:#0B0E11;--card:#181A20;--soft:#1E2329;--border:#2B3139;
+    --yellow:#F0B90B;--yellow2:#C99400;--green:#0ECB81;--red:#EF4444;
+    --text:#fff;--muted:#848E9C;--muted2:#5E6673;
 }
+.set-page{margin:-28px;min-height:100vh;background:var(--bg);color:var(--text);padding:24px 36px 48px;font-family:Inter,Arial,sans-serif}
+.set-head{background:radial-gradient(circle at 92% 0%,rgba(240,185,11,.20),transparent 38%),linear-gradient(135deg,#181A20,#0B0E11);border:1px solid var(--border);border-radius:16px;padding:18px 20px;margin-bottom:16px}
+.set-head h1{margin:0;font-size:20px}.set-head p{margin:5px 0 0;color:var(--muted);font-size:13px}
 
-*{box-sizing:border-box}
+.stat-row{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.stat-chip{flex:1;min-width:160px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px}
+.stat-chip .ic{width:36px;height:36px;border-radius:10px;background:rgba(240,185,11,.12);color:var(--yellow);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.stat-chip .lbl{color:var(--muted);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.03em}
+.stat-chip .val{font-size:15px;font-weight:800;margin-top:2px}
 
-.set-page{
-    margin:-28px;
-    min-height:100vh;
-    background:var(--bg);
-    color:var(--text);
-    font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
-    padding:24px 36px 48px;
-}
+.alert{padding:12px 14px;border-radius:10px;margin-bottom:12px;font-weight:700;font-size:13px}
+.alert.ok{background:rgba(14,203,129,.12);color:var(--green);border:1px solid rgba(14,203,129,.35)}
+.alert.err{background:rgba(239,68,68,.12);color:#ff9b9b;border:1px solid rgba(239,68,68,.35)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.full{margin-top:20px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.card-head{padding:16px 20px;border-bottom:1px solid var(--border);font-weight:800;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.card-head .ttl{display:flex;align-items:center;gap:8px}
+.card-head i{color:var(--yellow)}
+.card-body{padding:20px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.form-grid.three{grid-template-columns:repeat(3,1fr)}
+.field{margin-bottom:14px}.field label{display:block;font-size:12px;font-weight:800;margin-bottom:7px;color:var(--muted)}
+.field input,.field textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:9px;color:#fff;padding:10px 12px;outline:none;font-family:inherit}
+.field textarea{min-height:105px}
+.field input:focus,.field textarea:focus{border-color:var(--yellow);box-shadow:0 0 0 3px rgba(240,185,11,.12)}
+.field input[readonly]{opacity:.75}
+.btn{border:0;border-radius:9px;padding:10px 16px;font-weight:800;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:7px;font-size:13px}
+.btn.yellow{background:var(--yellow);color:#0B0E11}.btn.yellow:hover{background:var(--yellow2)}
+.btn.dark{background:var(--soft);color:#fff;border:1px solid var(--border)}
+.btn.red{background:rgba(239,68,68,.14);color:#ff9b9b;border:1px solid rgba(239,68,68,.35)}
+.btn.sm{padding:8px 12px;font-size:12px}
+.btn.block{width:100%;justify-content:center}
 
-/* Top Header */
-.set-simple-head{
-    background:radial-gradient(circle at 92% 0%,rgba(240,185,11,.20),transparent 38%),linear-gradient(135deg,#181A20,#0B0E11);
-    border:1px solid var(--border);
-    border-radius:16px;
-    padding:18px 20px;
-    box-shadow:var(--shadow);
-    margin-bottom:20px;
-}
+/* bank row (list) */
+.bank-row{display:flex;align-items:center;gap:14px;background:var(--soft);border:1px solid var(--border);border-radius:12px;padding:13px 16px;margin-bottom:10px}
+.bank-avatar{width:42px;height:42px;border-radius:10px;background:rgba(240,185,11,.12);color:var(--yellow);font-weight:900;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.bank-mid{flex:1;min-width:0}
+.bank-mid .nm{font-weight:800;font-size:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.bank-mid .sub{color:var(--muted);font-size:12px;margin-top:3px;display:flex;gap:10px;flex-wrap:wrap}
+.bank-mid .sub .num{font-family:'Courier New',monospace;letter-spacing:.03em;color:#c9cdd3}
+.badge{font-size:10px;font-weight:900;border-radius:999px;padding:4px 9px;background:rgba(240,185,11,.12);color:var(--yellow);border:1px solid rgba(240,185,11,.35);text-transform:uppercase;letter-spacing:.03em}
+.badge.type{background:var(--bg);color:var(--muted);border:1px solid var(--border)}
 
-.set-simple-kicker{
-    color:var(--yellow);
-    font-size:11px;
-    font-weight:800;
-    letter-spacing:.14em;
-    text-transform:uppercase;
-    margin-bottom:5px;
-}
+.table{width:100%;border-collapse:collapse}.table th{background:var(--soft);color:var(--muted);font-size:11px;text-align:left;padding:12px}.table td{border-top:1px solid var(--border);padding:13px;font-size:13px}
+.status{padding:6px 10px;border-radius:999px;font-size:11px;font-weight:900;background:rgba(240,185,11,.12);color:var(--yellow)}
 
-.set-simple-head h1{
-    margin:0;
-    font-size:19px;
-    font-weight:800;
-    letter-spacing:-.2px;
-    color:#fff;
-}
+/* modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px}
+.modal-overlay.active{display:flex}
+.modal-box{background:var(--card);border:1px solid var(--border);border-radius:16px;width:100%;max-width:540px;max-height:90vh;overflow-y:auto}
+.modal-head{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--card)}
+.modal-head h3{margin:0;font-size:16px;display:flex;align-items:center;gap:8px}
+.modal-head h3 i{color:var(--yellow)}
+.modal-close{background:var(--soft);border:1px solid var(--border);color:var(--muted);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+.modal-close:hover{color:#fff}
+.modal-body{padding:22px}
+.modal-foot-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+hr.sep{border:0;border-top:1px solid var(--border);margin:18px 0}
 
-.set-simple-head p{
-    margin:4px 0 0;
-    color:var(--muted);
-    font-size:12px;
-    font-weight:600;
-}
+/* view-only badges row inside view modal */
+.view-badges{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
 
-/* Alerts */
-.set-alerts{margin-bottom:20px}
-
-.set-alert{
-    border-radius:10px;
-    padding:13px 15px;
-    margin-bottom:10px;
-    font-size:13px;
-    font-weight:700;
-    display:flex;
-    gap:10px;
-    align-items:flex-start;
-}
-
-.set-alert.ok{
-    background:rgba(14,203,129,.12);
-    color:var(--green);
-    border:1px solid rgba(14,203,129,.35);
-}
-
-.set-alert.err{
-    background:rgba(239,68,68,.12);
-    color:#ff9b9b;
-    border:1px solid rgba(239,68,68,.35);
-}
-
-.set-alert i{font-size:17px}
-
-/* Sections */
-.set-grid{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:20px;
-}
-
-.set-section{
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:14px;
-    box-shadow:var(--shadow);
-    overflow:hidden;
-}
-
-.set-section:hover{
-    border-color:rgba(240,185,11,.42);
-}
-
-.set-section-head{
-    padding:16px 20px;
-    border-bottom:1px solid var(--border);
-    background:var(--surface);
-    display:flex;
-    align-items:center;
-    gap:9px;
-    font-size:15px;
-    font-weight:800;
-    color:#fff;
-}
-
-.set-section-head i{
-    color:var(--yellow);
-    font-size:18px;
-}
-
-.set-section-body{padding:20px}
-
-.set-full{margin-top:20px}
-
-/* Payment */
-.set-pay-list{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:12px;
-}
-
-.set-pay-row{
-    background:var(--surface-alt);
-    border:1px solid var(--border);
-    border-radius:9px;
-    padding:12px;
-}
-
-.set-pay-row span{
-    display:block;
-    color:var(--muted);
-    font-size:11px;
-    font-weight:800;
-    text-transform:uppercase;
-    letter-spacing:.05em;
-    margin-bottom:6px;
-}
-
-.set-pay-row strong{
-    color:#fff;
-    font-size:13.5px;
-    font-weight:700;
-    word-break:break-word;
-}
-
-/* Forms */
-.set-form-grid{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:14px;
-}
-
-.set-form-grid.two{
-    grid-template-columns:repeat(2,1fr);
-}
-
-.set-field{
-    margin-bottom:14px;
-}
-
-.set-field label{
-    display:block;
-    color:#fff;
-    font-size:12.5px;
-    font-weight:700;
-    margin-bottom:7px;
-}
-
-.set-field input,
-.set-field textarea{
-    width:100%;
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:9px;
-    color:#fff;
-    padding:10px 12px;
-    outline:none;
-    font-size:13.5px;
-    font-weight:500;
-    font-family:inherit;
-    transition:.15s;
-}
-
-.set-field textarea{
-    min-height:110px;
-    resize:vertical;
-}
-
-.set-field input:focus,
-.set-field textarea:focus{
-    border-color:var(--yellow);
-    box-shadow:0 0 0 3px rgba(240,185,11,.12);
-}
-
-/* Buttons */
-.set-btn{
-    border:0;
-    border-radius:9px;
-    padding:10px 18px;
-    font-size:13px;
-    font-weight:700;
-    cursor:pointer;
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    gap:8px;
-    text-decoration:none;
-    font-family:inherit;
-}
-
-.set-btn.primary{
-    background:var(--yellow);
-    color:#0B0E11;
-    box-shadow:0 10px 24px rgba(240,185,11,.20);
-}
-
-.set-btn.primary:hover{
-    background:var(--yellow-dark);
-}
-
-.set-btn.dark{
-    background:var(--surface-alt);
-    color:#fff;
-    border:1px solid var(--border);
-}
-
-/* Table */
-.set-table-wrap{overflow-x:auto}
-
-.set-table{
-    width:100%;
-    min-width:780px;
-    border-collapse:collapse;
-}
-
-.set-table th{
-    color:var(--muted);
-    background:var(--surface-alt);
-    font-size:11px;
-    text-align:left;
-    text-transform:uppercase;
-    letter-spacing:.05em;
-    padding:13px 16px;
-    font-weight:800;
-}
-
-.set-table td{
-    border-top:1px solid var(--border);
-    padding:15px 16px;
-    color:#d5dade;
-    font-size:13px;
-    font-weight:600;
-    vertical-align:top;
-}
-
-.set-table tr:hover td{
-    background:var(--surface-alt);
-}
-
-.set-status{
-    display:inline-flex;
-    padding:6px 11px;
-    border-radius:999px;
-    font-size:11px;
-    font-weight:800;
-    text-transform:uppercase;
-}
-
-.set-status.pending,
-.set-status.open{
-    background:rgba(240,185,11,.12);
-    color:var(--yellow);
-    border:1px solid rgba(240,185,11,.35);
-}
-
-.set-status.closed,
-.set-status.resolved,
-.set-status.approved{
-    background:rgba(14,203,129,.12);
-    color:var(--green);
-    border:1px solid rgba(14,203,129,.35);
-}
-
-.set-status.rejected{
-    background:rgba(239,68,68,.12);
-    color:#ff9b9b;
-    border:1px solid rgba(239,68,68,.35);
-}
-
-.set-empty{
-    text-align:center!important;
-    padding:42px!important;
-    color:var(--muted)!important;
-}
-
-/* Pager */
-.set-pager{
-    padding:16px 20px;
-    border-top:1px solid var(--border);
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:12px;
-    flex-wrap:wrap;
-    color:var(--muted);
-    font-size:13px;
-    font-weight:600;
-}
-
-.set-page-btn{
-    display:inline-flex;
-    align-items:center;
-    gap:6px;
-    padding:8px 13px;
-    background:var(--surface-alt);
-    border:1px solid var(--border);
-    color:#fff;
-    text-decoration:none;
-    border-radius:8px;
-    font-size:12.5px;
-    font-weight:700;
-    margin-left:6px;
-}
-
-.set-page-btn:hover{
-    border-color:var(--yellow);
-}
-
-.set-page-btn.disabled{
-    opacity:.4;
-    pointer-events:none;
-}
-
-@media(max-width:1100px){
-    .set-grid{
-        grid-template-columns:1fr;
-    }
-}
-
-@media(max-width:760px){
-    .set-page{
-        margin:-18px;
-        padding:16px 14px 30px;
-    }
-
-    .set-simple-head{
-        border-radius:14px;
-    }
-
-    .set-pay-list,
-    .set-form-grid,
-    .set-form-grid.two{
-        grid-template-columns:1fr;
-    }
-
-    .set-table{
-        min-width:0;
-    }
-
-    .set-table thead{
-        display:none;
-    }
-
-    .set-table,
-    .set-table tbody,
-    .set-table tr,
-    .set-table td{
-        display:block;
-        width:100%;
-    }
-
-    .set-table tr{
-        border-top:1px solid var(--border);
-        padding:14px 16px;
-    }
-
-    .set-table td{
-        border-top:0;
-        padding:6px 0;
-        display:flex;
-        justify-content:space-between;
-        gap:12px;
-        white-space:normal;
-    }
-
-    .set-table td::before{
-        content:attr(data-label);
-        color:var(--muted2);
-        font-size:11px;
-        font-weight:800;
-        text-transform:uppercase;
-        flex-shrink:0;
-    }
-
-    .set-pager{
-        align-items:flex-start;
-        flex-direction:column;
-    }
+@media(max-width:1000px){
+  .grid,.form-grid,.form-grid.three{grid-template-columns:1fr}
+  .set-page{margin:-18px;padding:16px 14px 30px}
+  .bank-row{flex-wrap:wrap}
 }
 </style>
 @endpush
-
 @section('content')
-
 @php
-    $passwordRoute = $user->role === 'merchant'
-        ? route('merchant.settings.password')
-        : route('client.settings.password');
+    $role = $user->role === 'merchant' ? 'merchant' : 'client';
 
-    $supportRoute = $user->role === 'merchant'
-        ? route('merchant.settings.support')
-        : route('client.settings.support');
+    $passwordRoute = route($role.'.settings.password');
+    $supportRoute = route($role.'.settings.support');
+
+    $bankStoreRoute = route($role.'.settings.bank.store');
+    $upiRoute = route($role.'.settings.upi');
+
+    $bankAccounts = $user->bankAccounts ?? collect();
+    $defaultBank = $bankAccounts->firstWhere('is_default', true);
+    $openTickets = $tickets->getCollection()->whereNotIn('status', ['closed', 'resolved'])->count();
+    $paymentLocked = ! empty($user->payment_details_locked_at);
 @endphp
 
 <div class="set-page">
-
-    <section class="set-simple-head">
-        <div class="set-simple-kicker">BITXNOW</div>
+    <section class="set-head">
         <h1>Settings</h1>
-        <p>Manage password, payment methods, and support tickets.</p>
+        <p>Manage password, bank accounts, UPI details, and support tickets.</p>
     </section>
 
-    <div class="set-alerts">
-        @if(session('success'))
-            <div class="set-alert ok">
-                <i class="ti ti-circle-check"></i>
-                <div>{{ session('success') }}</div>
-            </div>
-        @endif
-
-        @if($errors->any())
-            <div class="set-alert err">
-                <i class="ti ti-alert-triangle"></i>
-                <div>
-                    @foreach($errors->all() as $error)
-                        <div>{{ $error }}</div>
-                    @endforeach
-                </div>
-            </div>
-        @endif
-    </div>
-
-    <section class="set-grid">
-        <div class="set-section">
-            <div class="set-section-head">
-                <i class="ti ti-credit-card"></i>
-                Payment Methods
-            </div>
-
-            <div class="set-section-body">
-                <div class="set-pay-list">
-                    <div class="set-pay-row"><span>Bank</span><strong>{{ $user->bank_name ?? '-' }}</strong></div>
-                    <div class="set-pay-row"><span>Branch</span><strong>{{ $user->branch ?? '-' }}</strong></div>
-                    <div class="set-pay-row"><span>Account No</span><strong>{{ $user->account_number ?? '-' }}</strong></div>
-                    <div class="set-pay-row"><span>Account Type</span><strong>{{ $user->account_type ?? '-' }}</strong></div>
-                    <div class="set-pay-row"><span>IFSC</span><strong>{{ $user->ifsc ?? '-' }}</strong></div>
-                    <div class="set-pay-row"><span>UPI Name</span><strong>{{ $user->upi_name ?? '-' }}</strong></div>
-                    <div class="set-pay-row"><span>UPI ID</span><strong>{{ $user->upi_id ?? '-' }}</strong></div>
-                    <div class="set-pay-row"><span>Phone</span><strong>{{ $user->phone ?? '-' }}</strong></div>
-                </div>
+    <section class="stat-row">
+        <div class="stat-chip">
+            <div class="ic"><i class="ti ti-building-bank"></i></div>
+            <div>
+                <div class="lbl">Bank Accounts</div>
+                <div class="val">{{ $bankAccounts->count() }}</div>
             </div>
         </div>
 
-        <div class="set-section">
-            <div class="set-section-head">
-                <i class="ti ti-lock-password"></i>
-                Change Password
+        <div class="stat-chip">
+            <div class="ic"><i class="ti ti-star"></i></div>
+            <div>
+                <div class="lbl">Default Bank</div>
+                <div class="val">{{ $defaultBank->bank_name ?? 'Not set' }}</div>
+            </div>
+        </div>
+
+        <div class="stat-chip">
+            <div class="ic"><i class="ti ti-ticket"></i></div>
+            <div>
+                <div class="lbl">Open Tickets</div>
+                <div class="val">{{ $openTickets }}</div>
+            </div>
+        </div>
+    </section>
+
+    @if(session('success'))
+        <div class="alert ok">{{ session('success') }}</div>
+    @endif
+
+    @if($errors->any())
+        <div class="alert err">
+            @foreach($errors->all() as $error)
+                <div>{{ $error }}</div>
+            @endforeach
+        </div>
+    @endif
+
+    @if($paymentLocked)
+        <div class="alert err">
+            <i class="ti ti-lock"></i>
+            Payment details are locked. You can view bank and UPI details only.
+        </div>
+    @endif
+
+    <section class="grid">
+        <div class="card">
+            <div class="card-head">
+                <span class="ttl"><i class="ti ti-lock"></i> Change Password</span>
             </div>
 
-            <div class="set-section-body">
+            <div class="card-body">
                 <form method="POST" action="{{ $passwordRoute }}">
                     @csrf
 
-                    <div class="set-form-grid">
-                        <div class="set-field">
-                            <label>Current Password</label>
-                            <input type="password" name="current_password" required autocomplete="current-password">
-                        </div>
-
-                        <div class="set-field">
-                            <label>New Password</label>
-                            <input type="password" name="password" required autocomplete="new-password">
-                        </div>
-
-                        <div class="set-field">
-                            <label>Confirm Password</label>
-                            <input type="password" name="password_confirmation" required autocomplete="new-password">
-                        </div>
+                    <div class="field">
+                        <label>Current Password</label>
+                        <input type="password" name="current_password" required>
                     </div>
 
-                    <button type="submit" class="set-btn primary">
-                        <i class="ti ti-shield-check"></i>
-                        Update Password
+                    <div class="field">
+                        <label>New Password</label>
+                        <input type="password" name="password" required>
+                    </div>
+
+                    <div class="field">
+                        <label>Confirm Password</label>
+                        <input type="password" name="password_confirmation" required>
+                    </div>
+
+                    <button class="btn yellow" type="submit">
+                        <i class="ti ti-shield-check"></i> Update Password
                     </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <span class="ttl"><i class="ti ti-brand-paypal"></i> UPI Details</span>
+                @if($paymentLocked)
+                    <span class="badge"><i class="ti ti-lock"></i> Locked</span>
+                @endif
+            </div>
+
+            <div class="card-body">
+                <form method="POST" action="{{ $upiRoute }}" enctype="multipart/form-data">
+                    @csrf
+
+                    <div class="field">
+                        <label>UPI Name</label>
+                        <input type="text" name="upi_name" value="{{ old('upi_name', $user->upi_name) }}" {{ $paymentLocked ? 'disabled' : '' }}>
+                    </div>
+
+                    <div class="field">
+                        <label>UPI ID</label>
+                        <input type="text" name="upi_id" value="{{ old('upi_id', $user->upi_id) }}" placeholder="example@upi" {{ $paymentLocked ? 'disabled' : '' }}>
+                    </div>
+
+                    <div class="field">
+                        <label>UPI QR Photo</label>
+                        <input type="file" name="upi_qr" accept="image/*" {{ $paymentLocked ? 'disabled' : '' }}>
+
+                        @if($user->upi_qr)
+                            <img src="{{ asset('storage/'.$user->upi_qr) }}" style="width:130px;height:130px;object-fit:cover;border-radius:10px;margin-top:10px;border:1px solid var(--border);">
+                        @endif
+                    </div>
+
+                    @if(! $paymentLocked)
+                        <button class="btn yellow" type="submit">
+                            <i class="ti ti-device-floppy"></i> Save UPI
+                        </button>
+                    @else
+                        <span class="badge"><i class="ti ti-lock"></i> UPI Locked</span>
+                    @endif
                 </form>
             </div>
         </div>
     </section>
 
-    <section class="set-section set-full">
-        <div class="set-section-head">
-            <i class="ti ti-headset"></i>
-            Help & Support
+    <section class="card full">
+        <div class="card-head">
+            <span class="ttl"><i class="ti ti-building-bank"></i> Bank Accounts</span>
+
+            @if(! $paymentLocked)
+                <button type="button" class="btn yellow sm" onclick="openModal('add-bank-modal')">
+                    <i class="ti ti-plus"></i> Add Bank Account
+                </button>
+            @else
+                <span class="badge"><i class="ti ti-lock"></i> Payment Details Locked</span>
+            @endif
         </div>
 
-        <div class="set-section-body">
+        <div class="card-body">
+            @forelse($bankAccounts as $bank)
+                @php
+                    $masked = $bank->account_number ? '••••'.substr($bank->account_number, -4) : '—';
+                    $initial = strtoupper(substr($bank->bank_name ?: 'B', 0, 1));
+                @endphp
+
+                <div class="bank-row">
+                    <div class="bank-avatar">{{ $initial }}</div>
+
+                    <div class="bank-mid">
+                        <div class="nm">
+                            {{ $bank->bank_name }}
+
+                            @if($bank->is_default)
+                                <span class="badge">Default</span>
+                            @endif
+
+                            @if($bank->account_type)
+                                <span class="badge type">{{ $bank->account_type }}</span>
+                            @endif
+                        </div>
+
+                        <div class="sub">
+                            <span class="num">{{ $masked }}</span>
+                            <span>{{ $bank->branch ?: 'No branch added' }}</span>
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="btn dark sm"
+                        onclick="openBankView(this)"
+                        data-bank-name="{{ $bank->bank_name }}"
+                        data-branch="{{ $bank->branch }}"
+                        data-account-number="{{ $bank->account_number }}"
+                        data-account-type="{{ $bank->account_type }}"
+                        data-ifsc="{{ $bank->ifsc }}"
+                        data-is-default="{{ $bank->is_default ? '1' : '0' }}"
+                    >
+                        <i class="ti ti-eye"></i> View
+                    </button>
+                </div>
+            @empty
+                <div style="color:var(--muted);font-weight:700;padding:20px 0;text-align:center">
+                    No bank accounts added yet.
+                    @if(! $paymentLocked)
+                        Click "Add Bank Account" to add your first one.
+                    @endif
+                </div>
+            @endforelse
+        </div>
+    </section>
+
+    <section class="card full">
+        <div class="card-head">
+            <span class="ttl"><i class="ti ti-headset"></i> Help & Support</span>
+        </div>
+
+        <div class="card-body">
             <form method="POST" action="{{ $supportRoute }}">
                 @csrf
 
-                <div class="set-form-grid two">
-                    <div class="set-field">
+                <div class="form-grid">
+                    <div class="field">
                         <label>Name</label>
                         <input type="text" name="name" value="{{ old('name', $user->name) }}" required>
                     </div>
 
-                    <div class="set-field">
+                    <div class="field">
                         <label>Email</label>
                         <input type="email" name="email" value="{{ old('email', $user->email) }}" required>
                     </div>
                 </div>
 
-                <div class="set-field">
+                <div class="field">
                     <label>Message</label>
-                    <textarea name="message" required placeholder="Tell us your issue...">{{ old('message') }}</textarea>
+                    <textarea name="message" required>{{ old('message') }}</textarea>
                 </div>
 
-                <button type="submit" class="set-btn primary">
-                    <i class="ti ti-send"></i>
-                    Submit Ticket
+                <button class="btn yellow" type="submit">
+                    <i class="ti ti-send"></i> Submit Ticket
                 </button>
             </form>
         </div>
     </section>
 
-    <section class="set-section set-full">
-        <div class="set-section-head">
-            <i class="ti ti-ticket"></i>
-            Your Support Tickets
+    <section class="card full">
+        <div class="card-head">
+            <span class="ttl"><i class="ti ti-ticket"></i> Your Support Tickets</span>
         </div>
 
-        <div class="set-table-wrap">
-            <table class="set-table">
+        <div style="overflow-x:auto">
+            <table class="table">
                 <thead>
                     <tr>
                         <th>Date</th>
@@ -578,23 +337,13 @@
                 <tbody>
                     @forelse($tickets as $ticket)
                         <tr>
-                            <td data-label="Date" style="color:var(--muted)">
-                                {{ $ticket->created_at?->format('d M Y, H:i') }}
-                            </td>
-
-                            <td data-label="Message">
-                                {{ $ticket->message }}
-                            </td>
-
-                            <td data-label="Status">
-                                <span class="set-status {{ strtolower($ticket->status) }}">
-                                    {{ strtoupper($ticket->status) }}
-                                </span>
-                            </td>
+                            <td>{{ $ticket->created_at?->format('d M Y, H:i') }}</td>
+                            <td>{{ $ticket->message }}</td>
+                            <td><span class="status">{{ strtoupper($ticket->status) }}</span></td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="3" class="set-empty">
+                            <td colspan="3" style="text-align:center;color:var(--muted);padding:35px">
                                 No support tickets yet.
                             </td>
                         </tr>
@@ -603,39 +352,147 @@
             </table>
         </div>
 
-        @if(method_exists($tickets, 'hasPages') && $tickets->hasPages())
-            <div class="set-pager">
-                <div>
-                    Page {{ $tickets->currentPage() }} of {{ $tickets->lastPage() }}
-                    @if($tickets->total())
-                        · {{ $tickets->firstItem() }}–{{ $tickets->lastItem() }} of {{ $tickets->total() }}
-                    @endif
-                </div>
-
-                <div>
-                    @if($tickets->onFirstPage())
-                        <span class="set-page-btn disabled">
-                            <i class="ti ti-chevron-left"></i> Previous
-                        </span>
-                    @else
-                        <a class="set-page-btn" href="{{ $tickets->previousPageUrl() }}">
-                            <i class="ti ti-chevron-left"></i> Previous
-                        </a>
-                    @endif
-
-                    @if($tickets->hasMorePages())
-                        <a class="set-page-btn" href="{{ $tickets->nextPageUrl() }}">
-                            Next <i class="ti ti-chevron-right"></i>
-                        </a>
-                    @else
-                        <span class="set-page-btn disabled">
-                            Next <i class="ti ti-chevron-right"></i>
-                        </span>
-                    @endif
-                </div>
+        @if(method_exists($tickets, 'links'))
+            <div style="padding:16px 20px;border-top:1px solid var(--border)">
+                {{ $tickets->links() }}
             </div>
         @endif
     </section>
 </div>
 
+@if(! $paymentLocked)
+<div class="modal-overlay" id="add-bank-modal" onclick="if(event.target===this) closeModal('add-bank-modal')">
+    <div class="modal-box">
+        <div class="modal-head">
+            <h3><i class="ti ti-plus"></i> Add Bank Account</h3>
+            <button type="button" class="modal-close" onclick="closeModal('add-bank-modal')">&times;</button>
+        </div>
+
+        <div class="modal-body">
+            <form method="POST" action="{{ $bankStoreRoute }}">
+                @csrf
+
+                <div class="form-grid three">
+                    <div class="field">
+                        <label>Bank Name</label>
+                        <input type="text" name="bank_name" value="{{ old('bank_name') }}" required>
+                    </div>
+
+                    <div class="field">
+                        <label>Branch</label>
+                        <input type="text" name="branch" value="{{ old('branch') }}">
+                    </div>
+
+                    <div class="field">
+                        <label>Account Number</label>
+                        <input type="text" name="account_number" value="{{ old('account_number') }}" required>
+                    </div>
+
+                    <div class="field">
+                        <label>Account Type</label>
+                        <input type="text" name="account_type" value="{{ old('account_type') }}" placeholder="Savings / Current">
+                    </div>
+
+                    <div class="field">
+                        <label>IFSC</label>
+                        <input type="text" name="ifsc" value="{{ old('ifsc') }}">
+                    </div>
+                </div>
+
+                <label style="display:flex;gap:8px;align-items:center;margin-bottom:16px;font-size:13px;font-weight:700">
+                    <input type="checkbox" name="is_default" value="1">
+                    Set as default bank account
+                </label>
+
+                <button class="btn yellow block" type="submit">
+                    <i class="ti ti-plus"></i> Add Bank Account
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+
+{{-- Bank Account VIEW modal — always read-only, no editing, no default-switch here --}}
+<div class="modal-overlay" id="bank-view-modal" onclick="if(event.target===this) closeModal('bank-view-modal')">
+    <div class="modal-box">
+        <div class="modal-head">
+            <h3><i class="ti ti-building-bank"></i> Bank Account Details</h3>
+            <button type="button" class="modal-close" onclick="closeModal('bank-view-modal')">&times;</button>
+        </div>
+
+        <div class="modal-body">
+            <div class="view-badges" id="view-badges"></div>
+
+            <div class="form-grid three">
+                <div class="field">
+                    <label>Bank Name</label>
+                    <input type="text" id="view-bank-name" readonly>
+                </div>
+
+                <div class="field">
+                    <label>Branch</label>
+                    <input type="text" id="view-branch" readonly>
+                </div>
+
+                <div class="field">
+                    <label>Account Number</label>
+                    <input type="text" id="view-account-number" readonly>
+                </div>
+
+                <div class="field">
+                    <label>Account Type</label>
+                    <input type="text" id="view-account-type" readonly>
+                </div>
+
+                <div class="field">
+                    <label>IFSC</label>
+                    <input type="text" id="view-ifsc" readonly>
+                </div>
+            </div>
+
+            <button type="button" class="btn dark block" onclick="closeModal('bank-view-modal')">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function openModal(id){
+    const modal = document.getElementById(id);
+    if(modal) modal.classList.add('active');
+}
+
+function closeModal(id){
+    const modal = document.getElementById(id);
+    if(modal) modal.classList.remove('active');
+}
+
+function openBankView(btn){
+    const d = btn.dataset;
+
+    document.getElementById('view-bank-name').value = d.bankName || '';
+    document.getElementById('view-branch').value = d.branch || '';
+    document.getElementById('view-account-number').value = d.accountNumber || '';
+    document.getElementById('view-account-type').value = d.accountType || '';
+    document.getElementById('view-ifsc').value = d.ifsc || '';
+
+    const badges = document.getElementById('view-badges');
+    badges.innerHTML = '';
+
+    if(d.isDefault === '1'){
+        badges.insertAdjacentHTML('beforeend', '<span class="badge"><i class="ti ti-star-filled"></i> Default</span>');
+    }
+
+    openModal('bank-view-modal');
+}
+
+document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape'){
+        closeModal('add-bank-modal');
+        closeModal('bank-view-modal');
+    }
+});
+</script>
 @endsection

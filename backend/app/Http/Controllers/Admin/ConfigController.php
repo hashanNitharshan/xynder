@@ -40,6 +40,6 @@ class ConfigController extends Controller
 
         SystemConfig::create($data);
 
-        return back()->with('success', 'Config rates updated successfully.');
+        return back()->with('success');
     }
 }

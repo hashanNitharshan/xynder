@@ -631,4 +631,129 @@ static Future<Map<String, dynamic>> closeRequest(String requestId) async {
     return {"success": false, "message": e.toString()};
   }
 }
+
+static Future<Map<String, dynamic>> paymentMethods() async {
+  try {
+    final res = await http.get(
+      Uri.parse("$baseUrl/payment-methods"),
+      headers: await headers(),
+    ).timeout(const Duration(seconds: 25));
+
+    final data = decode(res);
+    if (res.statusCode == 401) await clearToken();
+    return data;
+  } catch (e) {
+    return {"success": false, "message": e.toString()};
+  }
+}
+
+static Future<Map<String, dynamic>> addBankAccount({
+  required String bankName,
+  required String branch,
+  required String accountNumber,
+  required String accountType,
+  required String ifsc,
+  bool isDefault = false,
+}) async {
+  try {
+    final res = await http.post(
+      Uri.parse("$baseUrl/bank-accounts"),
+      headers: await headers(),
+      body: {
+        "bank_name": bankName,
+        "branch": branch,
+        "account_number": accountNumber,
+        "account_type": accountType,
+        "ifsc": ifsc,
+        "is_default": isDefault ? "1" : "0",
+      },
+    ).timeout(const Duration(seconds: 25));
+
+    return decode(res);
+  } catch (e) {
+    return {"success": false, "message": e.toString()};
+  }
+}
+
+static Future<Map<String, dynamic>> updateBankAccount({
+  required String id,
+  required String bankName,
+  required String branch,
+  required String accountNumber,
+  required String accountType,
+  required String ifsc,
+  bool isDefault = false,
+}) async {
+  try {
+    final res = await http.post(
+      Uri.parse("$baseUrl/bank-accounts/$id"),
+      headers: await headers(),
+      body: {
+        "_method": "PUT",
+        "bank_name": bankName,
+        "branch": branch,
+        "account_number": accountNumber,
+        "account_type": accountType,
+        "ifsc": ifsc,
+        "is_default": isDefault ? "1" : "0",
+      },
+    ).timeout(const Duration(seconds: 25));
+
+    return decode(res);
+  } catch (e) {
+    return {"success": false, "message": e.toString()};
+  }
+}
+
+static Future<Map<String, dynamic>> deleteBankAccount(String id) async {
+  try {
+    final res = await http.post(
+      Uri.parse("$baseUrl/bank-accounts/$id"),
+      headers: await headers(),
+      body: {"_method": "DELETE"},
+    ).timeout(const Duration(seconds: 25));
+
+    return decode(res);
+  } catch (e) {
+    return {"success": false, "message": e.toString()};
+  }
+}
+
+static Future<Map<String, dynamic>> updateUpiMultipart({
+  required String upiName,
+  required String upiId,
+  XFile? upiQr,
+}) async {
+  final t = await token();
+  if (t == null || t.isEmpty) {
+    return {"success": false, "message": "Unauthorized"};
+  }
+
+  try {
+    final request = http.MultipartRequest(
+      "POST",
+      Uri.parse("$baseUrl/payment-upi"),
+    );
+
+    request.headers.addAll({
+      "Accept": "application/json",
+      "Authorization": "Bearer $t",
+    });
+
+    request.fields["_method"] = "PUT";
+    request.fields["upi_name"] = upiName;
+    request.fields["upi_id"] = upiId;
+
+    if (upiQr != null) {
+      request.files.add(await _filePart("upi_qr", upiQr));
+    }
+
+    final streamed = await request.send().timeout(const Duration(seconds: 60));
+    final res = await http.Response.fromStream(streamed);
+    return decode(res);
+  } catch (e) {
+    return {"success": false, "message": e.toString()};
+  }
+}
+
 }

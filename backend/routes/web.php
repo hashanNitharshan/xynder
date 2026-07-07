@@ -21,6 +21,7 @@ use App\Http\Controllers\Admin\ConfigController;
 use App\Http\Controllers\Admin\SupportTicketController;
 use App\Http\Controllers\Admin\WalletTransferController;
 use App\Http\Controllers\Admin\ChatController;
+use App\Http\Controllers\WebPaymentDetailsController;
 
 Route::get('/', function () {
     return Auth::check()
@@ -73,6 +74,18 @@ Route::middleware('auth')->group(function () {
         Route::post('/settings/profile', [WebSettingsController::class, 'updateProfile'])->name('settings.profile');
         Route::post('/settings/password', [WebSettingsController::class, 'changePassword'])->name('settings.password');
         Route::post('/settings/support', [WebSettingsController::class, 'storeSupport'])->name('settings.support');
+
+        Route::get('/payment-details', [WebPaymentDetailsController::class, 'clientIndex'])->name('payment-details');
+        Route::post('/payment-details/bank', [WebPaymentDetailsController::class, 'storeBank'])->name('payment-details.bank.store');
+        Route::put('/payment-details/bank/{bankAccount}', [WebPaymentDetailsController::class, 'updateBank'])->name('payment-details.bank.update');
+        Route::delete('/payment-details/bank/{bankAccount}', [WebPaymentDetailsController::class, 'deleteBank'])->name('payment-details.bank.destroy');
+        Route::post('/payment-details/bank/{bankAccount}/default', [WebPaymentDetailsController::class, 'setDefaultBank'])->name('payment-details.bank.default');
+        Route::post('/payment-details/upi', [WebPaymentDetailsController::class, 'updateUpi'])->name('payment-details.upi');
+        Route::post('/settings/bank', [WebSettingsController::class, 'storeBank'])->name('settings.bank.store');
+Route::put('/settings/bank/{bankAccount}', [WebSettingsController::class, 'updateBank'])->name('settings.bank.update');
+Route::delete('/settings/bank/{bankAccount}', [WebSettingsController::class, 'deleteBank'])->name('settings.bank.destroy');
+Route::post('/settings/bank/{bankAccount}/default', [WebSettingsController::class, 'setDefaultBank'])->name('settings.bank.default');
+Route::post('/settings/upi', [WebSettingsController::class, 'updateUpi'])->name('settings.upi');
     });
 
     Route::prefix('merchant')->name('merchant.')->group(function () {
@@ -91,8 +104,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/chats/transfer/{walletTransfer}', [WebChatController::class, 'showByTransfer'])->name('chats.transfer');
         Route::get('/chats/{conversation}', [WebChatController::class, 'show'])->name('chats.show');
         Route::post('/chats/{conversation}/send', [WebChatController::class, 'send'])->name('chats.send');
-       Route::post('/requests/{walletRequest}/close', [MerchantRequestController::class, 'close'])
-    ->name('requests.close');
+        Route::post('/requests/{walletRequest}/close', [MerchantRequestController::class, 'close'])->name('requests.close');
 
         Route::get('/history', [HistoryController::class, 'merchantIndex'])->name('history');
         Route::get('/history/{sourceType}/{id}', [HistoryController::class, 'merchantShow'])
@@ -107,6 +119,18 @@ Route::middleware('auth')->group(function () {
         Route::post('/settings/profile', [WebSettingsController::class, 'updateProfile'])->name('settings.profile');
         Route::post('/settings/password', [WebSettingsController::class, 'changePassword'])->name('settings.password');
         Route::post('/settings/support', [WebSettingsController::class, 'storeSupport'])->name('settings.support');
+
+        Route::get('/payment-details', [WebPaymentDetailsController::class, 'merchantIndex'])->name('payment-details');
+        Route::post('/payment-details/bank', [WebPaymentDetailsController::class, 'storeBank'])->name('payment-details.bank.store');
+        Route::put('/payment-details/bank/{bankAccount}', [WebPaymentDetailsController::class, 'updateBank'])->name('payment-details.bank.update');
+        Route::delete('/payment-details/bank/{bankAccount}', [WebPaymentDetailsController::class, 'deleteBank'])->name('payment-details.bank.destroy');
+        Route::post('/payment-details/bank/{bankAccount}/default', [WebPaymentDetailsController::class, 'setDefaultBank'])->name('payment-details.bank.default');
+        Route::post('/payment-details/upi', [WebPaymentDetailsController::class, 'updateUpi'])->name('payment-details.upi');
+        Route::post('/settings/bank', [WebSettingsController::class, 'storeBank'])->name('settings.bank.store');
+Route::put('/settings/bank/{bankAccount}', [WebSettingsController::class, 'updateBank'])->name('settings.bank.update');
+Route::delete('/settings/bank/{bankAccount}', [WebSettingsController::class, 'deleteBank'])->name('settings.bank.destroy');
+Route::post('/settings/bank/{bankAccount}/default', [WebSettingsController::class, 'setDefaultBank'])->name('settings.bank.default');
+Route::post('/settings/upi', [WebSettingsController::class, 'updateUpi'])->name('settings.upi');
     });
 
     Route::prefix('admin')->name('admin.')->group(function () {
@@ -136,5 +160,9 @@ Route::middleware('auth')->group(function () {
         Route::get('chats', [ChatController::class, 'index'])->name('chats.index');
         Route::get('chats/{conversation}', [ChatController::class, 'show'])->name('chats.show');
         Route::post('chats/{conversation}/send', [ChatController::class, 'send'])->name('chats.send');
+        Route::post('users/{user}/bank', [UserController::class, 'storeBank'])->name('users.bank.store');
+Route::put('users/{user}/bank/{bankAccount}', [UserController::class, 'updateBank'])->name('users.bank.update');
+Route::delete('users/{user}/bank/{bankAccount}', [UserController::class, 'deleteBank'])->name('users.bank.destroy');
+Route::post('users/{user}/bank/{bankAccount}/default', [UserController::class, 'setDefaultBank'])->name('users.bank.default');
     });
 });

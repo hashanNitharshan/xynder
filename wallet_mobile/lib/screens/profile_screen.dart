@@ -1,46 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+
 import '../services/api_service.dart';
-import '../widgets/pinwheel_loader.dart';
 import '../widgets/top_bar.dart';
 
-// ─────────────────────────────────────────────────────────────
-//  DESIGN TOKENS - BitXnow (Bright Yellow / Black)
-// ─────────────────────────────────────────────────────────────
 class _C {
   static const bg = Color(0xff0B0E11);
   static const surface = Color(0xff181A20);
   static const surfaceAlt = Color(0xff1E2329);
   static const border = Color(0xff2B3139);
-  static const borderFaint = Color(0xff202020);
 
-  // Theme (BitXnow bright yellow)
   static const orange = Color(0xffF0B90B);
   static const amber = Color(0xffC99400);
   static const gold = Color(0xffFFD45A);
-
   static const red = Color(0xffef4444);
-  static const blue = Color(0xffF0B90B);
 
   static const textPrimary = Colors.white;
   static const textSecondary = Color(0xff848E9C);
 
   static const gradientAccent = LinearGradient(
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
     colors: [Color(0xffC99400), Color(0xffF0B90B), Color(0xffFFD45A)],
-  );
-
-  static const gradientCard = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [Color(0xff181A20), Color(0xff11151B), Color(0xff0B0E11)],
-  );
-
-  static const gradientGlow = RadialGradient(
-    center: Alignment(-0.2, -0.6),
-    radius: 1.2,
-    colors: [Color(0x55F0B90B), Color(0x22FFD45A), Color(0x00000000)],
   );
 }
 
@@ -63,19 +42,11 @@ class _ProfileScreenState extends State<ProfileScreen>
   late TextEditingController countryCtrl;
   late TextEditingController stateCtrl;
   late TextEditingController addressCtrl;
-  late TextEditingController bankNameCtrl;
-  late TextEditingController branchCtrl;
-  late TextEditingController accountCtrl;
-  late TextEditingController accountTypeCtrl;
-  late TextEditingController ifscCtrl;
-  late TextEditingController upiNameCtrl;
-  late TextEditingController upiIdCtrl;
 
   bool loading = false;
 
   XFile? photo;
   XFile? aadhaarPhoto;
-  XFile? upiQr;
 
   late AnimationController _anim;
   late Animation<double> _fade;
@@ -110,17 +81,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     countryCtrl = TextEditingController(text: user["country"]?.toString() ?? "");
     stateCtrl = TextEditingController(text: user["state"]?.toString() ?? "");
     addressCtrl = TextEditingController(text: user["address"]?.toString() ?? "");
-    bankNameCtrl =
-        TextEditingController(text: user["bank_name"]?.toString() ?? "");
-    branchCtrl = TextEditingController(text: user["branch"]?.toString() ?? "");
-    accountCtrl =
-        TextEditingController(text: user["account_number"]?.toString() ?? "");
-    accountTypeCtrl =
-        TextEditingController(text: user["account_type"]?.toString() ?? "");
-    ifscCtrl = TextEditingController(text: user["ifsc"]?.toString() ?? "");
-    upiNameCtrl =
-        TextEditingController(text: user["upi_name"]?.toString() ?? "");
-    upiIdCtrl = TextEditingController(text: user["upi_id"]?.toString() ?? "");
   }
 
   @override
@@ -132,13 +92,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     countryCtrl.dispose();
     stateCtrl.dispose();
     addressCtrl.dispose();
-    bankNameCtrl.dispose();
-    branchCtrl.dispose();
-    accountCtrl.dispose();
-    accountTypeCtrl.dispose();
-    ifscCtrl.dispose();
-    upiNameCtrl.dispose();
-    upiIdCtrl.dispose();
     super.dispose();
   }
 
@@ -172,17 +125,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     }
   }
 
-  Future<void> pickQr() async {
-    final img = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 65,
-    );
-
-    if (img != null) {
-      setState(() => upiQr = img);
-    }
-  }
-
   Future<void> saveProfile() async {
     if (loading) return;
 
@@ -199,17 +141,9 @@ class _ProfileScreenState extends State<ProfileScreen>
           "country": countryCtrl.text.trim(),
           "state": stateCtrl.text.trim(),
           "address": addressCtrl.text.trim(),
-          "bank_name": bankNameCtrl.text.trim(),
-          "branch": branchCtrl.text.trim(),
-          "account_number": accountCtrl.text.trim(),
-          "account_type": accountTypeCtrl.text.trim(),
-          "ifsc": ifscCtrl.text.trim(),
-          "upi_name": upiNameCtrl.text.trim(),
-          "upi_id": upiIdCtrl.text.trim(),
         },
         photo: photo,
         aadhaarPhoto: aadhaarPhoto,
-        upiQr: upiQr,
       );
 
       if (!mounted) return;
@@ -219,7 +153,6 @@ class _ProfileScreenState extends State<ProfileScreen>
           user = Map<String, dynamic>.from(data["user"] ?? user);
           photo = null;
           aadhaarPhoto = null;
-          upiQr = null;
         });
 
         _snack("Profile updated successfully");
@@ -256,61 +189,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  // ═══════════════════════════════════════════
-  //  NORMAL PROFILE PHOTO UPLOAD SECTION
-  // ═══════════════════════════════════════════
-  Widget _profilePhotoSection() {
-    final photoUrl = ApiService.fixUrl(user["photo_url"]);
-
-    return _sectionCard(
-      title: "Profile Photo",
-      icon: Icons.image_rounded,
-      children: [
-        if (photoUrl.isNotEmpty && photo == null)
-          Container(
-            width: double.infinity,
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: _C.bg,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: _C.border),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(14),
-              child: Image.network(
-                photoUrl,
-                height: 160,
-                fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) {
-                  return const Padding(
-                    padding: EdgeInsets.all(18),
-                    child: Text(
-                      "Profile photo not available",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: _C.textSecondary),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-        if (photo != null) _selectedBox("New profile photo selected"),
-        _uploadButton(
-          title: photo == null
-              ? "Upload / Change Profile Photo"
-              : "New Profile Photo Selected",
-          icon: Icons.photo_camera_rounded,
-          onTap: pickPhoto,
-          selected: photo != null,
-        ),
-      ],
-    );
-  }
-
-  // ═══════════════════════════════════════════
-  //  SECTION CARD
-  // ═══════════════════════════════════════════
   Widget _sectionCard({
     required String title,
     required IconData icon,
@@ -364,7 +242,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     required String label,
     required TextEditingController controller,
     required IconData icon,
-    Color iconColor = _C.amber,
     int maxLines = 1,
   }) {
     return Padding(
@@ -377,7 +254,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           fontWeight: FontWeight.w600,
         ),
         decoration: InputDecoration(
-          prefixIcon: Icon(icon, color: iconColor, size: 20),
+          prefixIcon: Icon(icon, color: _C.amber, size: 20),
           labelText: label,
           labelStyle: const TextStyle(
             color: _C.textSecondary,
@@ -559,10 +436,58 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
+  Widget _profilePhotoSection() {
+    final photoUrl = ApiService.fixUrl(user["photo_url"]);
+
+    return _sectionCard(
+      title: "Profile Photo",
+      icon: Icons.image_rounded,
+      children: [
+        if (photoUrl.isNotEmpty && photo == null)
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: _C.bg,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: _C.border),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: Image.network(
+                photoUrl,
+                height: 160,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) {
+                  return const Padding(
+                    padding: EdgeInsets.all(18),
+                    child: Text(
+                      "Profile photo not available",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: _C.textSecondary),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        if (photo != null) _selectedBox("New profile photo selected"),
+        _uploadButton(
+          title: photo == null
+              ? "Upload / Change Profile Photo"
+              : "New Profile Photo Selected",
+          icon: Icons.photo_camera_rounded,
+          onTap: pickPhoto,
+          selected: photo != null,
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final aadhaarPhotoUrl = ApiService.fixUrl(user["aadhaar_photo_url"]);
-    final qrUrl = ApiService.fixUrl(user["upi_qr_url"]);
 
     return Scaffold(
       backgroundColor: _C.bg,
@@ -587,7 +512,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                     children: [
                       const SizedBox(height: 4),
                       _profilePhotoSection(),
-
                       _sectionCard(
                         title: "Personal Details",
                         icon: Icons.person_rounded,
@@ -623,7 +547,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                             icon: Icons.location_on_rounded,
                             maxLines: 3,
                           ),
-                          if (aadhaarPhotoUrl.isNotEmpty && aadhaarPhoto == null)
+                          if (aadhaarPhotoUrl.isNotEmpty &&
+                              aadhaarPhoto == null)
                             _imagePreview(
                               url: aadhaarPhotoUrl,
                               errorText: "Aadhaar card photo not available",
@@ -640,70 +565,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                           ),
                         ],
                       ),
-
-                      _sectionCard(
-                        title: "Bank Details",
-                        icon: Icons.account_balance_rounded,
-                        children: [
-                          _field(
-                            label: "Bank Name",
-                            controller: bankNameCtrl,
-                            icon: Icons.account_balance_rounded,
-                          ),
-                          _field(
-                            label: "Branch",
-                            controller: branchCtrl,
-                            icon: Icons.location_city_rounded,
-                          ),
-                          _field(
-                            label: "Account Number",
-                            controller: accountCtrl,
-                            icon: Icons.credit_card_rounded,
-                          ),
-                          _field(
-                            label: "Account Type",
-                            controller: accountTypeCtrl,
-                            icon: Icons.category_rounded,
-                          ),
-                          _field(
-                            label: "IFSC",
-                            controller: ifscCtrl,
-                            icon: Icons.code_rounded,
-                          ),
-                        ],
-                      ),
-
-                      _sectionCard(
-                        title: "UPI Details",
-                        icon: Icons.qr_code_rounded,
-                        children: [
-                          _field(
-                            label: "UPI Account Name",
-                            controller: upiNameCtrl,
-                            icon: Icons.account_circle_rounded,
-                          ),
-                          _field(
-                            label: "UPI ID",
-                            controller: upiIdCtrl,
-                            icon: Icons.link_rounded,
-                          ),
-                          if (qrUrl.isNotEmpty && upiQr == null)
-                            _imagePreview(
-                              url: qrUrl,
-                              errorText: "QR image not available",
-                            ),
-                          if (upiQr != null) _selectedBox("New QR selected"),
-                          _uploadButton(
-                            title: upiQr == null
-                                ? "Upload / Change UPI QR"
-                                : "New UPI QR Selected",
-                            icon: Icons.qr_code_2_rounded,
-                            onTap: pickQr,
-                            selected: upiQr != null,
-                          ),
-                        ],
-                      ),
-
                       const SizedBox(height: 22),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),

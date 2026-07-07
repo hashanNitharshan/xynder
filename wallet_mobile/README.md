@@ -29,10 +29,13 @@ X/
 │   │   │   │   ├── HistoryController.php
 │   │   │   │   ├── WalletTransferController.php
 │   │   │   │   ├── WebChatController.php
+│   │   │   │   ├── WebPaymentDetailsController.php
 │   │   │   │   ├── WebProfileController.php
 │   │   │   │   └── WebSettingsController.php
 │   │   │   └── Middleware/
 │   │   │       ├── AdminOnly.php
+│   │   │       ├── ClientOnly.php
+│   │   │       ├── MerchantOnly.php
 │   │   │       └── HandleCors.php
 │   │   ├── Models/
 │   │   │   ├── ChatMessage.php
@@ -40,6 +43,7 @@ X/
 │   │   │   ├── SupportTicket.php
 │   │   │   ├── SystemConfig.php
 │   │   │   ├── User.php
+│   │   │   ├── UserBankAccount.php
 │   │   │   ├── WalletRequest.php
 │   │   │   └── WalletTransfer.php
 │   │   └── Providers/
@@ -90,7 +94,9 @@ X/
 │   │   │   ├── 2026_06_18_052400_add_transaction_no_to_wallet_requests_and_transfers.php
 │   │   │   ├── 2026_06_23_071904_add_transaction_no_to_wallet_transfers_table.php
 │   │   │   ├── 2026_06_23_073254_add_attachment_and_lock_columns_to_chat_tables.php
-│   │   │   └── 2026_07_01_141804_add_closed_status_to_wallet_requests_table.php
+│   │   │   ├── 2026_07_01_141804_add_closed_status_to_wallet_requests_table.php
+│   │   │   ├── 2026_07_06_140201_create_user_bank_accounts_table.php
+│   │   │   └── 2026_07_07_095846_add_profile_payment_locks_to_users_table.php
 │   │   ├── seeders/
 │   │   │   └── DatabaseSeeder.php
 │   │   └── database.sqlite
@@ -137,7 +143,8 @@ X/
 │   │       │   ├── chat_show.blade.php
 │   │       │   ├── history.blade.php
 │   │       │   ├── profile.blade.php
-│   │       │   └── settings.blade.php
+│   │       │   ├── settings.blade.php
+│   │       │   └── payment_details.blade.php
 │   │       ├── merchant/
 │   │       │   ├── dashboard.blade.php
 │   │       │   ├── requests.blade.php
@@ -146,7 +153,8 @@ X/
 │   │       │   ├── chat_show.blade.php
 │   │       │   ├── history.blade.php
 │   │       │   ├── profile.blade.php
-│   │       │   └── settings.blade.php
+│   │       │   ├── settings.blade.php
+│   │       │   └── payment_details.blade.php
 │   │       ├── shared/
 │   │       │   ├── chats_index.blade.php
 │   │       │   ├── chat_show.blade.php
@@ -154,6 +162,7 @@ X/
 │   │       │   ├── history.blade.php
 │   │       │   ├── profile.blade.php
 │   │       │   ├── settings.blade.php
+│   │       │   ├── payment_details.blade.php
 │   │       │   ├── transaction_detail.blade.php
 │   │       │   └── transfers.blade.php
 │   │       ├── dashboards/
@@ -161,7 +170,10 @@ X/
 │   │       │   ├── client.blade.php
 │   │       │   └── merchant.blade.php
 │   │       ├── layouts/
-│   │       │   └── admin.blade.php
+│   │       │   ├── admin.blade.php
+│   │       │   ├── app.blade.php
+│   │       │   ├── client.blade.php
+│   │       │   └── merchant.blade.php
 │   │       └── welcome.blade.php
 │   ├── routes/
 │   │   ├── api.php
@@ -213,6 +225,7 @@ X/
     │   ├── app/
     │   │   ├── src/
     │   │   │   ├── debug/
+    │   │   │   ├── profile/
     │   │   │   └── main/
     │   │   │       ├── java/
     │   │   │       ├── kotlin/
@@ -270,6 +283,7 @@ X/
     │   │   ├── login_screen.dart
     │   │   ├── merchant_dashboard.dart
     │   │   ├── merchant_requests_screen.dart
+    │   │   ├── payment_methods_screen.dart
     │   │   ├── profile_screen.dart
     │   │   ├── register_screen.dart
     │   │   ├── request_screen.dart

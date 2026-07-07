@@ -29,7 +29,7 @@ class ChatController extends Controller
             ->latest('updated_at')
             ->get()
             ->map(function ($conversation) use ($userId) {
-                $conversation = $this->syncRequestChatLock($conversation);
+                $conversation->lockIfExpired();
 
                 $other = $conversation->user_one_id == $userId
                     ? $conversation->userTwo
@@ -58,11 +58,11 @@ class ChatController extends Controller
                         ? (int) $conversation->wallet_transfer_id
                         : (int) $conversation->wallet_request_id,
 
-                    'is_locked'        => $isLocked,
-                    'can_open'         => ! $isLocked,
-                    'chat_started_at'  => $conversation->chat_started_at,
-                    'locked_at'        => $conversation->locked_at,
-                    'lock_reason'      => $conversation->lock_reason,
+                    'is_locked'         => $isLocked,
+                    'can_open'          => ! $isLocked,
+                    'chat_started_at'   => $conversation->chat_started_at,
+                    'locked_at'         => $conversation->locked_at,
+                    'lock_reason'       => $conversation->lock_reason,
                     'remaining_seconds' => $conversation->remainingSeconds(),
 
                     'other_user' => [
@@ -122,7 +122,7 @@ class ChatController extends Controller
     public function requestMessages(Request $request, $requestId)
     {
         $conversation = $this->getOrCreateRequestConversation($request, $requestId);
-        $conversation = $this->syncRequestChatLock($conversation);
+        $conversation->lockIfExpired();
 
         if ($conversation->isLocked()) {
             return $this->lockedResponse($conversation);
@@ -131,53 +131,26 @@ class ChatController extends Controller
         $this->markSeen($conversation->id, $request->user()->id);
 
         return response()->json([
-            'success'            => true,
-            'is_locked'          => false,
-            'can_open'           => true,
-            'remaining_seconds'  => $conversation->remainingSeconds(),
-            'conversation'       => $conversation,
-            'other_user'         => $this->userData($this->otherUser($conversation, $request->user()->id)),
-            'messages'           => $this->messages($conversation->id),
+            'success'           => true,
+            'is_locked'         => false,
+            'can_open'          => true,
+            'remaining_seconds' => $conversation->remainingSeconds(),
+            'conversation'      => $conversation,
+            'other_user'        => $this->userData($this->otherUser($conversation, $request->user()->id)),
+            'messages'          => $this->messages($conversation->id),
         ]);
     }
 
     public function sendRequestMessage(Request $request, $requestId)
     {
         $conversation = $this->getOrCreateRequestConversation($request, $requestId);
-        $conversation = $this->syncRequestChatLock($conversation);
+        $conversation->lockIfExpired();
 
         return $this->sendMessage($request, $conversation);
     }
 
-    /**
-     * Auto-close a request that has been sitting "pending" for 10+ minutes,
-     * then let the Conversation model apply the lock based on the (possibly
-     * just-updated) request status. This is the ONLY place the 10-minute
-     * pending timeout is enforced, and it runs on every chat fetch/send —
-     * so it self-heals regardless of which controller approved/rejected/
-     * closed the request.
-     */
-    private function syncRequestChatLock(Conversation $conversation): Conversation
-    {
-        if ($conversation->wallet_request_id) {
-            $walletRequest = WalletRequest::find($conversation->wallet_request_id);
-
-            if ($walletRequest && strtolower((string) $walletRequest->status) === 'pending'
-                && $walletRequest->created_at
-                && now()->diffInMinutes($walletRequest->created_at) >= 10) {
-                $walletRequest->update(['status' => 'closed']);
-            }
-        }
-
-        $conversation->lockIfExpired();
-
-        return $conversation->fresh();
-    }
-
     private function sendMessage(Request $request, Conversation $conversation)
     {
-        $conversation->lockIfExpired();
-
         if ($conversation->isLocked()) {
             return $this->lockedResponse($conversation);
         }
@@ -194,11 +167,9 @@ class ChatController extends Controller
             ], 422);
         }
 
-        if (! $conversation->chat_started_at) {
-            $conversation->update([
-                'chat_started_at' => now(),
-            ]);
-        }
+        // chat_started_at is set once at conversation creation (see
+        // getOrCreateTransferConversation / getOrCreateRequestConversation),
+        // so no fallback assignment is needed here anymore.
 
         $receiver = $this->otherUser($conversation, $request->user()->id);
 
@@ -261,6 +232,7 @@ class ChatController extends Controller
                 'user_one_id'       => $transfer->sender_id,
                 'user_two_id'       => $transfer->receiver_id,
                 'wallet_request_id' => null,
+                'chat_started_at'   => now(),
             ]
         );
     }
@@ -281,9 +253,10 @@ class ChatController extends Controller
         return Conversation::firstOrCreate(
             ['wallet_request_id' => $walletRequest->id],
             [
-                'user_one_id'          => $walletRequest->user_id,
-                'user_two_id'          => $walletRequest->merchant_id,
-                'wallet_transfer_id'   => null,
+                'user_one_id'        => $walletRequest->user_id,
+                'user_two_id'        => $walletRequest->merchant_id,
+                'wallet_transfer_id' => null,
+                'chat_started_at'    => now(),
             ]
         );
     }
@@ -351,15 +324,15 @@ class ChatController extends Controller
     private function lockedResponse(Conversation $conversation)
     {
         return response()->json([
-            'success'            => false,
-            'is_locked'          => true,
-            'can_open'           => false,
-            'message'            => 'This chat is closed / locked.',
-            'locked_at'          => $conversation->locked_at,
-            'lock_reason'        => $conversation->lock_reason,
-            'remaining_seconds'  => 0,
-            'conversation'       => $conversation,
-            'messages'           => $this->messages($conversation->id),
+            'success'           => false,
+            'is_locked'         => true,
+            'can_open'          => false,
+            'message'           => 'This chat is closed / locked.',
+            'locked_at'         => $conversation->locked_at,
+            'lock_reason'       => $conversation->lock_reason,
+            'remaining_seconds' => 0,
+            'conversation'      => $conversation,
+            'messages'          => $this->messages($conversation->id),
         ], 423);
     }
 }

@@ -6,7 +6,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
 <style>
- :root{
+:root{
     --bg:#0B0E11;
     --surface:#181A20;
     --surface-alt:#1E2329;
@@ -24,6 +24,15 @@
 
 *{box-sizing:border-box}
 
+.ad-page{
+    margin:-28px;
+    min-height:100vh;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    padding:24px 36px 48px;
+}
+
 .ad-simple-head{
     background:radial-gradient(circle at 92% 0%,rgba(240,185,11,.20),transparent 38%),linear-gradient(135deg,#181A20,#0B0E11);
     border:1px solid var(--border);
@@ -32,17 +41,28 @@
     box-shadow:var(--shadow);
     margin-bottom:20px;
 }
-.ad-simple-kicker{color:var(--yellow);font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;margin-bottom:5px}
-.ad-simple-head h1{margin:0;font-size:19px;font-weight:800;letter-spacing:-.2px;color:#fff}
-.ad-simple-head p{margin:4px 0 0;color:var(--muted);font-size:12px;font-weight:600}
 
-.ad-page{
-    margin:-28px;
-    min-height:100vh;
-    background:var(--bg);
-    color:var(--text);
-    font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
-    padding:24px 36px 48px;
+.ad-simple-kicker{
+    color:var(--yellow);
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    margin-bottom:5px;
+}
+
+.ad-simple-head h1{
+    margin:0;
+    font-size:19px;
+    font-weight:800;
+    color:#fff;
+}
+
+.ad-simple-head p{
+    margin:4px 0 0;
+    color:var(--muted);
+    font-size:12px;
+    font-weight:600;
 }
 
 .ad-kpis{
@@ -62,16 +82,7 @@
     overflow:hidden;
 }
 
-.ad-kpi::after{
-    content:"";
-    position:absolute;
-    right:-38px;
-    top:-38px;
-    width:115px;
-    height:115px;
-    border-radius:50%;
-    background:rgba(232,25,44,.12);
-}
+.ad-kpi:hover{border-color:rgba(240,185,11,.42)}
 
 .ad-kpi-icon{
     width:42px;
@@ -79,6 +90,7 @@
     border-radius:50%;
     background:rgba(240,185,11,.12);
     color:var(--yellow);
+    border:1px solid rgba(240,185,11,.35);
     display:flex;
     align-items:center;
     justify-content:center;
@@ -113,7 +125,10 @@
     border-radius:14px;
     overflow:hidden;
     width:100%;
+    box-shadow:var(--shadow);
 }
+
+.ad-card:hover{border-color:rgba(240,185,11,.42)}
 
 .ad-head{
     background:var(--surface-alt);
@@ -153,7 +168,7 @@
 
 .ad-tab.active,
 .ad-tab:hover{
-    background:rgba(232,25,44,.14);
+    background:rgba(240,185,11,.12);
     color:var(--yellow);
     box-shadow:inset 0 -3px 0 var(--yellow);
 }
@@ -173,10 +188,26 @@
     white-space:nowrap;
 }
 
-.ad-btn-red{background:var(--yellow);color:#fff}
-.ad-btn-red:hover{background:var(--yellow-dark);color:#fff}
-.ad-btn-dark{background:var(--surface-alt);color:#fff;border:1px solid var(--border)}
-.ad-btn-dark:hover{border-color:var(--yellow);color:#fff}
+.ad-btn-red{
+    background:var(--yellow);
+    color:#0B0E11;
+}
+
+.ad-btn-red:hover{
+    background:var(--yellow-dark);
+    color:#0B0E11;
+}
+
+.ad-btn-dark{
+    background:var(--surface-alt);
+    color:#fff;
+    border:1px solid var(--border);
+}
+
+.ad-btn-dark:hover{
+    border-color:var(--yellow);
+    color:#fff;
+}
 
 .ad-filters{
     display:grid;
@@ -202,7 +233,7 @@
 .ad-input:focus,
 .ad-select:focus{
     border-color:var(--yellow);
-    box-shadow:0 0 0 3px rgba(232,25,44,.12);
+    box-shadow:0 0 0 3px rgba(240,185,11,.12);
 }
 
 .ad-table-wrap{
@@ -242,7 +273,6 @@
     background:#1E2329;
 }
 
-/* 7 columns now: User, Balance, Status, Bank/UPI, Online, Verify, Actions */
 .ad-table th:nth-child(1),.ad-table td:nth-child(1){width:30%}
 .ad-table th:nth-child(2),.ad-table td:nth-child(2){width:12%}
 .ad-table th:nth-child(3),.ad-table td:nth-child(3){width:10%}
@@ -274,6 +304,7 @@
 .ad-avatar-empty{
     background:rgba(240,185,11,.12);
     color:var(--yellow);
+    border:1px solid rgba(240,185,11,.35);
     display:flex;
     align-items:center;
     justify-content:center;
@@ -315,7 +346,8 @@
     gap:6px;
     margin-top:6px;
     background:rgba(240,185,11,.12);
-    color:#F0B90B;
+    color:var(--yellow);
+    border:1px solid rgba(240,185,11,.28);
     border-radius:20px;
     padding:3px 6px 3px 9px;
     font-size:10px;
@@ -339,7 +371,7 @@
     display:inline-flex;
     align-items:center;
     justify-content:center;
-    color:#F0B90B;
+    color:var(--yellow);
     cursor:pointer;
     font-size:11px;
     padding:0;
@@ -362,9 +394,15 @@
 }
 
 .ad-green{background:#0d2b1e;color:var(--green)}
-.ad-red{background:rgba(240,185,11,.12);color:#ff9b9b}
+.ad-red{background:rgba(239,68,68,.12);color:#ff9b9b}
 .ad-yellow{background:#3b2a09;color:var(--gold)}
 .ad-gray{background:var(--surface-alt);color:#d5dade;border:1px solid var(--border)}
+
+.ad-bank-line{
+    color:var(--muted);
+    font-size:12px;
+    margin-top:4px;
+}
 
 .ad-actions{
     display:flex;
@@ -406,18 +444,6 @@
     border-top:1px solid var(--border);
 }
 
-
-.ad-kpi:hover,.ad-card:hover{border-color:rgba(240,185,11,.42)}
-.ad-kpi-icon{border:1px solid rgba(240,185,11,.35)}
-.ad-card{box-shadow:var(--shadow)}
-.ad-btn-red{background:var(--yellow);color:#0B0E11}
-.ad-btn-red:hover{background:var(--yellow-dark);color:#0B0E11}
-.ad-tab.active,.ad-tab:hover{background:rgba(240,185,11,.12);color:var(--yellow);box-shadow:inset 0 -3px 0 var(--yellow)}
-.ad-input:focus,.ad-select:focus{border-color:var(--yellow);box-shadow:0 0 0 3px rgba(240,185,11,.12)}
-.ad-avatar-empty{border:1px solid rgba(240,185,11,.35)}
-.ad-wallet{background:rgba(240,185,11,.12);color:var(--yellow);border:1px solid rgba(240,185,11,.28)}
-.ad-copy-btn{color:var(--yellow)}
-.ad-icon:hover{border-color:var(--yellow)}
 @media(max-width:1200px){
     .ad-table,
     .ad-table thead,
@@ -475,7 +501,7 @@
     <section class="ad-simple-head">
         <div class="ad-simple-kicker">BITXNOW ADMIN</div>
         <h1>Clients & Merchants</h1>
-        <p>Manage client and merchant accounts, verification, status, wallet IDs, and online activity.</p>
+        <p>Manage client and merchant accounts, verification, status, wallet IDs, default bank details, UPI, and online activity.</p>
     </section>
 
     <div class="ad-kpis">
@@ -538,7 +564,7 @@
                    type="text"
                    name="search"
                    value="{{ request('search') }}"
-                   placeholder="Search name, email, phone, wallet ID">
+                   placeholder="Search name, email, phone, wallet ID, bank, UPI">
 
             <select name="status" class="ad-select ad-auto-filter">
                 <option value="">All Status</option>
@@ -565,7 +591,7 @@
                         <th>User</th>
                         <th>Balance</th>
                         <th>Status</th>
-                        <th>Bank / UPI</th>
+                        <th>Default Bank / UPI</th>
                         <th>Online</th>
                         <th>Verify</th>
                         <th>Actions</th>
@@ -574,6 +600,18 @@
 
                 <tbody>
                 @forelse($users as $user)
+                    @php
+                        $defaultBank = $user->bankAccounts
+                            ? $user->bankAccounts->firstWhere('is_default', true)
+                            : null;
+
+                        $fallbackBank = $user->bankAccounts && $user->bankAccounts->count()
+                            ? $user->bankAccounts->first()
+                            : null;
+
+                        $bank = $defaultBank ?: $fallbackBank;
+                    @endphp
+
                     <tr>
                         <td data-label="User">
                             <div class="ad-user">
@@ -583,7 +621,7 @@
                                          alt="{{ $user->name }}">
                                 @else
                                     <div class="ad-avatar-empty">
-                                        {{ strtoupper(substr($user->name, 0, 1)) }}
+                                        {{ strtoupper(substr($user->name ?? 'U', 0, 1)) }}
                                     </div>
                                 @endif
 
@@ -593,6 +631,7 @@
 
                                     <div class="ad-wallet">
                                         <span>Wallet ID: {{ $user->wallet_id ?? 'N/A' }}</span>
+
                                         @if($user->wallet_id)
                                             <button type="button"
                                                     class="ad-copy-btn"
@@ -623,21 +662,73 @@
                             @endif
                         </td>
 
-                        <td data-label="Bank / UPI">
-                            <strong>{{ $user->bank_name ?? '—' }}</strong>
+                        <td data-label="Default Bank / UPI">
+                            @if($bank)
+                                <strong>{{ $bank->bank_name ?? '—' }}</strong>
 
-                            @if($user->account_number)
+                                @if($bank->is_default)
+                                    <br>
+                                    <span class="ad-badge ad-yellow" style="margin-top:5px;">
+                                        Default
+                                    </span>
+                                @endif
+
+                                @if($bank->account_number)
+                                    <div class="ad-bank-line">
+                                        Acc: {{ $bank->account_number }}
+                                    </div>
+                                @endif
+
+                                @if($bank->branch)
+                                    <div class="ad-bank-line">
+                                        Branch: {{ $bank->branch }}
+                                    </div>
+                                @endif
+
+                                @if($bank->account_type)
+                                    <div class="ad-bank-line">
+                                        Type: {{ $bank->account_type }}
+                                    </div>
+                                @endif
+
+                                @if($bank->ifsc)
+                                    <div class="ad-bank-line">
+                                        IFSC: {{ $bank->ifsc }}
+                                    </div>
+                                @endif
+                            @elseif($user->bank_name || $user->account_number)
+                                <strong>{{ $user->bank_name ?? '—' }}</strong>
+
                                 <br>
-                                <span style="color:var(--muted);">
-                                    Acc: {{ $user->account_number }}
+                                <span class="ad-badge ad-gray" style="margin-top:5px;">
+                                    Legacy
                                 </span>
+
+                                @if($user->account_number)
+                                    <div class="ad-bank-line">
+                                        Acc: {{ $user->account_number }}
+                                    </div>
+                                @endif
+
+                                @if($user->branch)
+                                    <div class="ad-bank-line">
+                                        Branch: {{ $user->branch }}
+                                    </div>
+                                @endif
+
+                                @if($user->ifsc)
+                                    <div class="ad-bank-line">
+                                        IFSC: {{ $user->ifsc }}
+                                    </div>
+                                @endif
+                            @else
+                                <span style="color:var(--muted);">No bank added</span>
                             @endif
 
                             @if($user->upi_id)
-                                <br>
-                                <span style="color:var(--muted);">
+                                <div class="ad-bank-line">
                                     UPI: {{ $user->upi_id }}
-                                </span>
+                                </div>
                             @endif
                         </td>
 

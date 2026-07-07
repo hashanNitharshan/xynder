@@ -1,0 +1,1 @@
+@include('shared.payment_details')

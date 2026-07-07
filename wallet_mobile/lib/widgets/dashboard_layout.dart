@@ -13,6 +13,7 @@ import '../screens/chat_screen.dart';
 import '../screens/history_screen.dart';
 import '../screens/settings_screen.dart';
 import '../utils/page_transitions.dart';
+import 'dart:ui';
 
 class _C {
   static const bg = Color(0xff0B0E11);
@@ -321,16 +322,25 @@ class _DashboardLayoutState extends State<DashboardLayout>
         user["is_verified"] == 1 ||
         user["is_verified"]?.toString() == "1";
   }
+String maskCard(dynamic v) {
+  final c = v?.toString() ?? "";
 
-  String maskCard(dynamic v) {
-    final c = v?.toString() ?? "";
-
-    if (c.length >= 4) {
-      return "**** **** **** ${c.substring(c.length - 4)}";
-    }
-
-    return "**** **** **** ****";
+  if (c.length >= 4) {
+    return "**** **** **** ${c.substring(c.length - 4)}";
   }
+
+  return "**** **** **** ****";
+}
+
+String walletIdText(dynamic v) {
+  final id = v?.toString().trim() ?? "";
+
+  if (id.isEmpty || id == "null") {
+    return "Wallet ID not available";
+  }
+
+  return id;
+}
 
   String fmtDate(dynamic v) {
     final raw = v?.toString();
@@ -521,141 +531,142 @@ class _DashboardLayoutState extends State<DashboardLayout>
     );
   }
 
-  /// Unique "physical card" styled balance card — chip, contactless icon,
-  /// embossed-style number, and a custom dual-ring brand mark instead of
-  /// a generic gradient block.
   Widget _heroCard() {
-    final balance = toDouble(user["balance"]);
-    final name = user["name"]?.toString() ?? "CARD HOLDER";
+  final balance = toDouble(user["balance"]);
+  final name = user["name"]?.toString() ?? "CARD HOLDER";
+  final walletId = walletIdText(user["wallet_id"] ?? user["card_number"]);
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-      height: 252,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        gradient: _C.gradientCard,
-        border: Border.all(
-          color: _C.gold.withOpacity(0.30),
-          width: 1.2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.45),
-            blurRadius: 24,
-            offset: const Offset(0, 14),
-          ),
-        ],
+  return Container(
+    margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+    height: 252,
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(28),
+      gradient: _C.gradientCard,
+      border: Border.all(
+        color: _C.gold.withOpacity(0.30),
+        width: 1.2,
       ),
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(28),
-                gradient: _C.gradientGlow,
-              ),
-            ),
-          ),
-          Positioned(
-            top: -40,
-            right: -40,
-            child: Container(
-              width: 160,
-              height: 160,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: _C.gold.withOpacity(0.06),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: -30,
-            right: 60,
-            child: Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: _C.goldDark.withOpacity(0.05),
-              ),
-            ),
-          ),
-          // Fine diagonal texture lines for a "security print" feel.
-          Positioned.fill(
-            child: ClipRRect(
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.45),
+          blurRadius: 24,
+          offset: const Offset(0, 14),
+        ),
+      ],
+    ),
+    child: Stack(
+      children: [
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(28),
-              child: CustomPaint(
-                painter: _CardTexturePainter(),
-              ),
+              gradient: _C.gradientGlow,
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 18, 24, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ShaderMask(
-                      shaderCallback: (b) {
-                        return _C.gradientAccent.createShader(b);
-                      },
-                      child: const Text(
-                        "BITXNOW",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 16,
-                          letterSpacing: 2.5,
-                        ),
+        ),
+        Positioned(
+          top: -40,
+          right: -40,
+          child: Container(
+            width: 160,
+            height: 160,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: _C.gold.withOpacity(0.06),
+            ),
+          ),
+        ),
+        Positioned(
+          bottom: -30,
+          right: 60,
+          child: Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: _C.goldDark.withOpacity(0.05),
+            ),
+          ),
+        ),
+        Positioned.fill(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(28),
+            child: CustomPaint(
+              painter: _CardTexturePainter(),
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 18, 24, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ShaderMask(
+                    shaderCallback: (b) {
+                      return _C.gradientAccent.createShader(b);
+                    },
+                    child: const Text(
+                      "BITXNOW",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 16,
+                        letterSpacing: 2.5,
                       ),
                     ),
-                    const Spacer(),
-                    Icon(
-                      Icons.contactless_rounded,
-                      color: Colors.white.withOpacity(0.55),
-                      size: 22,
-                    ),
-                    const SizedBox(width: 10),
-                    GestureDetector(
-                      onTap: () {
-                        setState(() => balanceHidden = !balanceHidden);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.07),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          balanceHidden
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
-                          color: Colors.white54,
-                          size: 16,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                SizedBox(
-                  width: 42,
-                  height: 30,
-                  child: CustomPaint(painter: _ChipPainter()),
-                ),
-                const Spacer(),
-                Text(
-                  "My Wallet",
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.4),
-                    fontSize: 11,
-                    letterSpacing: 0.5,
                   ),
+                  const Spacer(),
+                  Icon(
+                    Icons.contactless_rounded,
+                    color: Colors.white.withOpacity(0.55),
+                    size: 22,
+                  ),
+                  const SizedBox(width: 10),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() => balanceHidden = !balanceHidden);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.07),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        balanceHidden
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        color: Colors.white54,
+                        size: 16,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: 42,
+                height: 30,
+                child: CustomPaint(painter: _ChipPainter()),
+              ),
+              const Spacer(),
+              Text(
+                "My Wallet",
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.4),
+                  fontSize: 11,
+                  letterSpacing: 0.5,
                 ),
-                const SizedBox(height: 4),
-                Text(
+              ),
+              const SizedBox(height: 4),
+              GestureDetector(
+                onTap: () {
+                  setState(() => balanceHidden = !balanceHidden);
+                },
+                child: Text(
                   balanceHidden
                       ? "••••••••"
                       : "\$${balance.toStringAsFixed(2)}",
@@ -666,53 +677,29 @@ class _DashboardLayoutState extends State<DashboardLayout>
                     letterSpacing: -0.5,
                   ),
                 ),
-                const Spacer(),
-                Text(
-                  maskCard(user["card_number"]),
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.55),
-                    fontSize: 15,
-                    letterSpacing: 2.4,
-                    fontWeight: FontWeight.w700,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
+              ),
+              const Spacer(),
+              Text(
+                walletId,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.65),
+                  fontSize: 15,
+                  letterSpacing: 1.4,
+                  fontWeight: FontWeight.w800,
+                  fontFeatures: const [FontFeature.tabularFigures()],
                 ),
-                const SizedBox(height: 8),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "CARD HOLDER",
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.35),
-                              fontSize: 8,
-                              letterSpacing: 0.8,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            name.toUpperCase(),
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+              ),
+              const SizedBox(height: 8),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "VALID THRU",
+                          "CARD HOLDER",
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.35),
                             fontSize: 8,
@@ -721,58 +708,82 @@ class _DashboardLayoutState extends State<DashboardLayout>
                           ),
                         ),
                         const SizedBox(height: 2),
-                        const Text(
-                          "12/29",
-                          style: TextStyle(
+                        Text(
+                          name.toUpperCase(),
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 12,
                             fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(width: 14),
-                    // Custom dual-ring brand mark (own mark, not a copy of
-                    // any existing card network logo).
-                    SizedBox(
-                      width: 34,
-                      height: 22,
-                      child: Stack(
-                        children: [
-                          Positioned(
-                            left: 0,
-                            child: Container(
-                              width: 22,
-                              height: 22,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: _C.gold.withOpacity(0.85),
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            right: 0,
-                            child: Container(
-                              width: 22,
-                              height: 22,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.white.withOpacity(0.85),
-                              ),
-                            ),
-                          ),
-                        ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        "WALLET ID",
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.35),
+                          fontSize: 8,
+                          letterSpacing: 0.8,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        "ACTIVE",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 14),
+                  SizedBox(
+                    width: 34,
+                    height: 22,
+                    child: Stack(
+                      children: [
+                        Positioned(
+                          left: 0,
+                          child: Container(
+                            width: 22,
+                            height: 22,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: _C.gold.withOpacity(0.85),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          right: 0,
+                          child: Container(
+                            width: 22,
+                            height: 22,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white.withOpacity(0.85),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ],
-            ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 
   /// Statistics section — standard fintech style: a donut breakdown chart
   /// with a center total, plus a clean legend (colored dot + label + amount

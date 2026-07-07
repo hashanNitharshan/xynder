@@ -9,7 +9,59 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../services/api_service.dart';
 import '../services/update_service.dart';
-import 'login_screen.dart';
+
+// ─────────────────────────────────────────────────────────────
+//  DESIGN TOKENS - SAME STYLE AS wallet_transfer_screen.dart
+//  (dark yellow / dark black)
+// ─────────────────────────────────────────────────────────────
+class _C {
+  static const bg = Color(0xff000000);
+  static const surface = Color(0xff0D0D0D);
+  static const surfaceAlt = Color(0xff171717);
+
+  static const border = Color(0xff2E2E2E);
+  static const borderFaint = Color(0xff202020);
+
+  static const orange = Color(0xffB8860B); // dark goldenrod
+  static const amber = Color(0xff9A6B00); // deep amber
+  static const gold = Color(0xffD4A017); // muted gold highlight
+
+  static const red = Color(0xffEF4444);
+  static const green = Color(0xff22C55E);
+
+  static const textPrimary = Colors.white;
+  static const textSecondary = Color(0xffA3A3A3);
+
+  static const gradientAccent = LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [
+      Color(0xff8A6300),
+      Color(0xffB8860B),
+      Color(0xffD4A017),
+    ],
+  );
+
+  static const gradientCard = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      Color(0xff050505),
+      Color(0xff111111),
+      Color(0xff1A1500),
+    ],
+  );
+
+  static const gradientGlow = RadialGradient(
+    center: Alignment(-0.2, -0.6),
+    radius: 1.2,
+    colors: [
+      Color(0x55B8860B),
+      Color(0x22D4A017),
+      Color(0x00000000),
+    ],
+  );
+}
 
 /// Works in two modes:
 ///   Mode 1 — Called by UpdateService: all params supplied, no extra fetch.
@@ -18,7 +70,7 @@ class UpdateScreen extends StatefulWidget {
   final String? currentVersion;
   final String? serverVersion;
   final String? apkUrl;
-  final bool    forceUpdate;
+  final bool forceUpdate;
 
   const UpdateScreen({
     super.key,
@@ -34,72 +86,45 @@ class UpdateScreen extends StatefulWidget {
 
 class _UpdateScreenState extends State<UpdateScreen>
     with SingleTickerProviderStateMixin {
-
-  // BitXnow blue -> purple palette
-  static const _bg      = Color(0xff070A12);
-  static const _surface = Color(0xff10131C);
-  static const _border  = Color(0xff232A3A);
-  static const _blue    = Color(0xff2E9BFF);
-  static const _blueDeep= Color(0xff2563EB);
-  static const _purple  = Color(0xff7C3AED);
-  static const _purpleLt= Color(0xff9B6BFF);
-  static const _muted   = Color(0xff8A93A6);
-
-  static const _gradientAccent = LinearGradient(
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
-    colors: [_blue, _blueDeep, _purple],
-  );
-  static const _gradientCard = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [Color(0xff141826), Color(0xff0E1119), Color(0xff070A12)],
-  );
-  static const _gradientGlow = RadialGradient(
-    center: Alignment(-0.2, -0.6),
-    radius: 1.2,
-    colors: [Color(0x552E9BFF), Color(0x337C3AED), Color(0x00000000)],
-  );
-
   String _currentVer = '';
-  String _serverVer  = '';
-  String _apkUrl     = '';
-  bool   _forceUpdt  = false;
+  String _serverVer = '';
+  String _apkUrl = '';
+  bool _forceUpdt = false;
 
   bool _fetching = false;
   bool _fetchErr = false;
   bool _upToDate = false;
 
-  double _progress    = 0;
-  bool   _downloading = false;
-  bool   _hasError    = false;
-  bool   _installed   = false;
-  String _status      = '';
+  double _progress = 0;
+  bool _downloading = false;
+  bool _hasError = false;
+  bool _installed = false;
+  String _status = '';
 
-  late AnimationController _animCtrl;
-  late Animation<double>   _fade;
-  late Animation<Offset>   _slide;
+  late AnimationController _anim;
+  late Animation<double> _fade;
+  late Animation<Offset> _slide;
 
   @override
   void initState() {
     super.initState();
-    _animCtrl = AnimationController(
+    _anim = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 650),
     );
-    _fade  = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut);
+    _fade = CurvedAnimation(parent: _anim, curve: Curves.easeOut);
     _slide = Tween<Offset>(
-      begin: const Offset(0, 0.07),
+      begin: const Offset(0, 0.05),
       end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut));
+    ).animate(CurvedAnimation(parent: _anim, curve: Curves.easeOut));
 
     if (widget.serverVersion != null) {
       // Mode 1: pre-filled by UpdateService
       _currentVer = widget.currentVersion ?? '';
-      _serverVer  = widget.serverVersion!;
-      _apkUrl     = widget.apkUrl ?? '';
-      _forceUpdt  = widget.forceUpdate;
-      _animCtrl.forward();
+      _serverVer = widget.serverVersion!;
+      _apkUrl = widget.apkUrl ?? '';
+      _forceUpdt = widget.forceUpdate;
+      _anim.forward();
     } else {
       // Mode 2: Settings — fetch ourselves
       _fetchVersionInfo();
@@ -108,12 +133,16 @@ class _UpdateScreenState extends State<UpdateScreen>
 
   @override
   void dispose() {
-    _animCtrl.dispose();
+    _anim.dispose();
     super.dispose();
   }
 
   Future<void> _fetchVersionInfo() async {
-    setState(() { _fetching = true; _fetchErr = false; _upToDate = false; });
+    setState(() {
+      _fetching = true;
+      _fetchErr = false;
+      _upToDate = false;
+    });
 
     try {
       final info = await PackageInfo.fromPlatform();
@@ -134,23 +163,27 @@ class _UpdateScreenState extends State<UpdateScreen>
 
         setState(() {
           _serverVer = sv;
-          _apkUrl    = data['apk_url']?.toString() ?? '';
+          _apkUrl = data['apk_url']?.toString() ?? '';
           _forceUpdt = data['force_update'] == true;
-          _fetching  = false;
-          // Treat as "up to date" if server isn't newer than installed.
-          // This naturally covers the post-install case: once the user
-          // actually opens the newly installed APK, PackageInfo reports
-          // the new version, so server is no longer "newer" → up to date.
-          _upToDate  = !isNewer;
+          _fetching = false;
+          _upToDate = !isNewer;
         });
       } else {
-        setState(() { _fetching = false; _fetchErr = true; });
+        setState(() {
+          _fetching = false;
+          _fetchErr = true;
+        });
       }
     } catch (_) {
-      setState(() { _fetching = false; _fetchErr = true; });
+      setState(() {
+        _fetching = false;
+        _fetchErr = true;
+      });
     }
 
-    _animCtrl..reset()..forward();
+    _anim
+      ..reset()
+      ..forward();
   }
 
   Future<void> _dismissUpdate() async {
@@ -161,10 +194,10 @@ class _UpdateScreenState extends State<UpdateScreen>
   Future<void> _downloadAndInstall() async {
     setState(() {
       _downloading = true;
-      _hasError    = false;
-      _installed   = false;
-      _status      = 'Preparing...';
-      _progress    = 0;
+      _hasError = false;
+      _installed = false;
+      _status = '';
+      _progress = 0;
     });
 
     try {
@@ -177,12 +210,10 @@ class _UpdateScreenState extends State<UpdateScreen>
         }
       }
 
-      final dir      = await getApplicationDocumentsDirectory();
+      final dir = await getApplicationDocumentsDirectory();
       final savePath = '${dir.path}/wallet_update.apk';
-      final old      = File(savePath);
+      final old = File(savePath);
       if (await old.exists()) await old.delete();
-
-      setState(() => _status = 'Downloading...');
 
       await Dio().download(
         _apkUrl,
@@ -192,13 +223,12 @@ class _UpdateScreenState extends State<UpdateScreen>
           if (total != -1) {
             setState(() {
               _progress = received / total;
-              _status   = 'Downloading ${(_progress * 100).toStringAsFixed(0)}%';
             });
           }
         },
       );
 
-      setState(() { _status = 'Installing...'; _progress = 1.0; });
+      setState(() => _progress = 1.0);
 
       final result = await OpenFile.open(
         savePath,
@@ -206,34 +236,31 @@ class _UpdateScreenState extends State<UpdateScreen>
       );
 
       if (result.type != ResultType.done) {
-        _setError('Install failed: ${result.message}');
+        _setError('Install failed. Please try again.');
       } else {
-        // Mark this server version as handled so neither the auto-check
-        // nor the Settings button nags about it again before the user
-        // actually opens the newly installed APK.
         await UpdateService.markVersionSkipped(_serverVer);
         setState(() {
-          _installed   = true;
+          _installed = true;
           _downloading = false;
-          _status      = 'Follow the on-screen prompts to complete installation.';
         });
       }
-    } on DioException catch (e) {
-      _setError('Download failed: ${e.message ?? "Network error"}');
+    } on DioException catch (_) {
+      _setError('Network error. Please try again.');
     } catch (_) {
-      _setError('Update failed. Please try again.');
+      _setError('Something went wrong. Please try again.');
     }
   }
 
   void _setError(String msg) => setState(() {
         _downloading = false;
-        _hasError    = true;
-        _status      = msg;
-        _progress    = 0;
+        _hasError = true;
+        _status = msg;
+        _progress = 0;
       });
 
   Widget _glowBall(double size, double opacity, Color color) => Container(
-        width: size, height: size,
+        width: size,
+        height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: color.withOpacity(opacity),
@@ -245,454 +272,375 @@ class _UpdateScreenState extends State<UpdateScreen>
         decoration: BoxDecoration(
           gradient: LinearGradient(colors: [
             Colors.transparent,
-            _blue.withOpacity(0.3),
+            _C.gold.withOpacity(0.3),
             Colors.transparent,
           ]),
-        ),
-      );
-
-  Widget _bullet(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 6),
-        child: Row(
-          children: [
-            Container(width: 5, height: 5,
-                decoration: const BoxDecoration(
-                    shape: BoxShape.circle, color: _blue)),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(text,
-                  style: const TextStyle(
-                      color: Colors.white60, fontSize: 12, height: 1.4)),
-            ),
-          ],
         ),
       );
 
   Widget _versionChip({
     required String label,
     required String version,
-    required Color  color,
-    bool isNew = false,
+    required Color color,
   }) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.07),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: color.withOpacity(0.22)),
+          color: color.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withOpacity(0.25)),
         ),
         child: Column(
           children: [
-            Text(label,
-                style: TextStyle(
-                    color: color.withOpacity(0.65),
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.2)),
-            const SizedBox(height: 8),
-            Text('v$version',
-                style: TextStyle(
-                    color: color, fontSize: 22, fontWeight: FontWeight.w900)),
-            if (isNew) ...[
-              const SizedBox(height: 6),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: _blue.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Text('LATEST',
-                    style: TextStyle(
-                        color: _blue,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1.0)),
+            Text(
+              label,
+              style: TextStyle(
+                color: color.withOpacity(0.7),
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.0,
               ),
-            ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'v$version',
+              style: TextStyle(
+                color: color,
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _gradientBtn(
-      {required String label,
-      required IconData icon,
-      required VoidCallback onTap}) {
+  Widget _gradientBtn({
+    required String label,
+    required VoidCallback onTap,
+    IconData? icon,
+    bool loading = false,
+  }) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: loading ? null : onTap,
       child: Container(
-        width: double.infinity, height: 56,
+        width: double.infinity,
+        height: 54,
         decoration: BoxDecoration(
-          gradient: _gradientAccent,
-          borderRadius: BorderRadius.circular(18),
+          gradient: _C.gradientAccent,
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-                color: _purple.withOpacity(0.35),
-                blurRadius: 18,
-                offset: const Offset(0, 7))
+              color: _C.orange.withOpacity(0.3),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
           ],
         ),
         child: Center(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, color: Colors.white, size: 20),
-              const SizedBox(width: 9),
-              Text(label,
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 16)),
-            ],
-          ),
+          child: loading
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.3,
+                    color: Colors.white,
+                  ),
+                )
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (icon != null) ...[
+                      Icon(icon, color: Colors.white, size: 18),
+                      const SizedBox(width: 8),
+                    ],
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 15,
+                      ),
+                    ),
+                  ],
+                ),
         ),
       ),
     );
   }
 
-  Widget _ghostBtn(
-      {required String label, required VoidCallback onTap}) {
+  Widget _ghostBtn({required String label, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: double.infinity, height: 50,
+        width: double.infinity,
+        height: 48,
         decoration: BoxDecoration(
-          color: _surface,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: _border),
+          color: _C.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: _C.border),
         ),
         child: Center(
-          child: Text(label,
-              style: const TextStyle(
-                  color: _muted,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 14)),
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: _C.textSecondary,
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
+            ),
+          ),
         ),
       ),
     );
   }
 
-  Widget _statusBox() {
-    final iconData  = _hasError
-        ? Icons.error_outline_rounded
-        : _installed
-            ? Icons.check_circle_outline_rounded
-            : Icons.download_rounded;
-    final iconColor = _hasError
-        ? Colors.redAccent
-        : _installed ? Colors.greenAccent : _blue;
-
+  /// Simple, single-line progress bar shown only while downloading.
+  Widget _progressBar() {
     return Column(
       children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: _surface.withOpacity(0.6),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: _hasError
-                  ? Colors.red.withOpacity(0.25)
-                  : _installed
-                      ? Colors.green.withOpacity(0.25)
-                      : _blue.withOpacity(0.15),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(iconData, color: iconColor, size: 16),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(_status,
-                        style: TextStyle(
-                            color: _hasError
-                                ? Colors.redAccent
-                                : _installed
-                                    ? Colors.greenAccent
-                                    : Colors.white70,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            height: 1.4)),
-                  ),
-                  if (_downloading && _progress > 0)
-                    Text('${(_progress * 100).toStringAsFixed(0)}%',
-                        style: const TextStyle(
-                            color: _blue,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w900)),
-                ],
-              ),
-              if (_downloading) ...[
-                const SizedBox(height: 12),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: LinearProgressIndicator(
-                    value: _progress > 0 ? _progress : null,
-                    backgroundColor: _border,
-                    valueColor: const AlwaysStoppedAnimation(_blue),
-                    minHeight: 8,
-                  ),
-                ),
-              ],
-            ],
+        ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: LinearProgressIndicator(
+            value: _progress > 0 ? _progress : null,
+            backgroundColor: _C.border,
+            valueColor: const AlwaysStoppedAnimation(_C.gold),
+            minHeight: 7,
           ),
         ),
-        if (_downloading) ...[
-          const SizedBox(height: 10),
-          const Text('Do not close the app during download',
-              style: TextStyle(color: Colors.white24, fontSize: 11)),
-        ],
+        const SizedBox(height: 8),
+        Text(
+          '${(_progress * 100).toStringAsFixed(0)}%',
+          style: const TextStyle(
+            color: _C.gold,
+            fontSize: 12,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
       ],
     );
   }
 
+  Widget _errorBanner() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: _C.red.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _C.red.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline_rounded, color: _C.red, size: 16),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              _status,
+              style: const TextStyle(
+                color: Colors.redAccent,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _loadingBody() => const SizedBox(
-        height: 260,
+        height: 240,
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CircularProgressIndicator(color: _blue, strokeWidth: 2.5),
-              SizedBox(height: 20),
-              Text('Checking for updates...',
-                  style: TextStyle(color: _muted, fontSize: 14)),
+              CircularProgressIndicator(color: _C.gold, strokeWidth: 2.5),
+              SizedBox(height: 18),
+              Text(
+                'Checking...',
+                style: TextStyle(color: _C.textSecondary, fontSize: 13),
+              ),
             ],
           ),
         ),
       );
 
   Widget _errorBody() => Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.wifi_off_rounded, color: _muted, size: 52),
-          const SizedBox(height: 16),
-          const Text('Unable to Check',
-              style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900)),
-          const SizedBox(height: 8),
+          const Icon(Icons.wifi_off_rounded, color: _C.textSecondary, size: 48),
+          const SizedBox(height: 14),
           const Text(
-            'Could not reach the update server.\nCheck your connection and try again.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: _muted, fontSize: 13, height: 1.6),
+            'Unable to Check',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+            ),
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 6),
+          const Text(
+            'Check your connection and try again.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: _C.textSecondary, fontSize: 12.5, height: 1.5),
+          ),
+          const SizedBox(height: 24),
           _gradientBtn(
-              label: 'Try Again',
-              icon: Icons.refresh_rounded,
-              onTap: _fetchVersionInfo),
+            label: 'Try Again',
+            icon: Icons.refresh_rounded,
+            onTap: _fetchVersionInfo,
+          ),
         ],
       );
 
   Widget _upToDateBody() => Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 84, height: 84,
+            width: 76,
+            height: 76,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.green.withOpacity(0.08),
-              border:
-                  Border.all(color: Colors.green.withOpacity(0.4), width: 2),
-              boxShadow: [
-                BoxShadow(
-                    color: Colors.green.withOpacity(0.2), blurRadius: 28)
-              ],
+              color: _C.green.withOpacity(0.08),
+              border: Border.all(color: _C.green.withOpacity(0.4), width: 2),
             ),
-            child: const Icon(Icons.check_rounded,
-                color: Colors.greenAccent, size: 44),
+            child: const Icon(Icons.check_rounded, color: _C.green, size: 40),
           ),
-          const SizedBox(height: 20),
-          const Text("You're Up to Date!",
-              style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900)),
-          const SizedBox(height: 8),
-          const Text('BitXnow Wallet is running the\nlatest version.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: _muted, fontSize: 13, height: 1.6)),
-          const SizedBox(height: 28),
+          const SizedBox(height: 18),
+          const Text(
+            "You're Up to Date",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 21,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 18),
           Row(
             children: [
               _versionChip(
-                  label: 'INSTALLED',
-                  version: _currentVer,
-                  color: Colors.greenAccent),
-              const SizedBox(width: 12),
+                label: 'INSTALLED',
+                version: _currentVer,
+                color: _C.green,
+              ),
+              const SizedBox(width: 10),
               _versionChip(
-                  label: 'LATEST',
-                  version: _serverVer,
-                  color: _blue,
-                  isNew: true),
+                label: 'LATEST',
+                version: _serverVer,
+                color: _C.gold,
+              ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
           _ghostBtn(label: 'Check Again', onTap: _fetchVersionInfo),
         ],
       );
 
-  Widget _updateBody() => Column(
+  /// After a successful install, keep it minimal — a checkmark and a
+  /// single "Okay" button. No extra instructional text.
+  Widget _installedBody() => Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+            width: 76,
+            height: 76,
             decoration: BoxDecoration(
-              color: _forceUpdt
-                  ? Colors.red.withOpacity(0.12)
-                  : _blue.withOpacity(0.10),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: _forceUpdt
-                    ? Colors.red.withOpacity(0.35)
-                    : _blue.withOpacity(0.30),
+              shape: BoxShape.circle,
+              color: _C.green.withOpacity(0.08),
+              border: Border.all(color: _C.green.withOpacity(0.4), width: 2),
+            ),
+            child: const Icon(Icons.check_rounded, color: _C.green, size: 40),
+          ),
+          const SizedBox(height: 18),
+          const Text(
+            'Done',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 21,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 22),
+          _gradientBtn(
+            label: 'Okay',
+            onTap: () => Navigator.pop(context),
+          ),
+        ],
+      );
+
+  Widget _updateBody() => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ShaderMask(
+            shaderCallback: (b) => _C.gradientAccent.createShader(b),
+            child: Text(
+              _forceUpdt ? 'Update Required' : 'New Version',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.4,
               ),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  _forceUpdt
-                      ? Icons.warning_amber_rounded
-                      : Icons.system_update_rounded,
-                  color: _forceUpdt ? Colors.redAccent : _blue,
-                  size: 14,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  _forceUpdt ? 'UPDATE REQUIRED' : 'UPDATE AVAILABLE',
-                  style: TextStyle(
-                    color: _forceUpdt ? Colors.redAccent : _blue,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-              ],
-            ),
           ),
-          const SizedBox(height: 16),
-          ShaderMask(
-            shaderCallback: (b) => _gradientAccent.createShader(b),
-            child: const Text('New Version Ready',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 27,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.5)),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _forceUpdt
-                ? 'This update is required to continue\nusing the BitXnow Wallet app.'
-                : 'A newer version of BitXnow Wallet\nis available for download.',
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: _muted, fontSize: 13, height: 1.6),
-          ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 18),
           Row(
             children: [
               _versionChip(
-                  label: 'CURRENT', version: _currentVer, color: _muted),
+                label: 'CURRENT',
+                version: _currentVer,
+                color: _C.textSecondary,
+              ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 10),
                 child: Icon(Icons.arrow_forward_rounded,
-                    color: _blue.withOpacity(0.6), size: 22),
+                    color: _C.gold.withOpacity(0.6), size: 20),
               ),
               _versionChip(
-                  label: 'NEW',
-                  version: _serverVer,
-                  color: _blue,
-                  isNew: true),
+                label: 'NEW',
+                version: _serverVer,
+                color: _C.gold,
+              ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 22),
           _divider(),
-          const SizedBox(height: 24),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: const Color(0xff0E1626).withOpacity(0.6),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: _blue.withOpacity(0.15)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(
-                  children: [
-                    Icon(Icons.auto_awesome_rounded, color: _blue, size: 14),
-                    SizedBox(width: 6),
-                    Text("WHAT'S NEW",
-                        style: TextStyle(
-                            color: _blue,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1.1)),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                _bullet('Performance improvements'),
-                _bullet('Improved security & stability'),
-                _bullet('Latest feature updates'),
-              ],
-            ),
-          ),
           const SizedBox(height: 20),
-          if (_downloading || _hasError || _installed) ...[
-            _statusBox(),
-            const SizedBox(height: 20),
+          if (_downloading) ...[
+            _progressBar(),
+            const SizedBox(height: 18),
           ],
-          if (!_downloading || _hasError) ...[
+          if (_hasError) ...[
+            _errorBanner(),
+            const SizedBox(height: 16),
+          ],
+          if (!_downloading) ...[
             _gradientBtn(
-              label: _hasError ? 'Retry Download' : 'Update Now',
-              icon: _hasError
-                  ? Icons.refresh_rounded
-                  : Icons.download_rounded,
+              label: _hasError ? 'Retry' : 'Update Now',
+              icon: _hasError ? Icons.refresh_rounded : Icons.download_rounded,
               onTap: _downloadAndInstall,
             ),
             if (!_forceUpdt) ...[
-              const SizedBox(height: 12),
-              _ghostBtn(
-                label: 'Remind Me Later',
-                onTap: _dismissUpdate,
-              ),
+              const SizedBox(height: 10),
+              _ghostBtn(label: 'Later', onTap: _dismissUpdate),
             ],
-          ],
-          if (_forceUpdt && !_downloading && !_installed) ...[
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.info_outline_rounded,
-                    color: Colors.white24, size: 13),
-                const SizedBox(width: 6),
-                Text('Back button will exit the app',
-                    style: TextStyle(
-                        color: Colors.white.withOpacity(0.2),
-                        fontSize: 11)),
-              ],
-            ),
           ],
         ],
       );
 
   Widget _card(Widget child) => Container(
-        padding: const EdgeInsets.all(28),
+        padding: const EdgeInsets.all(26),
         decoration: BoxDecoration(
-          gradient: _gradientCard,
-          borderRadius: BorderRadius.circular(32),
-          border: Border.all(color: const Color(0xff232A3A)),
+          gradient: _C.gradientCard,
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(color: _C.border),
           boxShadow: [
             BoxShadow(
-                color: _purple.withOpacity(0.25),
-                blurRadius: 55,
-                offset: const Offset(0, 24))
+              color: _C.orange.withOpacity(0.2),
+              blurRadius: 50,
+              offset: const Offset(0, 22),
+            ),
           ],
         ),
         child: Stack(
@@ -700,8 +648,8 @@ class _UpdateScreenState extends State<UpdateScreen>
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(32),
-                  gradient: _gradientGlow,
+                  borderRadius: BorderRadius.circular(30),
+                  gradient: _C.gradientGlow,
                 ),
               ),
             ),
@@ -709,23 +657,20 @@ class _UpdateScreenState extends State<UpdateScreen>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 100, height: 100,
-                  padding: const EdgeInsets.all(14),
+                  width: 88,
+                  height: 88,
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.05),
-                    border: Border.all(color: _blue, width: 2),
-                    boxShadow: [
-                      BoxShadow(
-                          color: _purple.withOpacity(0.30), blurRadius: 32)
-                    ],
+                    color: Colors.white.withOpacity(0.04),
+                    border: Border.all(color: _C.gold, width: 2),
                   ),
                   child: Image.asset(
                     "assets/images/bitxnow_logo.jpeg",
                     fit: BoxFit.contain,
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 18),
                 child,
               ],
             ),
@@ -741,22 +686,18 @@ class _UpdateScreenState extends State<UpdateScreen>
         if (!didPop && _forceUpdt) SystemNavigator.pop();
       },
       child: Scaffold(
-        backgroundColor: _bg,
+        backgroundColor: _C.bg,
         body: Stack(
           children: [
-            Positioned(top: -110, left: -80,
-                child: _glowBall(270, 0.10, _blue)),
-            Positioned(bottom: -130, right: -80,
-                child: _glowBall(310, 0.10, _purple)),
-            Positioned(top: 140, right: 60,
-                child: _glowBall(80, 0.06, _blue)),
+            Positioned(top: -110, left: -80, child: _glowBall(260, 0.08, _C.gold)),
+            Positioned(bottom: -130, right: -80, child: _glowBall(300, 0.08, _C.amber)),
 
             SafeArea(
               child: Center(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(22),
+                  padding: const EdgeInsets.all(20),
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 460),
+                    constraints: const BoxConstraints(maxWidth: 440),
                     child: _fetching
                         ? _card(_loadingBody())
                         : FadeTransition(
@@ -766,9 +707,11 @@ class _UpdateScreenState extends State<UpdateScreen>
                               child: _card(
                                 _fetchErr
                                     ? _errorBody()
-                                    : _upToDate
-                                        ? _upToDateBody()
-                                        : _updateBody(),
+                                    : _installed
+                                        ? _installedBody()
+                                        : _upToDate
+                                            ? _upToDateBody()
+                                            : _updateBody(),
                               ),
                             ),
                           ),

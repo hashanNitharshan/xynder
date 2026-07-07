@@ -34,16 +34,22 @@ class Conversation extends Model
     }
 
     /**
-     * Single source of truth for auto-locking.
+     * Single source of truth for auto-locking. Call this on every
+     * fetch/send from ANY controller (API or Web) — the logic lives
+     * here once, not duplicated per controller.
      *
-     * - Request-linked conversations: lock state is driven ENTIRELY by the
-     *   linked WalletRequest's status. As soon as a request is approved,
-     *   rejected, or closed (by admin, merchant, or client — any controller),
-     *   the chat locks the next time this is checked. No controller needs to
-     *   call anything explicitly.
+     * - Request-linked conversations:
+     *   1. If the linked WalletRequest has sat "pending" for 10+ minutes,
+     *      it's force-closed here.
+     *   2. Once the request is approved / rejected / closed (by anyone,
+     *      anywhere), the chat locks on the next check.
+     *   NOTE: we always re-query the WalletRequest directly instead of
+     *   using the cached Eloquent relation, so a status change made in
+     *   one request is seen immediately even if this Conversation was
+     *   eager-loaded earlier in the same request lifecycle.
      *
-     * - Transfer-linked conversations: unrelated feature, keeps its own
-     *   15-minute-from-first-message timer.
+     * - Transfer-linked conversations: independent 15-minute timer
+     *   starting from chat_started_at.
      */
     public function lockIfExpired(): void
     {
@@ -52,13 +58,26 @@ class Conversation extends Model
         }
 
         if ($this->wallet_request_id) {
-            $this->loadMissing('walletRequest');
+            $walletRequest = $this->walletRequest()->first();
 
-            if ($this->walletRequest && in_array($this->walletRequest->status, ['approved', 'rejected', 'closed'], true)) {
-                $this->forceFill([
-                    'locked_at' => now(),
-                    'lock_reason' => 'request_' . $this->walletRequest->status,
-                ])->save();
+            if ($walletRequest) {
+                $status = strtolower((string) $walletRequest->status);
+
+                if ($status === 'pending'
+                    && $walletRequest->created_at
+                    && now()->diffInMinutes($walletRequest->created_at) >= 10) {
+                    $walletRequest->update(['status' => 'closed']);
+                    $status = 'closed';
+                }
+
+                if (in_array($status, ['approved', 'rejected', 'closed'], true)) {
+                    $this->forceFill([
+                        'locked_at' => now(),
+                        'lock_reason' => 'request_' . $status,
+                    ])->save();
+                }
+
+                $this->setRelation('walletRequest', $walletRequest);
             }
 
             return;
@@ -81,13 +100,13 @@ class Conversation extends Model
 
         // Request-linked: countdown is 10 minutes from the request's creation time.
         if ($this->wallet_request_id) {
-            $this->loadMissing('walletRequest');
+            $walletRequest = $this->walletRequest()->first();
 
-            if (! $this->walletRequest || ! $this->walletRequest->created_at) {
+            if (! $walletRequest || ! $walletRequest->created_at) {
                 return 0;
             }
 
-            $deadline = $this->walletRequest->created_at->copy()->addMinutes(10);
+            $deadline = $walletRequest->created_at->copy()->addMinutes(10);
             return max(0, (int) now()->diffInSeconds($deadline, false));
         }
 

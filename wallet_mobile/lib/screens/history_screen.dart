@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
-import 'chat_screen.dart';
 import 'transaction_detail_screen.dart';
 
 class _C {
@@ -357,21 +356,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
 
     return GestureDetector(
+      // Both requests and transfers go straight to the summary/detail screen now.
       onTap: () {
-        if (isTransfer) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => TransactionDetailScreen(
-                item: r,
-                sourceType: "transfer",
-                user: user,
-              ),
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => TransactionDetailScreen(
+              item: r,
+              sourceType: isTransfer ? "transfer" : "request",
+              user: user,
             ),
-          );
-        } else {
-          _showRequestOptions(r);
-        }
+          ),
+        );
       },
       child: Container(
         margin: const EdgeInsets.fromLTRB(20, 0, 20, 10),
@@ -476,146 +472,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ),
                 ),
               ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Map<String, dynamic> _merchantForChat(Map<String, dynamic> item) {
-    return {
-      "id": item["merchant_id"] ?? item["merchant"]?["id"],
-      "name": item["merchant_name"] ?? item["merchant"]?["name"] ?? "Merchant",
-      "wallet_id": item["merchant_wallet_id"] ?? item["merchant"]?["wallet_id"],
-      "photo_url": item["merchant_photo_url"] ?? item["merchant"]?["photo_url"],
-      "photo": item["merchant_photo"] ?? item["merchant"]?["photo"],
-      "is_online": item["merchant"]?["is_online"],
-      "role": "merchant",
-    };
-  }
-
-  Future<void> _showRequestOptions(Map<String, dynamic> item) async {
-    await showModalBottomSheet(
-      context: context,
-      backgroundColor: _C.surfaceAlt,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (_) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  "Request Options",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 18),
-                _optionTile(
-                  icon: Icons.receipt_long_rounded,
-                  title: "Summary / Receipt",
-                  sub: "View request details",
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => TransactionDetailScreen(
-                          item: item,
-                          sourceType: "request",
-                          user: user,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 10),
-                _optionTile(
-                  icon: Icons.chat_rounded,
-                  title: "Chat",
-                  sub: "Open request chat",
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ChatScreen(
-                          chatType: "request",
-                          chatId: item["id"].toString(),
-                          otherUser: _merchantForChat(item),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _optionTile({
-    required IconData icon,
-    required String title,
-    required String sub,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: _C.surface,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: _C.border),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: _C.gold.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(icon, color: _C.orange, size: 21),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  Text(
-                    sub,
-                    style: const TextStyle(
-                      color: _C.textSecondary,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(
-              Icons.arrow_forward_ios_rounded,
-              color: _C.textSecondary,
-              size: 14,
             ),
           ],
         ),

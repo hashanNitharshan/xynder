@@ -149,6 +149,7 @@
     font-size:13px;font-weight:600;white-space:nowrap;vertical-align:middle;
 }
 .mreq-table tr:hover td{background:var(--surface-alt)}
+.mreq-row-click{cursor:pointer}
 .mreq-ref{font-family:monospace;color:var(--yellow);font-weight:800}
 .mreq-date{color:var(--muted);font-size:12px;font-weight:700}
 .mreq-client{display:flex;align-items:center;gap:10px}
@@ -307,9 +308,10 @@
                             $clientName = $r->user->name ?? '-';
                             $isBuy = $r->type === 'deposit';
                             $refNo = $r->transaction_no ?? 'TNS'.str_pad($r->id, 9, '0', STR_PAD_LEFT);
+                            $historyUrl = route('merchant.history.show', ['request', $r->id]);
                         @endphp
 
-                        <tr>
+                        <tr class="mreq-row-click" onclick="window.location='{{ $historyUrl }}'">
                             <td data-label="Date">
                                 <span class="mreq-date">{{ $r->created_at?->format('d M Y, H:i') }}</span>
                             </td>
@@ -354,7 +356,7 @@
                                 </span>
                             </td>
 
- <td data-label="Action">
+ <td data-label="Action" onclick="event.stopPropagation()">
     <div class="mreq-actions">
 
         @if($r->status === 'pending')

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'chat_screen.dart';
+
 class TransactionDetailScreen extends StatelessWidget {
   final Map item;
   final String sourceType;
@@ -14,6 +16,8 @@ class TransactionDetailScreen extends StatelessWidget {
   });
 
   static const bg = Color(0xff000000);
+  static const cardBg = Color(0xff0D0D0D);
+  static const cardBorder = Color(0xff2E2E2E);
   static const green = Color(0xff00C076);
   static const red = Color(0xffef4444);
   static const amber = Color(0xffFFB800);
@@ -58,17 +62,19 @@ class TransactionDetailScreen extends StatelessWidget {
     return "${amount.toStringAsFixed(amount.truncateToDouble() == amount ? 0 : 2)} USDT";
   }
 
-String get status {
-  if (sourceType == "transfer") return "Transfer Completed";
+  // "Chat Locked" wording removed from the accepted/rejected states —
+  // now just shows the plain request status.
+  String get status {
+    if (sourceType == "transfer") return "Transfer Completed";
 
-  final s = item["status"]?.toString().toLowerCase() ?? "pending";
+    final s = item["status"]?.toString().toLowerCase() ?? "pending";
 
-  if (s == "closed") return "Transaction Closed";
-  if (s == "approved") return "Request Accepted - Chat Locked";
-  if (s == "rejected") return "Request Rejected - Chat Locked";
+    if (s == "closed") return "Transaction Closed";
+    if (s == "approved") return "Request Accepted";
+    if (s == "rejected") return "Request Rejected";
 
-  return "Request Pending";
-}
+    return "Request Pending";
+  }
 
   Color get statusColor {
     final s = item["status"]?.toString().toLowerCase() ?? "";
@@ -126,6 +132,68 @@ String get status {
     final total = xynder + network;
     if (total == 0) return "0";
     return total.toStringAsFixed(2);
+  }
+
+  // ── Other-party lookup (for the connect/chat row) ─────────────────────
+  // Works out who the current user is chatting with, regardless of
+  // whether the viewer is the client or the merchant on this request,
+  // or the sender or receiver on a transfer.
+  Map<String, dynamic> _otherParty() {
+    if (sourceType == "transfer") {
+      final myId = user["id"]?.toString();
+      final senderId = item["sender_id"]?.toString();
+      final isSender = senderId == myId;
+
+      return {
+        "id": isSender ? item["receiver_id"] : item["sender_id"],
+        "name": isSender
+            ? (item["receiver_name"] ?? "User")
+            : (item["sender_name"] ?? "User"),
+        "wallet_id": isSender
+            ? (item["receiver_wallet_id"] ?? item["receiver_id"])
+            : (item["sender_wallet_id"] ?? item["sender_id"]),
+        "photo_url": isSender
+            ? item["receiver_photo_url"]
+            : item["sender_photo_url"],
+        "photo": isSender ? item["receiver_photo"] : item["sender_photo"],
+        "role": "user",
+        "role_label": "User",
+      };
+    }
+
+    final myRole = user["role"]?.toString().toLowerCase() ?? "client";
+
+    if (myRole == "merchant") {
+      return {
+        "id": item["client_id"] ?? item["user_id"] ?? item["client"]?["id"],
+        "name": item["client_name"] ??
+            item["user_name"] ??
+            item["client"]?["name"] ??
+            "Client",
+        "wallet_id": item["client_wallet_id"] ??
+            item["user_wallet_id"] ??
+            item["client"]?["wallet_id"],
+        "photo_url": item["client_photo_url"] ??
+            item["user_photo_url"] ??
+            item["client"]?["photo_url"],
+        "photo": item["client_photo"] ?? item["client"]?["photo"],
+        "role": "client",
+        "role_label": "Client",
+      };
+    }
+
+    return {
+      "id": item["merchant_id"] ?? item["merchant"]?["id"],
+      "name": item["merchant_name"] ?? item["merchant"]?["name"] ?? "Merchant",
+      "wallet_id":
+          item["merchant_wallet_id"] ?? item["merchant"]?["wallet_id"],
+      "photo_url":
+          item["merchant_photo_url"] ?? item["merchant"]?["photo_url"],
+      "photo": item["merchant_photo"] ?? item["merchant"]?["photo"],
+      "is_online": item["merchant"]?["is_online"],
+      "role": "merchant",
+      "role_label": "Merchant",
+    };
   }
 
   void copy(BuildContext context, String text) {
@@ -188,6 +256,84 @@ String get status {
     );
   }
 
+  // ── Connect-with-other-party row ──────────────────────────────────────
+  // Now leads with the other party's actual name as the heading, with the
+  // role (Merchant / Client / User) shown underneath as a muted subtitle —
+  // no more "Chat with ..." wording.
+  Widget _chatWithRow(BuildContext context) {
+    final other = _otherParty();
+    final name = other["name"]?.toString() ?? "User";
+    final roleLabel = other["role_label"]?.toString() ?? "User";
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ChatScreen(
+              chatType: sourceType,
+              chatId: item["id"].toString(),
+              otherUser: Map<String, dynamic>.from(other),
+            ),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(28, 0, 28, 26),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: cardBg,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: cardBorder),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: amber.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(Icons.chat_rounded, color: amber, size: 21),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    roleLabel,
+                    style: const TextStyle(
+                      color: textMuted,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: textMuted,
+              size: 14,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final amountTitle = isClosed ? "Status" : "Quantity";
@@ -221,59 +367,73 @@ String get status {
               ),
             ),
 
-            const SizedBox(height: 70),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 50),
 
-            Text(amountTitle, style: const TextStyle(color: textMuted, fontSize: 21)),
-            const SizedBox(height: 10),
-            Text(
-              quantity,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: isClosed ? grey : Colors.white,
-                fontSize: isClosed ? 26 : 31,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 16),
+                    Text(amountTitle, style: const TextStyle(color: textMuted, fontSize: 21)),
+                    const SizedBox(height: 10),
+                    Text(
+                      quantity,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: isClosed ? grey : Colors.white,
+                        fontSize: isClosed ? 26 : 31,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
 
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-              Icon(
-  isClosed ||
-          item["status"]?.toString().toLowerCase() == "approved" ||
-          item["status"]?.toString().toLowerCase() == "rejected"
-      ? Icons.lock_rounded
-      : Icons.access_time_rounded,
-  color: statusColor,
-  size: 22,
-),
-                const SizedBox(width: 8),
-                Text(
-                  status,
-                  style: TextStyle(
-                    color: statusColor,
-                    fontSize: 21,
-                    fontWeight: FontWeight.w500,
-                  ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          isClosed ||
+                                  item["status"]?.toString().toLowerCase() == "approved" ||
+                                  item["status"]?.toString().toLowerCase() == "rejected"
+                              ? Icons.lock_rounded
+                              : Icons.access_time_rounded,
+                          color: statusColor,
+                          size: 22,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          status,
+                          style: TextStyle(
+                            color: statusColor,
+                            fontSize: 21,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 40),
+
+                    // Tap to open the chat with the other party on this
+                    // request/transfer.
+                    _chatWithRow(context),
+
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 28),
+                      child: Column(
+                        children: [
+                          row(context, sourceType == "transfer" ? "Transfer Account" : "Request Account", account),
+                          row(context, "Fees", fees),
+                          row(context, "Chain Type", chainType),
+                          row(context, "Time", fmtDate(item["created_at"])),
+                          row(context, sourceType == "transfer" ? "Wallet Address" : "Merchant Address", address, copyable: !isClosed),
+                          row(context, "Transaction No", hash, copyable: true),
+                          row(context, "Reference ID", hash, copyable: true),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+                  ],
                 ),
-              ],
-            ),
-
-            const SizedBox(height: 92),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 28),
-              child: Column(
-                children: [
-                  row(context, sourceType == "transfer" ? "Transfer Account" : "Request Account", account),
-                  row(context, "Fees", fees),
-                  row(context, "Chain Type", chainType),
-                  row(context, "Time", fmtDate(item["created_at"])),
-                  row(context, sourceType == "transfer" ? "Wallet Address" : "Merchant Address", address, copyable: !isClosed),
-                  row(context, "Transaction No", hash, copyable: true),
-                  row(context, "Reference ID", hash, copyable: true),
-                ],
               ),
             ),
           ],

@@ -9,11 +9,40 @@
 .tx-top{display:flex;align-items:center;margin-bottom:70px}
 .tx-back{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;text-decoration:none;font-size:28px}
 .tx-title{flex:1;text-align:center;font-size:25px;font-weight:900;margin-right:42px}
-.tx-center{text-align:center;margin-bottom:85px}
+.tx-center{text-align:center;margin-bottom:32px}
 .tx-label{color:#6f6f76;font-size:21px;margin-bottom:10px}
 .tx-qty{font-size:34px;font-weight:800;margin-bottom:18px}
 .tx-status{display:flex;justify-content:center;align-items:center;gap:9px;font-size:21px;font-weight:700}
 .tx-status.green{color:#00C076}.tx-status.red{color:#ef4444}.tx-status.amber{color:#FFB800}.tx-status.grey{color:#8E8E93}
+
+.tx-chat-card{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    max-width:760px;
+    margin:0 auto 45px;
+    background:#111316;
+    border:1px solid #23262b;
+    border-radius:14px;
+    padding:14px 16px;
+    text-decoration:none;
+    color:inherit;
+    transition:.15s;
+}
+.tx-chat-card:hover{border-color:#F0B90B;background:#161A1F}
+.tx-chat-avatar{
+    width:46px;height:46px;border-radius:50%;
+    background:rgba(240,185,11,.12);
+    border:1px solid rgba(240,185,11,.35);
+    color:#F0B90B;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:18px;flex-shrink:0;
+}
+.tx-chat-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.tx-chat-label{color:#6f6f76;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.tx-chat-name{color:#fff;font-size:16px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx-chat-icon{color:#F0B90B;font-size:22px;flex-shrink:0}
+
 .tx-box{max-width:760px;margin:0 auto}
 .tx-row{display:grid;grid-template-columns:1fr 1.4fr;gap:18px;margin-bottom:25px;align-items:start}
 .tx-left{color:#6f6f76;font-size:18px;font-weight:600}
@@ -21,7 +50,7 @@
 .tx-copy{cursor:pointer;display:inline-flex;align-items:center;gap:7px;justify-content:flex-end}
 .tx-copy i{font-size:16px;color:#bbb}
 .tx-toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);background:#00C076;color:#fff;padding:11px 18px;border-radius:8px;font-weight:800;display:none}
-@media(max-width:760px){.tx-page{margin:-16px;padding:25px 18px 60px}.tx-title{font-size:22px}.tx-row{grid-template-columns:1fr;gap:7px;margin-bottom:23px}.tx-right{text-align:left}}
+@media(max-width:760px){.tx-page{margin:-16px;padding:25px 18px 60px}.tx-title{font-size:22px}.tx-row{grid-template-columns:1fr;gap:7px;margin-bottom:23px}.tx-right{text-align:left}.tx-chat-card{margin-left:0;margin-right:0}}
 </style>
 @endpush
 
@@ -80,6 +109,29 @@
         $address = $isClosed ? '—' : ($item->merchant?->wallet_id ?? $item->merchant_id ?? '—');
     }
 
+    // Counterparty (client/merchant or sender/receiver) — clickable, opens the chat for this exact request/transfer
+    if ($isTransfer) {
+        $isSenderMe = (int)$item->sender_id === (int)$user->id;
+        $counterpartyLabel = $isSenderMe ? 'Receiver' : 'Sender';
+        $counterpartyUser = $isSenderMe ? $item->receiver : $item->sender;
+        $chatRoute = $user->role === 'merchant'
+            ? route('merchant.chats.transfer', $item->id)
+            : route('client.chats.transfer', $item->id);
+    } else {
+        if ($user->role === 'merchant') {
+            $counterpartyLabel = 'Client';
+            $counterpartyUser = $item->user;
+        } else {
+            $counterpartyLabel = 'Merchant';
+            $counterpartyUser = $item->merchant;
+        }
+        $chatRoute = $user->role === 'merchant'
+            ? route('merchant.chats.request', $item->id)
+            : route('client.chats.request', $item->id);
+    }
+
+    $counterpartyName = $counterpartyUser?->name ?? null;
+
     $time = $item->created_at ? $item->created_at->format('Y-m-d H:i:s') : '—';
 
     $backRoute = $user->role === 'merchant' ? route('merchant.history') : route('client.history');
@@ -111,6 +163,17 @@
                 <span>{{ $statusText }}</span>
             </div>
         </div>
+
+        @if($counterpartyName)
+            <a href="{{ $chatRoute }}" class="tx-chat-card">
+                <div class="tx-chat-avatar">{{ strtoupper(substr($counterpartyName, 0, 1)) }}</div>
+                <div class="tx-chat-info">
+                    <span class="tx-chat-label">{{ $counterpartyLabel }}</span>
+                    <span class="tx-chat-name">{{ $counterpartyName }}</span>
+                </div>
+                <i class="ti ti-message-circle tx-chat-icon"></i>
+            </a>
+        @endif
 
         <div class="tx-box">
             @foreach($rows as [$left, $right, $copyable])
