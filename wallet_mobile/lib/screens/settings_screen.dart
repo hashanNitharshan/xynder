@@ -6,6 +6,7 @@ import '../services/update_service.dart';
 import 'profile_screen.dart';
 import 'login_screen.dart';
 import 'payment_methods_screen.dart';
+import '../main.dart' show navigatorKey;
 
 // ─────────────────────────────────────────────────────────────
 //  DESIGN TOKENS - SAME STYLE AS OTHER SCREENS (Dark Yellow)
@@ -130,7 +131,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final beforeVersion = _appVersion;
 
     try {
-      await UpdateService.checkForUpdate(context);
+      await UpdateService.checkForUpdate(navigatorKey);
     } finally {
       if (mounted) setState(() => _checkingUpdate = false);
     }
