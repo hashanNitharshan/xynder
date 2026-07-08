@@ -11,55 +11,28 @@ import '../services/api_service.dart';
 import '../services/update_service.dart';
 
 // ─────────────────────────────────────────────────────────────
-//  DESIGN TOKENS - SAME STYLE AS wallet_transfer_screen.dart
-//  (dark yellow / dark black)
+//  DESIGN TOKENS - dark black / dark yellow only.
+//  Matches the app-wide Binance-style palette (bg #0B0E11,
+//  bright yellow #F0B90B, dark amber #C99400, gold #D4A017,
+//  grey text #848E9C).
 // ─────────────────────────────────────────────────────────────
 class _C {
-  static const bg = Color(0xff000000);
-  static const surface = Color(0xff0D0D0D);
-  static const surfaceAlt = Color(0xff171717);
+  static const bg = Color(0xff0B0E11);
+  static const border = Color(0xff23262B);
+  static const borderFaint = Color(0xff181A1E);
 
-  static const border = Color(0xff2E2E2E);
-  static const borderFaint = Color(0xff202020);
-
-  static const orange = Color(0xffB8860B); // dark goldenrod
-  static const amber = Color(0xff9A6B00); // deep amber
-  static const gold = Color(0xffD4A017); // muted gold highlight
+  static const yellow = Color(0xffF0B90B); // bright dark-yellow
+  static const amber = Color(0xffC99400); // dark amber
+  static const gold = Color(0xffD4A017); // muted gold
 
   static const red = Color(0xffEF4444);
-  static const green = Color(0xff22C55E);
 
   static const textPrimary = Colors.white;
-  static const textSecondary = Color(0xffA3A3A3);
+  static const textSecondary = Color(0xff848E9C);
+  static const textFaint = Color(0xff5C6470);
 
   static const gradientAccent = LinearGradient(
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
-    colors: [
-      Color(0xff8A6300),
-      Color(0xffB8860B),
-      Color(0xffD4A017),
-    ],
-  );
-
-  static const gradientCard = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [
-      Color(0xff050505),
-      Color(0xff111111),
-      Color(0xff1A1500),
-    ],
-  );
-
-  static const gradientGlow = RadialGradient(
-    center: Alignment(-0.2, -0.6),
-    radius: 1.2,
-    colors: [
-      Color(0x55B8860B),
-      Color(0x22D4A017),
-      Color(0x00000000),
-    ],
+    colors: [Color(0xffC99400), Color(0xffF0B90B)],
   );
 }
 
@@ -113,11 +86,11 @@ class _UpdateScreenState extends State<UpdateScreen>
     super.initState();
     _anim = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 650),
+      duration: const Duration(milliseconds: 500),
     );
     _fade = CurvedAnimation(parent: _anim, curve: Curves.easeOut);
     _slide = Tween<Offset>(
-      begin: const Offset(0, 0.05),
+      begin: const Offset(0, 0.03),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _anim, curve: Curves.easeOut));
 
@@ -263,86 +236,154 @@ class _UpdateScreenState extends State<UpdateScreen>
         _progress = 0;
       });
 
-  Widget _glowBall(double size, double opacity, Color color) => Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: color.withOpacity(opacity),
-        ),
-      );
-
-  Widget _divider() => Container(
-        height: 1,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(colors: [
-            Colors.transparent,
-            _C.gold.withOpacity(0.3),
-            Colors.transparent,
-          ]),
-        ),
-      );
-
-  Widget _versionChip({
-    required String label,
-    required String version,
-    required Color color,
+  // ═══════════════════════════════════════════
+  //  LOGO — plain by default, ringed while
+  //  checking/downloading, badged when settled.
+  // ═══════════════════════════════════════════
+  Widget _logo({
+    bool ring = false,
+    double? ringValue,
+    IconData? badgeIcon,
+    Color? badgeColor,
   }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.25)),
-        ),
-        child: Column(
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                color: color.withOpacity(0.7),
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.0,
+    return SizedBox(
+      width: 116,
+      height: 116,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          if (ring)
+            SizedBox(
+              width: 116,
+              height: 116,
+              child: CircularProgressIndicator(
+                value: ringValue,
+                strokeWidth: 2.2,
+                backgroundColor: _C.border,
+                valueColor: const AlwaysStoppedAnimation(_C.yellow),
+              ),
+            )
+          else
+            Container(
+              width: 116,
+              height: 116,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: _C.border, width: 1.4),
               ),
             ),
-            const SizedBox(height: 6),
-            Text(
-              'v$version',
-              style: TextStyle(
-                color: color,
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
+          Container(
+            width: 92,
+            height: 92,
+            padding: const EdgeInsets.all(3),
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: _C.bg,
+            ),
+            child: ClipOval(
+              child: Image.asset(
+                "assets/images/bitxnow_logo.jpeg",
+                fit: BoxFit.cover,
               ),
             ),
-          ],
-        ),
+          ),
+          if (badgeIcon != null)
+            Positioned(
+              right: 2,
+              bottom: 2,
+              child: Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _C.bg,
+                  border: Border.all(color: badgeColor ?? _C.yellow, width: 1.4),
+                ),
+                child: Icon(badgeIcon, color: badgeColor ?? _C.yellow, size: 15),
+              ),
+            ),
+        ],
       ),
     );
   }
 
-  Widget _gradientBtn({
+  // ═══════════════════════════════════════════
+  //  SLEEK LINEAR PROGRESS — logo, thin bar,
+  //  percentage. Mirrors a native OS update
+  //  screen instead of a boxed widget.
+  // ═══════════════════════════════════════════
+  Widget _progressLine() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: _progress > 0 ? _progress : null,
+            minHeight: 4,
+            backgroundColor: _C.border,
+            valueColor: const AlwaysStoppedAnimation(_C.yellow),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Align(
+          alignment: Alignment.centerRight,
+          child: Text(
+            '${(_progress * 100).toStringAsFixed(0)}%',
+            style: const TextStyle(
+              color: _C.yellow,
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.3,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _versionRow() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'v$_currentVer',
+          style: const TextStyle(
+            color: _C.textFaint,
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Icon(Icons.arrow_forward_rounded,
+              color: _C.yellow.withOpacity(0.7), size: 14),
+        ),
+        Text(
+          'v$_serverVer',
+          style: const TextStyle(
+            color: _C.yellow,
+            fontSize: 13,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _primaryBtn({
     required String label,
     required VoidCallback onTap,
-    IconData? icon,
     bool loading = false,
   }) {
     return GestureDetector(
       onTap: loading ? null : onTap,
       child: Container(
         width: double.infinity,
-        height: 54,
+        height: 52,
         decoration: BoxDecoration(
-          gradient: _C.gradientAccent,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: _C.orange.withOpacity(0.3),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            ),
-          ],
+          color: _C.yellow,
+          borderRadius: BorderRadius.circular(14),
         ),
         child: Center(
           child: loading
@@ -351,99 +392,51 @@ class _UpdateScreenState extends State<UpdateScreen>
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2.3,
-                    color: Colors.white,
+                    color: Colors.black,
                   ),
                 )
-              : Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (icon != null) ...[
-                      Icon(icon, color: Colors.white, size: 18),
-                      const SizedBox(width: 8),
-                    ],
-                    Text(
-                      label,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 15,
-                      ),
-                    ),
-                  ],
+              : Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                  ),
                 ),
         ),
       ),
     );
   }
 
-  Widget _ghostBtn({required String label, required VoidCallback onTap}) {
+  Widget _textBtn(String label, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        height: 48,
-        decoration: BoxDecoration(
-          color: _C.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: _C.border),
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: const TextStyle(
-              color: _C.textSecondary,
-              fontWeight: FontWeight.w700,
-              fontSize: 14,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Simple, single-line progress bar shown only while downloading.
-  Widget _progressBar() {
-    return Column(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(6),
-          child: LinearProgressIndicator(
-            value: _progress > 0 ? _progress : null,
-            backgroundColor: _C.border,
-            valueColor: const AlwaysStoppedAnimation(_C.gold),
-            minHeight: 7,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          '${(_progress * 100).toStringAsFixed(0)}%',
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Text(
+          label,
           style: const TextStyle(
-            color: _C.gold,
-            fontSize: 12,
-            fontWeight: FontWeight.w800,
+            color: _C.textSecondary,
+            fontWeight: FontWeight.w700,
+            fontSize: 14,
           ),
         ),
-      ],
+      ),
     );
   }
 
-  Widget _errorBanner() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: _C.red.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _C.red.withOpacity(0.3)),
-      ),
+  Widget _errorLine() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
       child: Row(
         children: [
-          const Icon(Icons.error_outline_rounded, color: _C.red, size: 16),
-          const SizedBox(width: 8),
+          const Icon(Icons.error_outline_rounded, color: _C.red, size: 15),
+          const SizedBox(width: 7),
           Expanded(
             child: Text(
               _status,
               style: const TextStyle(
-                color: Colors.redAccent,
+                color: _C.red,
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
               ),
@@ -454,27 +447,18 @@ class _UpdateScreenState extends State<UpdateScreen>
     );
   }
 
-  /// Shown only when the update prompt is being enforced from a cached
-  /// check (the live /version call failed but we still know an update
-  /// was required from the last successful check).
-  Widget _cacheBanner() {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: _C.gold.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _C.gold.withOpacity(0.25)),
-      ),
-      child: const Row(
+  Widget _cacheLine() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
         children: [
-          Icon(Icons.info_outline_rounded, color: _C.gold, size: 15),
-          SizedBox(width: 8),
+          Icon(Icons.info_outline_rounded, color: _C.yellow.withOpacity(0.8), size: 14),
+          const SizedBox(width: 7),
           Expanded(
             child: Text(
-              "Couldn't reach the server just now — showing the last known update info.",
+              "Couldn't reach the server — showing the last known update info.",
               style: TextStyle(
-                color: _C.gold,
+                color: _C.yellow.withOpacity(0.85),
                 fontSize: 11.5,
                 fontWeight: FontWeight.w600,
                 height: 1.3,
@@ -486,234 +470,131 @@ class _UpdateScreenState extends State<UpdateScreen>
     );
   }
 
-  Widget _loadingBody() => const SizedBox(
-        height: 240,
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(color: _C.gold, strokeWidth: 2.5),
-              SizedBox(height: 18),
-              Text(
-                'Checking...',
-                style: TextStyle(color: _C.textSecondary, fontSize: 13),
-              ),
-            ],
+  // ═══════════════════════════════════════════
+  //  BODIES
+  // ═══════════════════════════════════════════
+  Widget _loadingBody() => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _logo(ring: true),
+          const SizedBox(height: 26),
+          const Text(
+            'Checking for updates',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+            ),
           ),
-        ),
+          const SizedBox(height: 6),
+          const Text(
+            'Please wait a moment...',
+            style: TextStyle(color: _C.textSecondary, fontSize: 12.5),
+          ),
+        ],
       );
 
   Widget _errorBody() => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.wifi_off_rounded, color: _C.textSecondary, size: 48),
-          const SizedBox(height: 14),
+          _logo(
+            badgeIcon: Icons.wifi_off_rounded,
+            badgeColor: _C.textSecondary,
+          ),
+          const SizedBox(height: 26),
           const Text(
             'Unable to Check',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 20,
+              fontSize: 19,
               fontWeight: FontWeight.w900,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           const Text(
             'Check your connection and try again.',
             textAlign: TextAlign.center,
             style: TextStyle(color: _C.textSecondary, fontSize: 12.5, height: 1.5),
           ),
-          const SizedBox(height: 24),
-          _gradientBtn(
-            label: 'Try Again',
-            icon: Icons.refresh_rounded,
-            onTap: _fetchVersionInfo,
-          ),
+          const SizedBox(height: 30),
+          _primaryBtn(label: 'Try Again', onTap: _fetchVersionInfo),
         ],
       );
 
   Widget _upToDateBody() => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 76,
-            height: 76,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: _C.green.withOpacity(0.08),
-              border: Border.all(color: _C.green.withOpacity(0.4), width: 2),
-            ),
-            child: const Icon(Icons.check_rounded, color: _C.green, size: 40),
-          ),
-          const SizedBox(height: 18),
+          _logo(badgeIcon: Icons.check_rounded, badgeColor: _C.yellow),
+          const SizedBox(height: 26),
           const Text(
             "You're Up to Date",
             style: TextStyle(
               color: Colors.white,
-              fontSize: 21,
+              fontSize: 19,
               fontWeight: FontWeight.w900,
             ),
           ),
-          const SizedBox(height: 18),
-          Row(
-            children: [
-              _versionChip(
-                label: 'INSTALLED',
-                version: _currentVer,
-                color: _C.green,
-              ),
-              const SizedBox(width: 10),
-              _versionChip(
-                label: 'LATEST',
-                version: _serverVer,
-                color: _C.gold,
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          _ghostBtn(label: 'Check Again', onTap: _fetchVersionInfo),
+          const SizedBox(height: 10),
+          _versionRow(),
+          const SizedBox(height: 30),
+          _textBtn('Check Again', _fetchVersionInfo),
         ],
       );
 
-  /// After a successful install, keep it minimal — a checkmark and a
-  /// single "Okay" button. No extra instructional text.
   Widget _installedBody() => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 76,
-            height: 76,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: _C.green.withOpacity(0.08),
-              border: Border.all(color: _C.green.withOpacity(0.4), width: 2),
-            ),
-            child: const Icon(Icons.check_rounded, color: _C.green, size: 40),
-          ),
-          const SizedBox(height: 18),
+          _logo(badgeIcon: Icons.check_rounded, badgeColor: _C.yellow),
+          const SizedBox(height: 26),
           const Text(
-            'Done',
+            'Update Installed',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 21,
+              fontSize: 19,
               fontWeight: FontWeight.w900,
             ),
           ),
-          const SizedBox(height: 22),
-          _gradientBtn(
-            label: 'Okay',
-            onTap: () => Navigator.pop(context),
+          const SizedBox(height: 8),
+          Text(
+            'You\'re now on v$_serverVer',
+            style: const TextStyle(color: _C.textSecondary, fontSize: 12.5),
           ),
+          const SizedBox(height: 30),
+          _primaryBtn(label: 'Continue', onTap: () => Navigator.pop(context)),
         ],
       );
 
   Widget _updateBody() => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          ShaderMask(
-            shaderCallback: (b) => _C.gradientAccent.createShader(b),
-            child: Text(
-              _forceUpdt ? 'Update Required' : 'New Version',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.4,
-              ),
+          _logo(ring: _downloading, ringValue: _downloading ? (_progress > 0 ? _progress : null) : null),
+          const SizedBox(height: 26),
+          Text(
+            _forceUpdt ? 'Update Required' : 'New Version Available',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 19,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.2,
             ),
           ),
-          const SizedBox(height: 18),
-          if (_fromCache) _cacheBanner(),
-          Row(
-            children: [
-              _versionChip(
-                label: 'CURRENT',
-                version: _currentVer,
-                color: _C.textSecondary,
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Icon(Icons.arrow_forward_rounded,
-                    color: _C.gold.withOpacity(0.6), size: 20),
-              ),
-              _versionChip(
-                label: 'NEW',
-                version: _serverVer,
-                color: _C.gold,
-              ),
-            ],
-          ),
-          const SizedBox(height: 22),
-          _divider(),
-          const SizedBox(height: 20),
+          const SizedBox(height: 10),
+          _versionRow(),
+          const SizedBox(height: 28),
+          if (_fromCache) _cacheLine(),
           if (_downloading) ...[
-            _progressBar(),
-            const SizedBox(height: 18),
-          ],
-          if (_hasError) ...[
-            _errorBanner(),
-            const SizedBox(height: 16),
-          ],
-          if (!_downloading) ...[
-            _gradientBtn(
+            _progressLine(),
+            const SizedBox(height: 22),
+          ] else ...[
+            if (_hasError) _errorLine(),
+            _primaryBtn(
               label: _hasError ? 'Retry' : 'Update Now',
-              icon: _hasError ? Icons.refresh_rounded : Icons.download_rounded,
               onTap: _downloadAndInstall,
             ),
-            if (!_forceUpdt) ...[
-              const SizedBox(height: 10),
-              _ghostBtn(label: 'Later', onTap: _dismissUpdate),
-            ],
+            if (!_forceUpdt) _textBtn('Later', _dismissUpdate),
           ],
         ],
-      );
-
-  Widget _card(Widget child) => Container(
-        padding: const EdgeInsets.all(26),
-        decoration: BoxDecoration(
-          gradient: _C.gradientCard,
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(color: _C.border),
-          boxShadow: [
-            BoxShadow(
-              color: _C.orange.withOpacity(0.2),
-              blurRadius: 50,
-              offset: const Offset(0, 22),
-            ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(30),
-                  gradient: _C.gradientGlow,
-                ),
-              ),
-            ),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 88,
-                  height: 88,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.04),
-                    border: Border.all(color: _C.gold, width: 2),
-                  ),
-                  child: Image.asset(
-                    "assets/images/bitxnow_logo.jpeg",
-                    fit: BoxFit.contain,
-                  ),
-                ),
-                const SizedBox(height: 18),
-                child,
-              ],
-            ),
-          ],
-        ),
       );
 
   @override
@@ -725,39 +606,30 @@ class _UpdateScreenState extends State<UpdateScreen>
       },
       child: Scaffold(
         backgroundColor: _C.bg,
-        body: Stack(
-          children: [
-            Positioned(top: -110, left: -80, child: _glowBall(260, 0.08, _C.gold)),
-            Positioned(bottom: -130, right: -80, child: _glowBall(300, 0.08, _C.amber)),
-
-            SafeArea(
-              child: Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 440),
-                    child: _fetching
-                        ? _card(_loadingBody())
-                        : FadeTransition(
-                            opacity: _fade,
-                            child: SlideTransition(
-                              position: _slide,
-                              child: _card(
-                                _fetchErr
-                                    ? _errorBody()
-                                    : _installed
-                                        ? _installedBody()
-                                        : _upToDate
-                                            ? _upToDateBody()
-                                            : _updateBody(),
-                              ),
-                            ),
-                          ),
-                  ),
-                ),
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 360),
+                child: _fetching
+                    ? _loadingBody()
+                    : FadeTransition(
+                        opacity: _fade,
+                        child: SlideTransition(
+                          position: _slide,
+                          child: _fetchErr
+                              ? _errorBody()
+                              : _installed
+                                  ? _installedBody()
+                                  : _upToDate
+                                      ? _upToDateBody()
+                                      : _updateBody(),
+                        ),
+                      ),
               ),
             ),
-          ], 
+          ),
         ),
       ),
     );

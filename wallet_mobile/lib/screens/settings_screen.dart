@@ -134,6 +134,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // run, bypassing the cooldown that protects the automatic
       // background checks (launch/resume). Without this, tapping the
       // button shortly after app launch silently does nothing.
+      //
+      // checkForUpdate() awaits the UpdateScreen push internally, so by
+      // the time this returns, the user has either closed it, hit
+      // "Later", or finished installing.
       updateFound =
           await UpdateService.checkForUpdate(navigatorKey, force: true);
     } finally {
@@ -141,11 +145,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
 
     if (!mounted) return;
+
+    // Re-read the installed version now that the update flow is closed.
+    // Without this, an install that just happened would still show the
+    // pre-update version number here until the screen was recreated.
+    await _loadVersion();
+
+    if (!mounted) return;
+
     if (!updateFound) {
       _showSnack("You're on the latest version ($_appVersion)");
     }
-    // If updateFound is true, the UpdateScreen is already on screen —
-    // no extra snackbar needed.
+    // If updateFound is true, the UpdateScreen already handled its own
+    // "Done" state — no extra snackbar needed.
   }
 
   // ═══════════════════════════════════════════

@@ -17,13 +17,18 @@ class UpdateService {
   static bool _isShowing = false;
 
   // Avoid hammering /version on every screen-off/screen-on cycle.
-  // Bypassed entirely when force: true (e.g. a manual "Check for Update" tap).
+  // Bypassed entirely when force: true (e.g. a manual "Check for Update" tap)
+  // OR when a mandatory update is known to still be outstanding — see
+  // _hasOutstandingMandatoryUpdate() below.
   static DateTime? _lastCheckedAt;
   static const _cooldown = Duration(seconds: 20);
 
   /// Call this:
   ///   • once at app startup
   ///   • again every time the app resumes from background
+  ///   • again on the home/dashboard screen right after login — this is
+  ///     what re-surfaces a mandatory update if it got cleared off the
+  ///     nav stack by a pushAndRemoveUntil during the login transition
   ///   • with force: true for an explicit user-initiated check (e.g. a
   ///     "Check for Update" button in Settings) so it's never silently
   ///     skipped by the cooldown.
@@ -42,7 +47,20 @@ class UpdateService {
   }) async {
     if (_isShowing) return false;
 
-    if (!force &&
+    // A mandatory (force_update) result that hasn't been resolved yet
+    // must never be silently swallowed by the cooldown. Typical failure
+    // case: the update screen is shown at startup, the login screen does
+    // Navigator.pushAndRemoveUntil to reach home, which clears the update
+    // screen off the stack, and home's own check — fired a couple of
+    // seconds later — used to get blocked by the cooldown below. Now, if
+    // the last known-good check says a mandatory update is still pending,
+    // we treat this call as force regardless of the `force` argument.
+    bool bypassCooldown = force;
+    if (!bypassCooldown) {
+      bypassCooldown = await _hasOutstandingMandatoryUpdate();
+    }
+
+    if (!bypassCooldown &&
         _lastCheckedAt != null &&
         DateTime.now().difference(_lastCheckedAt!) < _cooldown) {
       return false;
@@ -89,7 +107,12 @@ class UpdateService {
 
       // No live data and nothing cached — nothing we can safely enforce.
       if (serverVersion == null) return false;
-      if (!isNewer(serverVersion, currentVersion)) return false;
+      if (!isNewer(serverVersion, currentVersion)) {
+        // We're on the latest version — clear any stale mandatory-update
+        // cache entry so it can't keep bypassing the cooldown forever.
+        await _clearCacheIfResolved(currentVersion);
+        return false;
+      }
 
       // Optional-update skip check — force updates always show regardless.
       if (!forceUpdate) {
@@ -126,6 +149,26 @@ class UpdateService {
     }
   }
 
+  /// True when the last known-good check says a mandatory update is
+  /// still outstanding (i.e. the cached server version is force_update
+  /// and is still newer than the currently-installed version). Used to
+  /// force a fresh live check even inside the normal cooldown window.
+  static Future<bool> _hasOutstandingMandatoryUpdate() async {
+    try {
+      final cached = await _readCache();
+      if (cached == null) return false;
+
+      final cachedForce = cached['force_update'] as bool;
+      if (!cachedForce) return false;
+
+      final cachedVersion = cached['version'] as String;
+      final info = await PackageInfo.fromPlatform();
+      return isNewer(cachedVersion, info.version);
+    } catch (_) {
+      return false;
+    }
+  }
+
   static Future<void> _cacheResult(
       String version, String apkUrl, bool force) async {
     try {
@@ -149,6 +192,23 @@ class UpdateService {
     } catch (_) {
       return null;
     }
+  }
+
+  /// Drops the cached update record once the installed version has
+  /// caught up to it, so a resolved mandatory update can't keep
+  /// bypassing the cooldown indefinitely.
+  static Future<void> _clearCacheIfResolved(String currentVersion) async {
+    try {
+      final cached = await _readCache();
+      if (cached == null) return;
+      final cachedVersion = cached['version'] as String;
+      if (!isNewer(cachedVersion, currentVersion)) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove(_cacheVerKey);
+        await prefs.remove(_cacheApkKey);
+        await prefs.remove(_cacheForceKey);
+      }
+    } catch (_) {}
   }
 
   /// Called by UpdateScreen when the user taps "Later" (optional updates only).
