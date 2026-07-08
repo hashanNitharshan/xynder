@@ -60,7 +60,7 @@ class UpdateScreen extends StatefulWidget {
 }
 
 class _UpdateScreenState extends State<UpdateScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   String _currentVer = '';
   String _serverVer = '';
   String _apkUrl = '';
@@ -77,6 +77,14 @@ class _UpdateScreenState extends State<UpdateScreen>
   bool _installed = false;
   String _status = '';
 
+  // True once the Android system installer intent has been launched but
+  // we haven't yet confirmed the install actually completed. OpenFile
+  // only reports whether the intent opened, not whether the user
+  // finished (or Android silently rejected it, e.g. on a signing-key
+  // mismatch) — so we verify the real installed version once the app
+  // comes back to the foreground instead of trusting that result.
+  bool _awaitingInstallConfirm = false;
+
   late AnimationController _anim;
   late Animation<double> _fade;
   late Animation<Offset> _slide;
@@ -84,6 +92,8 @@ class _UpdateScreenState extends State<UpdateScreen>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
     _anim = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
@@ -110,8 +120,20 @@ class _UpdateScreenState extends State<UpdateScreen>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _anim.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // The user just came back from the Android package-installer screen
+    // (or switched away and back). If we were waiting on an install
+    // confirmation, this is our chance to check whether it actually
+    // took effect.
+    if (state == AppLifecycleState.resumed && _awaitingInstallConfirm) {
+      _verifyInstallCompleted();
+    }
   }
 
   Future<void> _fetchVersionInfo() async {
@@ -172,6 +194,7 @@ class _UpdateScreenState extends State<UpdateScreen>
   Future<void> _downloadAndInstall() async {
     setState(() {
       _downloading = true;
+      _awaitingInstallConfirm = false;
       _hasError = false;
       _installed = false;
       _status = '';
@@ -215,13 +238,20 @@ class _UpdateScreenState extends State<UpdateScreen>
 
       if (result.type != ResultType.done) {
         _setError('Install failed. Please try again.');
-      } else {
-        await UpdateService.markVersionSkipped(_serverVer);
-        setState(() {
-          _installed = true;
-          _downloading = false;
-        });
+        return;
       }
+
+      // IMPORTANT: `result.type == ResultType.done` only means Android
+      // successfully launched the package-installer screen — it does
+      // NOT mean the install finished. The user still has to tap
+      // "Install" there, and Android can silently refuse it entirely
+      // (most commonly: the new APK is signed with a different key than
+      // the one currently installed). Do not mark this as installed yet.
+      setState(() {
+        _downloading = false;
+        _awaitingInstallConfirm = true;
+        _status = 'Complete the install prompt, then return to the app.';
+      });
     } on DioException catch (_) {
       _setError('Network error. Please try again.');
     } catch (_) {
@@ -229,8 +259,50 @@ class _UpdateScreenState extends State<UpdateScreen>
     }
   }
 
+  /// Re-reads the actual installed app version and only NOW decides
+  /// whether the update really succeeded. Called automatically when the
+  /// app resumes after the installer screen, and also available as a
+  /// manual "I've Installed" retry in the UI in case the lifecycle
+  /// callback doesn't fire on a particular device.
+  Future<void> _verifyInstallCompleted() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      final nowVersion = info.version;
+
+      final stillBehind = UpdateService.isNewer(_serverVer, nowVersion);
+
+      if (!stillBehind) {
+        // The installed version now matches (or exceeds) the server
+        // version — the install genuinely completed.
+        await UpdateService.markVersionSkipped(_serverVer);
+        if (!mounted) return;
+        setState(() {
+          _currentVer = nowVersion;
+          _awaitingInstallConfirm = false;
+          _installed = true;
+        });
+      } else {
+        // Still on the old version — the install was cancelled, backed
+        // out of, or silently rejected by Android. Say so plainly
+        // instead of pretending it worked.
+        if (!mounted) return;
+        setState(() {
+          _currentVer = nowVersion;
+          _awaitingInstallConfirm = false;
+          _hasError = true;
+          _status =
+              'Still on v$nowVersion. If the install prompt didn\'t appear or you cancelled it, tap Update Now to try again.';
+        });
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _awaitingInstallConfirm = false);
+    }
+  }
+
   void _setError(String msg) => setState(() {
         _downloading = false;
+        _awaitingInstallConfirm = false;
         _hasError = true;
         _status = msg;
         _progress = 0;
@@ -429,8 +501,12 @@ class _UpdateScreenState extends State<UpdateScreen>
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.error_outline_rounded, color: _C.red, size: 15),
+          const Padding(
+            padding: EdgeInsets.only(top: 1),
+            child: Icon(Icons.error_outline_rounded, color: _C.red, size: 15),
+          ),
           const SizedBox(width: 7),
           Expanded(
             child: Text(
@@ -439,6 +515,7 @@ class _UpdateScreenState extends State<UpdateScreen>
                 color: _C.red,
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
+                height: 1.4,
               ),
             ),
           ),
@@ -556,7 +633,7 @@ class _UpdateScreenState extends State<UpdateScreen>
           ),
           const SizedBox(height: 8),
           Text(
-            'You\'re now on v$_serverVer',
+            'You\'re now on v$_currentVer',
             style: const TextStyle(color: _C.textSecondary, fontSize: 12.5),
           ),
           const SizedBox(height: 30),
@@ -564,10 +641,42 @@ class _UpdateScreenState extends State<UpdateScreen>
         ],
       );
 
+  /// Shown while we've launched the Android installer but haven't yet
+  /// confirmed (via app-resume + a fresh PackageInfo read) that the
+  /// install actually completed.
+  Widget _awaitingConfirmBody() => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _logo(ring: true),
+          const SizedBox(height: 26),
+          const Text(
+            'Waiting for Install',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 19,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _status.isEmpty
+                ? 'Complete the install prompt, then return to the app.'
+                : _status,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: _C.textSecondary, fontSize: 12.5, height: 1.5),
+          ),
+          const SizedBox(height: 30),
+          _primaryBtn(label: "I've Installed It", onTap: _verifyInstallCompleted),
+        ],
+      );
+
   Widget _updateBody() => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _logo(ring: _downloading, ringValue: _downloading ? (_progress > 0 ? _progress : null) : null),
+          _logo(
+            ring: _downloading,
+            ringValue: _downloading ? (_progress > 0 ? _progress : null) : null,
+          ),
           const SizedBox(height: 26),
           Text(
             _forceUpdt ? 'Update Required' : 'New Version Available',
@@ -600,7 +709,7 @@ class _UpdateScreenState extends State<UpdateScreen>
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: !_forceUpdt && !_downloading,
+      canPop: !_forceUpdt && !_downloading && !_awaitingInstallConfirm,
       onPopInvoked: (didPop) {
         if (!didPop && _forceUpdt) SystemNavigator.pop();
       },
@@ -620,11 +729,13 @@ class _UpdateScreenState extends State<UpdateScreen>
                           position: _slide,
                           child: _fetchErr
                               ? _errorBody()
-                              : _installed
-                                  ? _installedBody()
-                                  : _upToDate
-                                      ? _upToDateBody()
-                                      : _updateBody(),
+                              : _awaitingInstallConfirm
+                                  ? _awaitingConfirmBody()
+                                  : _installed
+                                      ? _installedBody()
+                                      : _upToDate
+                                          ? _upToDateBody()
+                                          : _updateBody(),
                         ),
                       ),
               ),
