@@ -275,27 +275,16 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
     if (res["success"] == true) _load();
   }
 
-  Future<void> _showBankDialog({Map? bank}) async {
-    if (bank?["old_user_bank"] == true) {
-      _snack("Old profile bank details cannot edit here. Add a new bank account.", ok: false);
-      return;
-    }
+  // Add-only dialog. Existing bank accounts can no longer be edited here —
+  // only added or deleted (see _bankTile / popup menu).
+  Future<void> _showAddBankDialog() async {
+    final bankNameCtrl = TextEditingController();
+    final branchCtrl = TextEditingController();
+    final accountCtrl = TextEditingController();
+    final accountTypeCtrl = TextEditingController();
+    final ifscCtrl = TextEditingController();
 
-    final bankNameCtrl =
-        TextEditingController(text: bank?["bank_name"]?.toString() ?? "");
-    final branchCtrl =
-        TextEditingController(text: bank?["branch"]?.toString() ?? "");
-    final accountCtrl =
-        TextEditingController(text: bank?["account_number"]?.toString() ?? "");
-    final accountTypeCtrl =
-        TextEditingController(text: bank?["account_type"]?.toString() ?? "");
-    final ifscCtrl =
-        TextEditingController(text: bank?["ifsc"]?.toString() ?? "");
-
-    bool isDefault = bank?["is_default"] == true ||
-        bank?["is_default"] == 1 ||
-        bank?["is_default"]?.toString() == "1";
-
+    bool isDefault = false;
     bool saving = false;
 
     await showDialog(
@@ -308,9 +297,9 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(22),
               ),
-              title: Text(
-                bank == null ? "Add Bank Account" : "Edit Bank Account",
-                style: const TextStyle(
+              title: const Text(
+                "Add Bank Account",
+                style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w900,
                 ),
@@ -378,24 +367,14 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                       : () async {
                           setDialog(() => saving = true);
 
-                          final res = bank == null
-                              ? await ApiService.addBankAccount(
-                                  bankName: bankNameCtrl.text.trim(),
-                                  branch: branchCtrl.text.trim(),
-                                  accountNumber: accountCtrl.text.trim(),
-                                  accountType: accountTypeCtrl.text.trim(),
-                                  ifsc: ifscCtrl.text.trim(),
-                                  isDefault: isDefault,
-                                )
-                              : await ApiService.updateBankAccount(
-                                  id: bank["id"].toString(),
-                                  bankName: bankNameCtrl.text.trim(),
-                                  branch: branchCtrl.text.trim(),
-                                  accountNumber: accountCtrl.text.trim(),
-                                  accountType: accountTypeCtrl.text.trim(),
-                                  ifsc: ifscCtrl.text.trim(),
-                                  isDefault: isDefault,
-                                );
+                          final res = await ApiService.addBankAccount(
+                            bankName: bankNameCtrl.text.trim(),
+                            branch: branchCtrl.text.trim(),
+                            accountNumber: accountCtrl.text.trim(),
+                            accountType: accountTypeCtrl.text.trim(),
+                            ifsc: ifscCtrl.text.trim(),
+                            isDefault: isDefault,
+                          );
 
                           if (!ctx.mounted) return;
 
@@ -428,6 +407,38 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
         );
       },
     );
+  }
+
+  // Promotes an existing bank account to default, reusing its own saved
+  // details — no editing of the account's fields happens here.
+  Future<void> _setDefaultBank(Map bank) async {
+    if (bank["old_user_bank"] == true) {
+      _snack("Old profile bank details cannot be changed here.", ok: false);
+      return;
+    }
+
+    final isAlreadyDefault = bank["is_default"] == true ||
+        bank["is_default"] == 1 ||
+        bank["is_default"]?.toString() == "1";
+
+    if (isAlreadyDefault) return;
+
+    final res = await ApiService.updateBankAccount(
+      id: bank["id"].toString(),
+      bankName: bank["bank_name"]?.toString() ?? "",
+      branch: bank["branch"]?.toString() ?? "",
+      accountNumber: bank["account_number"]?.toString() ?? "",
+      accountType: bank["account_type"]?.toString() ?? "",
+      ifsc: bank["ifsc"]?.toString() ?? "",
+      isDefault: true,
+    );
+
+    _snack(
+      res["message"]?.toString() ?? "Default bank updated",
+      ok: res["success"] == true,
+    );
+
+    if (res["success"] == true) _load();
   }
 
   Future<void> _deleteBank(Map bank) async {
@@ -581,15 +592,19 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
               color: _C.surfaceAlt,
               icon: const Icon(Icons.more_vert_rounded, color: Colors.white70),
               onSelected: (v) {
-                if (v == "edit") _showBankDialog(bank: bank);
+                if (v == "default") _setDefaultBank(bank);
                 if (v == "delete") _deleteBank(bank);
               },
-              itemBuilder: (_) => const [
-                PopupMenuItem(
-                  value: "edit",
-                  child: Text("Edit", style: TextStyle(color: Colors.white)),
-                ),
-                PopupMenuItem(
+              itemBuilder: (_) => [
+                if (!isDefault)
+                  const PopupMenuItem(
+                    value: "default",
+                    child: Text(
+                      "Set as Default",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                const PopupMenuItem(
                   value: "delete",
                   child: Text("Delete", style: TextStyle(color: _C.red)),
                 ),
@@ -681,7 +696,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
       title: "Bank Accounts",
       icon: Icons.account_balance_rounded,
       action: GestureDetector(
-        onTap: () => _showBankDialog(),
+        onTap: _showAddBankDialog,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
           decoration: BoxDecoration(

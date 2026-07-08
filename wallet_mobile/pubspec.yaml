@@ -1,7 +1,7 @@
 name: wallet_mobile
 description: "Xynder wallet mobile app."
 publish_to: 'none'
-version: 1.0.12+12
+version: 1.1.1+1
 
 environment:
   sdk: ^3.11.5

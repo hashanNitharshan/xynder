@@ -36,6 +36,8 @@ class TransactionDetailScreen extends StatelessWidget {
         item["status"]?.toString().toLowerCase() == "closed";
   }
 
+  bool get canChat => sourceType != "transfer";
+
   String fmtDate(dynamic raw) {
     final s = raw?.toString();
     if (s == null || s.isEmpty) return "—";
@@ -62,8 +64,6 @@ class TransactionDetailScreen extends StatelessWidget {
     return "${amount.toStringAsFixed(amount.truncateToDouble() == amount ? 0 : 2)} USDT";
   }
 
-  // "Chat Locked" wording removed from the accepted/rejected states —
-  // now just shows the plain request status.
   String get status {
     if (sourceType == "transfer") return "Transfer Completed";
 
@@ -135,9 +135,6 @@ class TransactionDetailScreen extends StatelessWidget {
   }
 
   // ── Other-party lookup (for the connect/chat row) ─────────────────────
-  // Works out who the current user is chatting with, regardless of
-  // whether the viewer is the client or the merchant on this request,
-  // or the sender or receiver on a transfer.
   Map<String, dynamic> _otherParty() {
     if (sourceType == "transfer") {
       final myId = user["id"]?.toString();
@@ -257,9 +254,8 @@ class TransactionDetailScreen extends StatelessWidget {
   }
 
   // ── Connect-with-other-party row ──────────────────────────────────────
-  // Now leads with the other party's actual name as the heading, with the
-  // role (Merchant / Client / User) shown underneath as a muted subtitle —
-  // no more "Chat with ..." wording.
+  // Now shows "Connect with {Name}" as the main heading, with the role
+  // (Merchant / Client / User) as a muted subtitle underneath.
   Widget _chatWithRow(BuildContext context) {
     final other = _otherParty();
     final name = other["name"]?.toString() ?? "User";
@@ -303,7 +299,7 @@ class TransactionDetailScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    name,
+                    "Connect with $name",
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: Colors.white,
@@ -412,9 +408,7 @@ class TransactionDetailScreen extends StatelessWidget {
 
                     const SizedBox(height: 40),
 
-                    // Tap to open the chat with the other party on this
-                    // request/transfer.
-                    _chatWithRow(context),
+                    if (canChat) _chatWithRow(context),
 
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 28),
