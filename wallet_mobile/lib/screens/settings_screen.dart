@@ -128,20 +128,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (_checkingUpdate) return;
     setState(() => _checkingUpdate = true);
 
-    final beforeVersion = _appVersion;
-
+    bool updateFound = false;
     try {
-      await UpdateService.checkForUpdate(navigatorKey);
+      // force: true — this is an explicit user tap, so it must always
+      // run, bypassing the cooldown that protects the automatic
+      // background checks (launch/resume). Without this, tapping the
+      // button shortly after app launch silently does nothing.
+      updateFound =
+          await UpdateService.checkForUpdate(navigatorKey, force: true);
     } finally {
       if (mounted) setState(() => _checkingUpdate = false);
     }
 
-    // If UpdateService didn't push the UpdateScreen (i.e. already latest
-    // or skipped), give the user feedback instead of silence.
     if (!mounted) return;
-    if (beforeVersion == _appVersion) {
+    if (!updateFound) {
       _showSnack("You're on the latest version ($_appVersion)");
     }
+    // If updateFound is true, the UpdateScreen is already on screen —
+    // no extra snackbar needed.
   }
 
   // ═══════════════════════════════════════════

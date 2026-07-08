@@ -17,26 +17,35 @@ class UpdateService {
   static bool _isShowing = false;
 
   // Avoid hammering /version on every screen-off/screen-on cycle.
+  // Bypassed entirely when force: true (e.g. a manual "Check for Update" tap).
   static DateTime? _lastCheckedAt;
   static const _cooldown = Duration(seconds: 20);
 
   /// Call this:
   ///   • once at app startup
   ///   • again every time the app resumes from background
+  ///   • with force: true for an explicit user-initiated check (e.g. a
+  ///     "Check for Update" button in Settings) so it's never silently
+  ///     skipped by the cooldown.
   ///
   /// [navigatorKey] must be the SAME GlobalKey<NavigatorState> passed to
   /// MaterialApp, so the update screen can be pushed on top of whatever
   /// screen the user is currently on — not just the splash screen.
-  static Future<void> checkForUpdate(
+  ///
+  /// Returns true if an update was required (and the UpdateScreen was
+  /// shown, or would have been had the navigator not been ready yet).
+  /// Returns false if the app is already up to date, the update was
+  /// already skipped, or nothing could be determined at all.
+  static Future<bool> checkForUpdate(
     GlobalKey<NavigatorState> navigatorKey, {
     bool force = false,
   }) async {
-    if (_isShowing) return;
+    if (_isShowing) return false;
 
     if (!force &&
         _lastCheckedAt != null &&
         DateTime.now().difference(_lastCheckedAt!) < _cooldown) {
-      return;
+      return false;
     }
     _lastCheckedAt = DateTime.now();
 
@@ -68,8 +77,7 @@ class UpdateService {
         }
       } catch (_) {
         // Live check failed — fall back to the last known-good result
-        // instead of silently letting the user through. This is what
-        // makes "must update" survive a flaky/offline network.
+        // instead of silently letting the user through.
         final cached = await _readCache();
         if (cached != null) {
           serverVersion = cached['version'] as String;
@@ -80,17 +88,21 @@ class UpdateService {
       }
 
       // No live data and nothing cached — nothing we can safely enforce.
-      if (serverVersion == null) return;
-      if (!isNewer(serverVersion, currentVersion)) return;
+      if (serverVersion == null) return false;
+      if (!isNewer(serverVersion, currentVersion)) return false;
 
       // Optional-update skip check — force updates always show regardless.
       if (!forceUpdate) {
         final prefs = await SharedPreferences.getInstance();
         final skipped = prefs.getString(_skipKey) ?? '';
-        if (skipped == serverVersion) return;
+        if (skipped == serverVersion) return false;
       }
 
-      if (navigatorKey.currentState == null) return;
+      if (navigatorKey.currentState == null) {
+        // We know an update is needed, we just couldn't display it
+        // right now (navigator not ready). Report it as needed anyway.
+        return true;
+      }
 
       _isShowing = true;
       await navigatorKey.currentState!.push(
@@ -105,8 +117,10 @@ class UpdateService {
           ),
         ),
       );
+      return true;
     } catch (_) {
       // Never crash the app because of a failed update check.
+      return false;
     } finally {
       _isShowing = false;
     }
