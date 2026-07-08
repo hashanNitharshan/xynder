@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
-import '../services/update_service.dart';
 import 'login_screen.dart';
 import 'client_dashboard.dart';
 import 'merchant_dashboard.dart';
@@ -61,9 +60,10 @@ class _AuthGateState extends State<AuthGate>
       if (mounted) _textController.forward();
     });
 
+    // Update check now lives at the app root (main.dart) so it can fire
+    // again on every resume, not just once here at cold start.
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await UpdateService.checkForUpdate(context);
-      if (mounted) await checkLogin();
+      await checkLogin();
     });
   }
 

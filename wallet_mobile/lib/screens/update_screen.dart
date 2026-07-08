@@ -71,6 +71,7 @@ class UpdateScreen extends StatefulWidget {
   final String? serverVersion;
   final String? apkUrl;
   final bool forceUpdate;
+  final bool isFromCache;
 
   const UpdateScreen({
     super.key,
@@ -78,6 +79,7 @@ class UpdateScreen extends StatefulWidget {
     this.serverVersion,
     this.apkUrl,
     this.forceUpdate = false,
+    this.isFromCache = false,
   });
 
   @override
@@ -90,6 +92,7 @@ class _UpdateScreenState extends State<UpdateScreen>
   String _serverVer = '';
   String _apkUrl = '';
   bool _forceUpdt = false;
+  bool _fromCache = false;
 
   bool _fetching = false;
   bool _fetchErr = false;
@@ -124,6 +127,7 @@ class _UpdateScreenState extends State<UpdateScreen>
       _serverVer = widget.serverVersion!;
       _apkUrl = widget.apkUrl ?? '';
       _forceUpdt = widget.forceUpdate;
+      _fromCache = widget.isFromCache;
       _anim.forward();
     } else {
       // Mode 2: Settings — fetch ourselves
@@ -165,6 +169,7 @@ class _UpdateScreenState extends State<UpdateScreen>
           _serverVer = sv;
           _apkUrl = data['apk_url']?.toString() ?? '';
           _forceUpdt = data['force_update'] == true;
+          _fromCache = false;
           _fetching = false;
           _upToDate = !isNewer;
         });
@@ -449,6 +454,38 @@ class _UpdateScreenState extends State<UpdateScreen>
     );
   }
 
+  /// Shown only when the update prompt is being enforced from a cached
+  /// check (the live /version call failed but we still know an update
+  /// was required from the last successful check).
+  Widget _cacheBanner() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: _C.gold.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _C.gold.withOpacity(0.25)),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.info_outline_rounded, color: _C.gold, size: 15),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              "Couldn't reach the server just now — showing the last known update info.",
+              style: TextStyle(
+                color: _C.gold,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                height: 1.3,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _loadingBody() => const SizedBox(
         height: 240,
         child: Center(
@@ -585,6 +622,7 @@ class _UpdateScreenState extends State<UpdateScreen>
             ),
           ),
           const SizedBox(height: 18),
+          if (_fromCache) _cacheBanner(),
           Row(
             children: [
               _versionChip(
