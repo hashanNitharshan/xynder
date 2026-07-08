@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-
+import '../main.dart' show navigatorKey;
 import '../services/api_service.dart';
 import '../services/update_service.dart';
 import 'profile_screen.dart';
@@ -119,29 +119,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     ));
   }
+Future<void> _checkForUpdate() async {
+  if (_checkingUpdate) return;
+  setState(() => _checkingUpdate = true);
 
-  // ═══════════════════════════════════════════
-  //  CHECK FOR UPDATE
-  // ═══════════════════════════════════════════
-  Future<void> _checkForUpdate() async {
-    if (_checkingUpdate) return;
-    setState(() => _checkingUpdate = true);
+  final beforeVersion = _appVersion;
 
-    final beforeVersion = _appVersion;
-
-    try {
-      await UpdateService.checkForUpdate(context);
-    } finally {
-      if (mounted) setState(() => _checkingUpdate = false);
-    }
-
-    // If UpdateService didn't push the UpdateScreen (i.e. already latest
-    // or skipped), give the user feedback instead of silence.
-    if (!mounted) return;
-    if (beforeVersion == _appVersion) {
-      _showSnack("You're on the latest version ($_appVersion)");
-    }
+  try {
+    await UpdateService.checkForUpdate(navigatorKey, force: true);
+  } finally {
+    if (mounted) setState(() => _checkingUpdate = false);
   }
+
+  // If UpdateService didn't push the UpdateScreen (i.e. already latest
+  // or skipped), give the user feedback instead of silence.
+  if (!mounted) return;
+  if (beforeVersion == _appVersion) {
+    _showSnack("You're on the latest version ($_appVersion)");
+  }
+}
 
   // ═══════════════════════════════════════════
   //  PROFILE CARD
