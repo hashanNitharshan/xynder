@@ -757,7 +757,7 @@ class _UpdateScreenState extends State<UpdateScreen>
                 ),
               ),
             ),
-          ],
+          ], 
         ),
       ),
     );
