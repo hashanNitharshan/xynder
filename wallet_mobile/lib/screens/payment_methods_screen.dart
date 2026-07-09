@@ -441,7 +441,13 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
     if (res["success"] == true) _load();
   }
 
- 
+  // This method's signature had gone missing, which is what broke the
+  // build — everything below was floating outside any method.
+  Future<void> _deleteBankAccount(Map bank) async {
+    if (bank["old_user_bank"] == true) {
+      _snack("Old profile bank details cannot be deleted here.", ok: false);
+      return;
+    }
 
     final yes = await showDialog<bool>(
       context: context,
@@ -470,7 +476,11 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
 
     if (yes != true) return;
 
+    if (!mounted) return;
+
     final res = await ApiService.deleteBankAccount(bank["id"].toString());
+
+    if (!mounted) return;
 
     _snack(
       res["message"]?.toString() ?? "Deleted",
@@ -583,32 +593,32 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                 size: 18,
               ),
             )
-         else if (!isDefault)
-  PopupMenuButton<String>(
-    color: _C.surfaceAlt,
-    icon: const Icon(Icons.more_vert_rounded, color: Colors.white70),
-    onSelected: (v) {
-      if (v == "default") _setDefaultBank(bank);
-    },
-    itemBuilder: (_) => const [
-      PopupMenuItem(
-        value: "default",
-        child: Text(
-          "Set as Default",
-          style: TextStyle(color: Colors.white),
-        ),
-      ),
-    ],
-  )
-else
-  const Padding(
-    padding: EdgeInsets.only(top: 8),
-    child: Icon(
-      Icons.verified_rounded,
-      color: _C.gold,
-      size: 18,
-    ),
-  ),
+          else
+            PopupMenuButton<String>(
+              color: _C.surfaceAlt,
+              icon: const Icon(Icons.more_vert_rounded, color: Colors.white70),
+              onSelected: (v) {
+                if (v == "default") _setDefaultBank(bank);
+                if (v == "delete") _deleteBankAccount(bank);
+              },
+              itemBuilder: (_) => [
+                if (!isDefault)
+                  const PopupMenuItem(
+                    value: "default",
+                    child: Text(
+                      "Set as Default",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                const PopupMenuItem(
+                  value: "delete",
+                  child: Text(
+                    "Delete",
+                    style: TextStyle(color: _C.red),
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );
