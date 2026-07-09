@@ -441,11 +441,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
     if (res["success"] == true) _load();
   }
 
-  Future<void> _deleteBank(Map bank) async {
-    if (bank["old_user_bank"] == true) {
-      _snack("Old profile bank details cannot delete here.", ok: false);
-      return;
-    }
+ 
 
     final yes = await showDialog<bool>(
       context: context,
@@ -587,29 +583,32 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                 size: 18,
               ),
             )
-          else
-            PopupMenuButton<String>(
-              color: _C.surfaceAlt,
-              icon: const Icon(Icons.more_vert_rounded, color: Colors.white70),
-              onSelected: (v) {
-                if (v == "default") _setDefaultBank(bank);
-                if (v == "delete") _deleteBank(bank);
-              },
-              itemBuilder: (_) => [
-                if (!isDefault)
-                  const PopupMenuItem(
-                    value: "default",
-                    child: Text(
-                      "Set as Default",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                const PopupMenuItem(
-                  value: "delete",
-                  child: Text("Delete", style: TextStyle(color: _C.red)),
-                ),
-              ],
-            ),
+         else if (!isDefault)
+  PopupMenuButton<String>(
+    color: _C.surfaceAlt,
+    icon: const Icon(Icons.more_vert_rounded, color: Colors.white70),
+    onSelected: (v) {
+      if (v == "default") _setDefaultBank(bank);
+    },
+    itemBuilder: (_) => const [
+      PopupMenuItem(
+        value: "default",
+        child: Text(
+          "Set as Default",
+          style: TextStyle(color: Colors.white),
+        ),
+      ),
+    ],
+  )
+else
+  const Padding(
+    padding: EdgeInsets.only(top: 8),
+    child: Icon(
+      Icons.verified_rounded,
+      color: _C.gold,
+      size: 18,
+    ),
+  ),
         ],
       ),
     );

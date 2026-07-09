@@ -11,8 +11,7 @@ import '../services/api_service.dart';
 import '../services/update_service.dart';
 
 // ─────────────────────────────────────────────────────────────
-//  DESIGN TOKENS - SAME STYLE AS wallet_transfer_screen.dart
-//  (dark yellow / dark black)
+//  DESIGN TOKENS - DARK YELLOW / BLACK ONLY (no light yellow)
 // ─────────────────────────────────────────────────────────────
 class _C {
   static const bg = Color(0xff000000);
@@ -22,9 +21,10 @@ class _C {
   static const border = Color(0xff2E2E2E);
   static const borderFaint = Color(0xff202020);
 
+  // Only dark/deep yellow tones — no bright/light yellow anywhere.
   static const orange = Color(0xffB8860B); // dark goldenrod
-  static const amber = Color(0xff9A6B00); // deep amber
-  static const gold = Color(0xffD4A017); // muted gold highlight
+  static const amber = Color(0xff7A5300); // deep amber (darker than before)
+  static const gold = Color(0xffA67C00); // muted dark gold highlight
 
   static const red = Color(0xffEF4444);
   static const green = Color(0xff22C55E);
@@ -36,9 +36,9 @@ class _C {
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
     colors: [
+      Color(0xff5C4200),
       Color(0xff8A6300),
-      Color(0xffB8860B),
-      Color(0xffD4A017),
+      Color(0xffA67C00),
     ],
   );
 
@@ -46,9 +46,9 @@ class _C {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Color(0xff050505),
-      Color(0xff111111),
-      Color(0xff1A1500),
+      Color(0xff000000),
+      Color(0xff0D0D0D),
+      Color(0xff141000),
     ],
   );
 
@@ -56,12 +56,19 @@ class _C {
     center: Alignment(-0.2, -0.6),
     radius: 1.2,
     colors: [
-      Color(0x55B8860B),
-      Color(0x22D4A017),
+      Color(0x44B8860B),
+      Color(0x22A67C00),
       Color(0x00000000),
     ],
   );
 }
+
+/// ─────────────────────────────────────────────────────────────
+/// IMPORTANT — set this to your real post-login/home route name.
+/// After a forced update finishes installing, the app sends the
+/// user here instead of just closing the screen.
+/// ─────────────────────────────────────────────────────────────
+const String kHomeOrLoginRoute = '/login';
 
 /// Works in two modes:
 ///   Mode 1 — Called by UpdateService: all params supplied, no extra fetch.
@@ -108,6 +115,10 @@ class _UpdateScreenState extends State<UpdateScreen>
   late Animation<double> _fade;
   late Animation<Offset> _slide;
 
+  // Spinner ring shown around the logo while downloading/installing,
+  // mimicking the native Android system-update look.
+  late AnimationController _spin;
+
   @override
   void initState() {
     super.initState();
@@ -120,6 +131,11 @@ class _UpdateScreenState extends State<UpdateScreen>
       begin: const Offset(0, 0.05),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _anim, curve: Curves.easeOut));
+
+    _spin = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat();
 
     if (widget.serverVersion != null) {
       // Mode 1: pre-filled by UpdateService
@@ -138,6 +154,7 @@ class _UpdateScreenState extends State<UpdateScreen>
   @override
   void dispose() {
     _anim.dispose();
+    _spin.dispose();
     super.dispose();
   }
 
@@ -248,12 +265,26 @@ class _UpdateScreenState extends State<UpdateScreen>
           _installed = true;
           _downloading = false;
         });
+
+        // If this was a mandatory update, move the user forward to the
+        // home/login flow instead of leaving them stuck on this screen.
+        if (_forceUpdt) {
+          _goToHomeOrLogin();
+        }
       }
     } on DioException catch (_) {
       _setError('Network error. Please try again.');
     } catch (_) {
       _setError('Something went wrong. Please try again.');
     }
+  }
+
+  void _goToHomeOrLogin() {
+    if (!mounted) return;
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      kHomeOrLoginRoute,
+      (route) => false,
+    );
   }
 
   void _setError(String msg) => setState(() {
@@ -401,7 +432,61 @@ class _UpdateScreenState extends State<UpdateScreen>
     );
   }
 
-  /// Simple, single-line progress bar shown only while downloading.
+  /// Logo with a spinning dark-gold ring around it — the Android
+  /// system-update look, recolored to dark yellow / black only.
+  Widget _logoWithSpinner({required bool spinning}) {
+    return SizedBox(
+      width: 120,
+      height: 120,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          if (spinning)
+            AnimatedBuilder(
+              animation: _spin,
+              builder: (context, child) => Transform.rotate(
+                angle: _spin.value * 6.28318,
+                child: child,
+              ),
+              child: SizedBox(
+                width: 120,
+                height: 120,
+                child: CircularProgressIndicator(
+                  strokeWidth: 3,
+                  valueColor: const AlwaysStoppedAnimation(_C.gold),
+                  backgroundColor: _C.border,
+                ),
+              ),
+            )
+          else
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: _C.gold, width: 3),
+              ),
+            ),
+          Container(
+            width: 88,
+            height: 88,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withOpacity(0.04),
+              border: Border.all(color: _C.gold, width: 2),
+            ),
+            child: Image.asset(
+              "assets/images/bitxnow_logo.jpeg",
+              fit: BoxFit.contain,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Native-style progress bar + percentage, dark gold on black.
   Widget _progressBar() {
     return Column(
       children: [
@@ -411,15 +496,15 @@ class _UpdateScreenState extends State<UpdateScreen>
             value: _progress > 0 ? _progress : null,
             backgroundColor: _C.border,
             valueColor: const AlwaysStoppedAnimation(_C.gold),
-            minHeight: 7,
+            minHeight: 8,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         Text(
           '${(_progress * 100).toStringAsFixed(0)}%',
           style: const TextStyle(
             color: _C.gold,
-            fontSize: 12,
+            fontSize: 15,
             fontWeight: FontWeight.w800,
           ),
         ),
@@ -486,15 +571,15 @@ class _UpdateScreenState extends State<UpdateScreen>
     );
   }
 
-  Widget _loadingBody() => const SizedBox(
-        height: 240,
+  Widget _loadingBody() => SizedBox(
+        height: 260,
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CircularProgressIndicator(color: _C.gold, strokeWidth: 2.5),
-              SizedBox(height: 18),
-              Text(
+              _logoWithSpinner(spinning: true),
+              const SizedBox(height: 18),
+              const Text(
                 'Checking...',
                 style: TextStyle(color: _C.textSecondary, fontSize: 13),
               ),
@@ -574,8 +659,9 @@ class _UpdateScreenState extends State<UpdateScreen>
         ],
       );
 
-  /// After a successful install, keep it minimal — a checkmark and a
-  /// single "Okay" button. No extra instructional text.
+  /// After a successful install: for a forced update we already navigate
+  /// away automatically (see _downloadAndInstall), so this body is only
+  /// really seen for optional updates that the user chose to install.
   Widget _installedBody() => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -606,23 +692,26 @@ class _UpdateScreenState extends State<UpdateScreen>
         ],
       );
 
+  /// Main "Android system update" style body — logo + spinner ring,
+  /// progress bar and percentage, all in dark yellow / black.
   Widget _updateBody() => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          ShaderMask(
-            shaderCallback: (b) => _C.gradientAccent.createShader(b),
-            child: Text(
-              _forceUpdt ? 'Update Required' : 'New Version',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.4,
-              ),
+          if (_fromCache) _cacheBanner(),
+          _logoWithSpinner(spinning: _downloading),
+          const SizedBox(height: 20),
+          Text(
+            _downloading
+                ? 'Updating...'
+                : (_forceUpdt ? 'Update required' : 'New version available'),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.3,
             ),
           ),
           const SizedBox(height: 18),
-          if (_fromCache) _cacheBanner(),
           Row(
             children: [
               _versionChip(
@@ -659,6 +748,8 @@ class _UpdateScreenState extends State<UpdateScreen>
               icon: _hasError ? Icons.refresh_rounded : Icons.download_rounded,
               onTap: _downloadAndInstall,
             ),
+            // "Later" is only shown for optional updates — a forced
+            // update never lets the user skip or go back.
             if (!_forceUpdt) ...[
               const SizedBox(height: 10),
               _ghostBtn(label: 'Later', onTap: _dismissUpdate),
@@ -691,33 +782,16 @@ class _UpdateScreenState extends State<UpdateScreen>
                 ),
               ),
             ),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 88,
-                  height: 88,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.04),
-                    border: Border.all(color: _C.gold, width: 2),
-                  ),
-                  child: Image.asset(
-                    "assets/images/bitxnow_logo.jpeg",
-                    fit: BoxFit.contain,
-                  ),
-                ),
-                const SizedBox(height: 18),
-                child,
-              ],
-            ),
+            child,
           ],
         ),
       );
 
   @override
   Widget build(BuildContext context) {
+    // Forced update: back button/gesture is fully blocked, and the
+    // screen does NOT hide/dismiss itself until the install completes
+    // and _goToHomeOrLogin() is called.
     return PopScope(
       canPop: !_forceUpdt && !_downloading,
       onPopInvoked: (didPop) {
@@ -757,7 +831,7 @@ class _UpdateScreenState extends State<UpdateScreen>
                 ),
               ),
             ),
-          ], 
+          ],
         ),
       ),
     );
