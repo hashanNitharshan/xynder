@@ -275,8 +275,8 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
     if (res["success"] == true) _load();
   }
 
-  // Add-only dialog. Existing bank accounts can no longer be edited here —
-  // only added or deleted (see _bankTile / popup menu).
+  // Add-only dialog. Existing bank accounts can no longer be edited or
+  // deleted here — only added, or promoted to default (see _bankTile).
   Future<void> _showAddBankDialog() async {
     final bankNameCtrl = TextEditingController();
     final branchCtrl = TextEditingController();
@@ -441,55 +441,6 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
     if (res["success"] == true) _load();
   }
 
-  // This method's signature had gone missing, which is what broke the
-  // build — everything below was floating outside any method.
-  Future<void> _deleteBankAccount(Map bank) async {
-    if (bank["old_user_bank"] == true) {
-      _snack("Old profile bank details cannot be deleted here.", ok: false);
-      return;
-    }
-
-    final yes = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: _C.surfaceAlt,
-        title: const Text(
-          "Delete Bank Account?",
-          style: TextStyle(color: Colors.white),
-        ),
-        content: const Text(
-          "This bank account will be removed.",
-          style: TextStyle(color: _C.textSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text("Cancel"),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text("Delete", style: TextStyle(color: _C.red)),
-          ),
-        ],
-      ),
-    );
-
-    if (yes != true) return;
-
-    if (!mounted) return;
-
-    final res = await ApiService.deleteBankAccount(bank["id"].toString());
-
-    if (!mounted) return;
-
-    _snack(
-      res["message"]?.toString() ?? "Deleted",
-      ok: res["success"] == true,
-    );
-
-    if (res["success"] == true) _load();
-  }
-
   Widget _bankTile(Map bank) {
     final isDefault = bank["is_default"] == true ||
         bank["is_default"] == 1 ||
@@ -593,31 +544,31 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                 size: 18,
               ),
             )
-          else
+          else if (!isDefault)
             PopupMenuButton<String>(
               color: _C.surfaceAlt,
               icon: const Icon(Icons.more_vert_rounded, color: Colors.white70),
               onSelected: (v) {
                 if (v == "default") _setDefaultBank(bank);
-                if (v == "delete") _deleteBankAccount(bank);
               },
-              itemBuilder: (_) => [
-                if (!isDefault)
-                  const PopupMenuItem(
-                    value: "default",
-                    child: Text(
-                      "Set as Default",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                const PopupMenuItem(
-                  value: "delete",
+              itemBuilder: (_) => const [
+                PopupMenuItem(
+                  value: "default",
                   child: Text(
-                    "Delete",
-                    style: TextStyle(color: _C.red),
+                    "Set as Default",
+                    style: TextStyle(color: Colors.white),
                   ),
                 ),
               ],
+            )
+          else
+            const Padding(
+              padding: EdgeInsets.only(top: 8),
+              child: Icon(
+                Icons.verified_rounded,
+                color: _C.gold,
+                size: 18,
+              ),
             ),
         ],
       ),

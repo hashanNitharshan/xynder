@@ -14,7 +14,7 @@ Route::options('/{any}', function () {
 Route::get('/version', function () {
     return response()->json([
         'success'      => true,
-        'version'      => '1.1.2',
+        'version'      => '1.1.3',
         'apk_url'      => 'https://wallet.bitxnow.com/apk/wallet-mobile.apk',
         'force_update' => false,
     ]);
