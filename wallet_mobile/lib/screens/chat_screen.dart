@@ -45,6 +45,10 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
+  // How long a chat stays open after it is first created, if the
+  // backend does not tell us otherwise.
+  static const int _chatLifetimeSeconds = 15 * 60; // 15 minutes
+
   final TextEditingController _messageCtrl = TextEditingController();
   final ScrollController _scrollCtrl = ScrollController();
   final ImagePicker _picker = ImagePicker();
@@ -56,25 +60,38 @@ class _ChatScreenState extends State<ChatScreen> {
   int _remainingSeconds = 0;
 
   List _messages = [];
-  Timer? _timer;
+
+  // Polls the server for new messages / lock state.
+  Timer? _pollTimer;
+
+  // Ticks the on-screen countdown down every second, and auto-locks
+  // the chat locally the moment it reaches zero (in addition to
+  // whatever the server says), so a chat can never be used past its
+  // 15 minute window even if a poll is delayed.
+  Timer? _countdownTimer;
+
   String? _myUserId;
+  DateTime? _chatOpenedAt;
 
- @override
-void initState() {
-  super.initState();
+  @override
+  void initState() {
+    super.initState();
 
-  _loadMyProfile();
-  _loadMessages();
-  ApiService.chatDelivered();
+    _chatOpenedAt = DateTime.now();
 
-  _timer = Timer.periodic(const Duration(seconds: 3), (_) {
-    _loadMessages(showLoading: false);
-  });
-}
+    _loadMyProfile();
+    _loadMessages();
+    ApiService.chatDelivered();
+
+    _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      _loadMessages(showLoading: false);
+    });
+  }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _pollTimer?.cancel();
+    _countdownTimer?.cancel();
     _messageCtrl.dispose();
     _scrollCtrl.dispose();
     super.dispose();
@@ -90,180 +107,235 @@ void initState() {
       });
     }
   }
-Future<void> _loadMessages({bool showLoading = true}) async {
-  if (showLoading && mounted) {
-    setState(() => _loading = true);
-  }
 
-  final res = widget.chatType == "transfer"
-      ? await ApiService.transferChatMessages(widget.chatId)
-      : await ApiService.requestChatMessages(widget.chatId);
-
-  if (!mounted) return;
-
-  final bool locked =
-      res["is_locked"] == true ||
-      res["locked"] == true ||
-      res["chat_locked"] == true ||
-      res["chat_is_locked"] == true ||
-      res["status_code"] == 423;
-
-  final newMessages = List.from(res["messages"] ?? []);
-  final grew = newMessages.length > _messages.length;
-
-  setState(() {
-    _messages = newMessages;
-    _isLocked = locked;
-    _remainingSeconds =
-        int.tryParse(res["remaining_seconds"]?.toString() ?? "0") ?? 0;
-    _loading = false;
-  });
-
-  if (grew || showLoading) {
-    Future.delayed(const Duration(milliseconds: 120), _scrollToBottom);
-  }
-}
-
-Future<void> _sendMessage() async {
-  if (_isLocked || _sending) return;
-
-  final text = _messageCtrl.text.trim();
-  if (text.isEmpty) return;
-
-  setState(() => _sending = true);
-  _messageCtrl.clear();
-
-  final res = await ApiService.sendChatMessageMultipart(
-    chatType: widget.chatType,
-    chatId: widget.chatId,
-    message: text,
-  );
-
-  if (!mounted) return;
-
-  final bool locked =
-      res["is_locked"] == true ||
-      res["locked"] == true ||
-      res["chat_locked"] == true ||
-      res["chat_is_locked"] == true ||
-      res["status_code"] == 423;
-
-  setState(() {
-    _sending = false;
-    if (locked) {
-      _isLocked = true;
-      _remainingSeconds = 0;
+  Future<void> _loadMessages({bool showLoading = true}) async {
+    if (showLoading && mounted) {
+      setState(() => _loading = true);
     }
-  });
 
-  if (locked) return;
+    final res = widget.chatType == "transfer"
+        ? await ApiService.transferChatMessages(widget.chatId)
+        : await ApiService.requestChatMessages(widget.chatId);
 
-  if (res["success"] == true) {
-    await _loadMessages(showLoading: false);
-    Future.delayed(const Duration(milliseconds: 80), _scrollToBottom);
-  }
-}
+    if (!mounted) return;
 
-Future<void> _sendImage(ImageSource source) async {
-  if (_isLocked || _sending) return;
+    final bool serverLocked = res["is_locked"] == true ||
+        res["locked"] == true ||
+        res["chat_locked"] == true ||
+        res["chat_is_locked"] == true ||
+        res["status_code"] == 423;
 
-  final image = await _picker.pickImage(source: source, imageQuality: 80);
-  if (image == null) return;
+    final newMessages = List.from(res["messages"] ?? []);
+    final grew = newMessages.length > _messages.length;
 
-  setState(() => _sending = true);
+    // Prefer the server's remaining_seconds when it sends one.
+    // Otherwise fall back to our own 15-minute-from-open calculation
+    // so the chat still auto-locks even if the backend doesn't
+    // return a countdown value.
+    int? serverRemaining =
+        int.tryParse(res["remaining_seconds"]?.toString() ?? "");
 
-  final res = await ApiService.sendChatMessageMultipart(
-    chatType: widget.chatType,
-    chatId: widget.chatId,
-    message: _messageCtrl.text.trim(),
-    image: image,
-  );
-
-  if (!mounted) return;
-
-  _messageCtrl.clear();
-
-  final bool locked =
-      res["is_locked"] == true ||
-      res["locked"] == true ||
-      res["chat_locked"] == true ||
-      res["chat_is_locked"] == true ||
-      res["status_code"] == 423;
-
-  setState(() {
-    _sending = false;
-    if (locked) {
-      _isLocked = true;
-      _remainingSeconds = 0;
+    int computedRemaining;
+    if (serverRemaining != null) {
+      computedRemaining = serverRemaining;
+    } else if (_chatOpenedAt != null) {
+      final elapsed = DateTime.now().difference(_chatOpenedAt!).inSeconds;
+      computedRemaining = _chatLifetimeSeconds - elapsed;
+    } else {
+      computedRemaining = _remainingSeconds;
     }
-  });
 
-  if (locked) return;
+    final bool timeExpired = computedRemaining <= 0;
 
-  if (res["success"] == true) {
-    await _loadMessages(showLoading: false);
-    Future.delayed(const Duration(milliseconds: 80), _scrollToBottom);
-  }
-}
+    setState(() {
+      _messages = newMessages;
+      _isLocked = serverLocked || timeExpired;
+      _remainingSeconds = _isLocked ? 0 : computedRemaining;
+      _loading = false;
+    });
 
-Future<void> _sendFile() async {
-  if (_isLocked || _sending) return;
+    _restartCountdownTimer();
 
-  final result = await FilePicker.platform.pickFiles(
-    withData: true,
-    type: FileType.custom,
-    allowedExtensions: [
-      'jpg',
-      'jpeg',
-      'png',
-      'webp',
-      'pdf',
-      'doc',
-      'docx',
-      'xls',
-      'xlsx',
-      'txt',
-      'zip',
-    ],
-  );
-
-  if (result == null || result.files.isEmpty) return;
-
-  setState(() => _sending = true);
-
-  final res = await ApiService.sendChatMessageMultipart(
-    chatType: widget.chatType,
-    chatId: widget.chatId,
-    message: _messageCtrl.text.trim(),
-    file: result.files.first,
-  );
-
-  if (!mounted) return;
-
-  _messageCtrl.clear();
-
-  final bool locked =
-      res["is_locked"] == true ||
-      res["locked"] == true ||
-      res["chat_locked"] == true ||
-      res["chat_is_locked"] == true ||
-      res["status_code"] == 423;
-
-  setState(() {
-    _sending = false;
-    if (locked) {
-      _isLocked = true;
-      _remainingSeconds = 0;
+    if (grew || showLoading) {
+      Future.delayed(const Duration(milliseconds: 120), _scrollToBottom);
     }
-  });
-
-  if (locked) return;
-
-  if (res["success"] == true) {
-    await _loadMessages(showLoading: false);
-    Future.delayed(const Duration(milliseconds: 80), _scrollToBottom);
   }
-}
+
+  // Runs a local, once-per-second countdown so the timer shown to the
+  // user is smooth (not just updated every 3s poll) and so the chat
+  // gets locked immediately once the 15 minutes run out, without
+  // waiting for the next poll.
+  void _restartCountdownTimer() {
+    _countdownTimer?.cancel();
+
+    if (_isLocked || _remainingSeconds <= 0) return;
+
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) {
+        t.cancel();
+        return;
+      }
+
+      setState(() {
+        if (_remainingSeconds > 1) {
+          _remainingSeconds--;
+        } else {
+          _remainingSeconds = 0;
+          _isLocked = true;
+        }
+      });
+
+      if (_isLocked) t.cancel();
+    });
+  }
+
+  Future<void> _sendMessage() async {
+    if (_isLocked || _sending) return;
+
+    final text = _messageCtrl.text.trim();
+    if (text.isEmpty) return;
+
+    setState(() => _sending = true);
+    _messageCtrl.clear();
+
+    final res = await ApiService.sendChatMessageMultipart(
+      chatType: widget.chatType,
+      chatId: widget.chatId,
+      message: text,
+    );
+
+    if (!mounted) return;
+
+    final bool locked = res["is_locked"] == true ||
+        res["locked"] == true ||
+        res["chat_locked"] == true ||
+        res["chat_is_locked"] == true ||
+        res["status_code"] == 423;
+
+    setState(() {
+      _sending = false;
+      if (locked) {
+        _isLocked = true;
+        _remainingSeconds = 0;
+      }
+    });
+
+    if (locked) {
+      _countdownTimer?.cancel();
+      return;
+    }
+
+    if (res["success"] == true) {
+      await _loadMessages(showLoading: false);
+      Future.delayed(const Duration(milliseconds: 80), _scrollToBottom);
+    }
+  }
+
+  Future<void> _sendImage(ImageSource source) async {
+    if (_isLocked || _sending) return;
+
+    final image = await _picker.pickImage(source: source, imageQuality: 80);
+    if (image == null) return;
+
+    setState(() => _sending = true);
+
+    final res = await ApiService.sendChatMessageMultipart(
+      chatType: widget.chatType,
+      chatId: widget.chatId,
+      message: _messageCtrl.text.trim(),
+      image: image,
+    );
+
+    if (!mounted) return;
+
+    _messageCtrl.clear();
+
+    final bool locked = res["is_locked"] == true ||
+        res["locked"] == true ||
+        res["chat_locked"] == true ||
+        res["chat_is_locked"] == true ||
+        res["status_code"] == 423;
+
+    setState(() {
+      _sending = false;
+      if (locked) {
+        _isLocked = true;
+        _remainingSeconds = 0;
+      }
+    });
+
+    if (locked) {
+      _countdownTimer?.cancel();
+      return;
+    }
+
+    if (res["success"] == true) {
+      await _loadMessages(showLoading: false);
+      Future.delayed(const Duration(milliseconds: 80), _scrollToBottom);
+    }
+  }
+
+  Future<void> _sendFile() async {
+    if (_isLocked || _sending) return;
+
+    final result = await FilePicker.platform.pickFiles(
+      withData: true,
+      type: FileType.custom,
+      allowedExtensions: [
+        'jpg',
+        'jpeg',
+        'png',
+        'webp',
+        'pdf',
+        'doc',
+        'docx',
+        'xls',
+        'xlsx',
+        'txt',
+        'zip',
+      ],
+    );
+
+    if (result == null || result.files.isEmpty) return;
+
+    setState(() => _sending = true);
+
+    final res = await ApiService.sendChatMessageMultipart(
+      chatType: widget.chatType,
+      chatId: widget.chatId,
+      message: _messageCtrl.text.trim(),
+      file: result.files.first,
+    );
+
+    if (!mounted) return;
+
+    _messageCtrl.clear();
+
+    final bool locked = res["is_locked"] == true ||
+        res["locked"] == true ||
+        res["chat_locked"] == true ||
+        res["chat_is_locked"] == true ||
+        res["status_code"] == 423;
+
+    setState(() {
+      _sending = false;
+      if (locked) {
+        _isLocked = true;
+        _remainingSeconds = 0;
+      }
+    });
+
+    if (locked) {
+      _countdownTimer?.cancel();
+      return;
+    }
+
+    if (res["success"] == true) {
+      await _loadMessages(showLoading: false);
+      Future.delayed(const Duration(milliseconds: 80), _scrollToBottom);
+    }
+  }
+
   void _openAttachment(String url) async {
     final uri = Uri.parse(ApiService.fixUrl(url));
     await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -360,10 +432,10 @@ Future<void> _sendFile() async {
     return "$m:$s";
   }
 
-String _transactionNo() {
-  final raw = widget.chatId.padLeft(9, '0');
-  return "TNS$raw";
-}
+  String _transactionNo() {
+    final raw = widget.chatId.padLeft(9, '0');
+    return "TNS$raw";
+  }
 
   // ═══════════════════════════════════════════
   //  TOP BAR - status shown as a dot on the photo, no text
@@ -731,35 +803,37 @@ String _transactionNo() {
       ),
     );
   }
-Widget _lockedInput() {
-  return Container(
-    width: double.infinity,
-    padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-    decoration: const BoxDecoration(
-      color: _C.surface,
-      border: Border(top: BorderSide(color: _C.border)),
-    ),
-    child: const SafeArea(
-      top: false,
-      child: Center(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.lock_rounded, color: _C.red, size: 17),
-            SizedBox(width: 8),
-            Text(
-              "Chat closed / locked",
-              style: TextStyle(
-                color: _C.red,
-                fontWeight: FontWeight.w900,
+
+  Widget _lockedInput() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      decoration: const BoxDecoration(
+        color: _C.surface,
+        border: Border(top: BorderSide(color: _C.border)),
+      ),
+      child: const SafeArea(
+        top: false,
+        child: Center(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.lock_rounded, color: _C.red, size: 17),
+              SizedBox(width: 8),
+              Text(
+                "Chat closed / locked",
+                style: TextStyle(
+                  color: _C.red,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
+
   Widget _messageInput() {
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 9, 12, 11),

@@ -1,40 +1,41 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../services/api_service.dart';
 import 'chat_screen.dart';
+import 'transaction_detail_screen.dart';
 
 class _C {
   // Background
   static const bg = Color(0xff000000);
-  static const surface = Color(0xff0D0D0D);
-  static const surfaceAlt = Color(0xff171717);
+  static const surface = Color(0xff101010);
+  static const surfaceAlt = Color(0xff101010);
 
   // Borders
-  static const border = Color(0xff2E2E2E);
-  static const borderFaint = Color(0xff202020);
+  static const border = Color(0xff252525);
+  static const borderFaint = Color(0xff252525);
 
   // Primary Theme (Dark Yellow / Goldenrod)
-  static const orange = Color(0xffB8860B); // dark goldenrod
-  static const amber = Color(0xff9A6B00); // deep amber
-  static const gold = Color(0xffD4A017); // muted gold highlight
+  static const orange = Color(0xffFF9F2E); // dark goldenrod
+  static const amber = Color(0xffFF9F2E); // deep amber
+  static const gold = Color(0xffFF9F2E); // muted gold highlight
 
   // Status Colors
-  static const green = Color(0xff22C55E);
-  static const red = Color(0xffEF4444);
-  static const blue = Color(0xffB8860B);
+  static const green = Color(0xff00C076);
+  static const red = Color(0xffF6465D);
+  static const blue = Color(0xffFF9F2E);
 
   // Text
   static const textPrimary = Colors.white;
-  static const textSecondary = Color(0xffA3A3A3);
+  static const textSecondary = Color(0xff68686E);
 
   // Dark Yellow Button Gradient
   static const gradientAccent = LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
     colors: [
-      Color(0xff8A6300),
-      Color(0xffB8860B),
-      Color(0xffD4A017),
+      Color(0xffFF9F2E),
+      Color(0xffFF9F2E),
     ],
   );
 
@@ -43,9 +44,8 @@ class _C {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Color(0xff050505),
-      Color(0xff111111),
-      Color(0xff1A1500),
+      Color(0xff101010),
+      Color(0xff101010),
     ],
   );
 }
@@ -210,7 +210,9 @@ class _RequestScreenState extends State<RequestScreen>
     _showMerchantSheet();
   }
 
-  Future<void> _submitFinal() async {
+  Future<void> _submitFinal(BuildContext sheetContext) async {
+    if (_submitting) return;
+
     if (_selectedMerchant == null) {
       _snack("Please select a merchant", ok: false);
       return;
@@ -221,7 +223,9 @@ class _RequestScreenState extends State<RequestScreen>
       return;
     }
 
-    setState(() => _submitting = true);
+    if (mounted) {
+      setState(() => _submitting = true);
+    }
 
     final data = await ApiService.createRequestMultipart(
       amount: _amountCtrl.text.trim(),
@@ -230,52 +234,121 @@ class _RequestScreenState extends State<RequestScreen>
       note: _noteCtrl.text.trim(),
     );
 
-    if (mounted) setState(() => _submitting = false);
+    if (!mounted) return;
 
-    if (data["success"] == true) {
-      final reqId =
-          data["request"]?["id"]?.toString() ?? data["request_id"]?.toString();
+    setState(() => _submitting = false);
 
-      final reqNo = data["request"]?["transaction_no"]?.toString() ??
-          (reqId != null ? "TNS${reqId.padLeft(9, "0")}" : null);
-
-      final merchant = Map<String, dynamic>.from(_selectedMerchant!);
-
-      if (mounted) Navigator.pop(context);
-
-      _amountCtrl.clear();
-      _noteCtrl.clear();
-
-      setState(() {
-        _selectedMerchant = null;
-        _lastRequestId = reqId;
-        _lastMerchantUser = merchant;
-      });
-
-      await _loadPage();
-
-      _showSuccessDialog(
-        requestId: reqId,
-        requestNo: reqNo,
-        merchant: merchant,
+    if (data["success"] != true) {
+      _snack(
+        data["message"]?.toString() ?? "Request failed",
+        ok: false,
       );
-    } else {
-      _snack(data["message"] ?? "Request failed", ok: false);
+      return;
     }
-  }
 
-  void _snack(String msg, {bool ok = true}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: ok ? _C.green : _C.red,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        content: Text(
-          msg,
-          style: const TextStyle(fontWeight: FontWeight.w700),
+    final reqId =
+        data["request"]?["id"]?.toString() ??
+        data["request_id"]?.toString();
+
+    final reqNo =
+        data["request"]?["transaction_no"]?.toString() ??
+        (reqId != null ? "TNS${reqId.padLeft(9, "0")}" : null);
+
+    final merchant = Map<String, dynamic>.from(
+      _selectedMerchant!,
+    );
+
+    final submittedAmount = _amountCtrl.text.trim();
+    final submittedNote = _noteCtrl.text.trim();
+
+    final requestItem = data["request"] is Map
+        ? Map<String, dynamic>.from(data["request"])
+        : <String, dynamic>{};
+
+    requestItem.addAll({
+      if (requestItem["id"] == null && reqId != null)
+        "id": reqId,
+      if (requestItem["transaction_no"] == null && reqNo != null)
+        "transaction_no": reqNo,
+      if (requestItem["type"] == null)
+        "type": type,
+      if (requestItem["amount"] == null)
+        "amount": submittedAmount,
+      if (requestItem["note"] == null)
+        "note": submittedNote,
+      if (requestItem["status"] == null)
+        "status": "pending",
+      if (requestItem["merchant_id"] == null)
+        "merchant_id": merchant["id"],
+      if (requestItem["merchant_name"] == null)
+        "merchant_name": merchant["name"],
+      if (requestItem["merchant_wallet_id"] == null)
+        "merchant_wallet_id": merchant["wallet_id"],
+      if (requestItem["merchant"] == null)
+        "merchant": merchant,
+      if (requestItem["created_at"] == null)
+        "created_at": DateTime.now().toIso8601String(),
+    });
+
+    _amountCtrl.clear();
+    _noteCtrl.clear();
+
+    setState(() {
+      _selectedMerchant = null;
+      _lastRequestId = reqId;
+      _lastMerchantUser = merchant;
+    });
+
+    // Close only the merchant bottom sheet.
+    if (sheetContext.mounted) {
+      Navigator.of(sheetContext).pop();
+    }
+
+    // Wait until the bottom-sheet closing animation finishes.
+    await Future<void>.delayed(
+      const Duration(milliseconds: 300),
+    );
+
+    if (!mounted) return;
+
+    // Open the new request as a pending transaction.
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => TransactionDetailScreen(
+          item: requestItem,
+          sourceType: "request",
+          user: Map<String, dynamic>.from(
+            _user ?? const <String, dynamic>{},
+          ),
         ),
       ),
     );
+
+    if (!mounted) return;
+
+    await _loadPage();
+  }
+
+  void _snack(String msg, {bool ok = true}) {
+    if (!mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          backgroundColor: ok ? _C.green : _C.red,
+          behavior: SnackBarBehavior.fixed,
+          content: Text(
+            msg,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      );
   }
 
   // ═══════════════════════════════════════════
@@ -288,88 +361,41 @@ class _RequestScreenState extends State<RequestScreen>
       opacity: _fade,
       child: SlideTransition(
         position: _slide,
-        child: Container(
-          margin: const EdgeInsets.fromLTRB(20, 18, 20, 0),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-          decoration: BoxDecoration(
-            gradient: _C.gradientCard,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xff3A2E00)),
-          ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
           child: Row(
             children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  gradient: _C.gradientAccent,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.account_balance_wallet_rounded,
-                  color: Colors.white,
-                  size: 18,
-                ),
+              const Icon(
+                Icons.account_balance_wallet_outlined,
+                color: _C.textSecondary,
+                size: 17,
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 9),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Available USD Balance",
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.45),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      "\$${_balance.toStringAsFixed(2)}",
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: _isVerified
-                      ? _C.green.withOpacity(0.14)
-                      : _C.gold.withOpacity(0.14),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: _isVerified
-                        ? _C.green.withOpacity(0.3)
-                        : _C.gold.withOpacity(0.3),
+                child: Text(
+                  "Available USD Balance",
+                  style: const TextStyle(
+                    color: _C.textSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-                child: Row(
-                  children: [
-                    Icon(
-                      _isVerified
-                          ? Icons.verified_rounded
-                          : Icons.warning_amber_rounded,
-                      size: 12,
-                      color: _isVerified ? _C.green : _C.gold,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      _isVerified ? "VERIFIED" : "UNVERIFIED",
-                      style: TextStyle(
-                        color: _isVerified ? _C.green : _C.gold,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ],
+              ),
+              Text(
+                "\$${_balance.toStringAsFixed(2)}",
+                style: const TextStyle(
+                  color: _C.textPrimary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
                 ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                _isVerified
+                    ? Icons.verified_rounded
+                    : Icons.warning_amber_rounded,
+                size: 15,
+                color: _isVerified ? _C.green : _C.gold,
               ),
             ],
           ),
@@ -380,16 +406,20 @@ class _RequestScreenState extends State<RequestScreen>
 
   Widget _typeSelector() {
     return Container(
-      margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-      padding: const EdgeInsets.all(5),
-      decoration: BoxDecoration(
-        color: _C.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _C.border),
+      margin: const EdgeInsets.fromLTRB(0, 22, 0, 0),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: _C.borderFaint,
+            width: 1,
+          ),
+        ),
       ),
       child: Row(
         children: [
           _typeBtn("Sell USD", Icons.trending_down_rounded, "withdrawal"),
+          const SizedBox(width: 28),
           _typeBtn("Buy USD", Icons.trending_up_rounded, "deposit"),
         ],
       ),
@@ -399,49 +429,59 @@ class _RequestScreenState extends State<RequestScreen>
   Widget _typeBtn(String label, IconData icon, String value) {
     final active = type == value;
 
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() {
-          type = value;
-          _selectedMerchant = null;
-        }),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          decoration: BoxDecoration(
-            gradient: active ? _C.gradientAccent : null,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon,
-                  size: 17, color: active ? Colors.white : Colors.white54),
-              const SizedBox(width: 7),
-              Text(
-                label,
-                style: TextStyle(
-                  color: active ? Colors.white : Colors.white70,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 13,
+    return GestureDetector(
+      onTap: () => setState(() {
+        type = value;
+        _selectedMerchant = null;
+      }),
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Icon(
+                  icon,
+                  size: 18,
+                  color: active
+                      ? _C.textPrimary
+                      : _C.textSecondary,
                 ),
+                const SizedBox(width: 7),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: active
+                        ? _C.textPrimary
+                        : _C.textSecondary,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              width: 82,
+              height: 3,
+              decoration: BoxDecoration(
+                color: active
+                    ? _C.orange
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(4),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _formCard() {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(20, 18, 20, 28),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: _C.surface,
-        borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: _C.border),
-      ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -449,7 +489,7 @@ class _RequestScreenState extends State<RequestScreen>
             "P2P Details",
             style: TextStyle(
               color: _C.textPrimary,
-              fontSize: 17,
+              fontSize: 14,
               fontWeight: FontWeight.w900,
             ),
           ),
@@ -459,12 +499,18 @@ class _RequestScreenState extends State<RequestScreen>
             label: "USD Amount",
             icon: Icons.attach_money_rounded,
             iconColor: _C.gold,
-            keyboardType: TextInputType.number,
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(
+                RegExp(r'^\d*\.?\d{0,8}'),
+              ),
+            ],
             onChanged: (_) => setState(() {}),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
           _summaryBox(),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
           _field(
             controller: _noteCtrl,
             label: "Note (optional)",
@@ -472,7 +518,7 @@ class _RequestScreenState extends State<RequestScreen>
             iconColor: _C.textSecondary,
             maxLines: 3,
           ),
-          const SizedBox(height: 22),
+          const SizedBox(height: 24),
           _gradientBtn(
             label: _isSell ? "Continue Sell P2P" : "Continue Buy P2P",
             icon: Icons.arrow_forward_rounded,
@@ -490,63 +536,101 @@ class _RequestScreenState extends State<RequestScreen>
     required IconData icon,
     Color iconColor = _C.gold,
     TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
     int maxLines = 1,
     Function(String)? onChanged,
   }) {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
       maxLines: maxLines,
       onChanged: onChanged,
-      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+      cursorColor: _C.orange,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+      ),
       decoration: InputDecoration(
-        prefixIcon: Icon(icon, color: iconColor, size: 20),
+        isDense: true,
         labelText: label,
-        labelStyle: const TextStyle(color: _C.textSecondary, fontSize: 14),
-        filled: true,
-        fillColor: _C.bg,
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: _C.border),
+        labelStyle: const TextStyle(
+          color: _C.textSecondary,
+          fontSize: 13,
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: _C.orange, width: 1.5),
+        floatingLabelStyle: const TextStyle(
+          color: _C.orange,
+          fontSize: 12,
         ),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 13,
+        ),
+        enabledBorder: const UnderlineInputBorder(
+          borderSide: BorderSide(
+            color: _C.border,
+            width: 1,
+          ),
+        ),
+        focusedBorder: const UnderlineInputBorder(
+          borderSide: BorderSide(
+            color: _C.orange,
+            width: 1.5,
+          ),
+        ),
+        border: const UnderlineInputBorder(
+          borderSide: BorderSide(
+            color: _C.border,
+          ),
+        ),
       ),
     );
   }
 
   Widget _summaryBox() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: _C.bg,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _C.borderFaint),
-      ),
-      child: Column(
-        children: [
-          _summaryRow("Type", _isSell ? "SELL USD" : "BUY USD",
-              color: _isSell ? _C.red : _C.green),
-          _summaryRow("USD Amount", "\$${_amount.toStringAsFixed(2)}"),
-          _summaryRow("USD Rate", "\$${_usdRate.toStringAsFixed(2)}"),
-          _summaryRow("Converted INR", "₹${_converted.toStringAsFixed(2)}"),
-          _summaryRow("Xynder Fee", "₹${_fee.toStringAsFixed(2)}"),
-          _summaryRow("Network Fee", "₹${_netFee.toStringAsFixed(2)}"),
-          const SizedBox(height: 4),
-          Container(height: 1, color: _C.border),
-          const SizedBox(height: 12),
-          _summaryRow(
-            "Total INR",
-            "₹${_total.toStringAsFixed(2)}",
-            color: _C.gold,
-            bold: true,
-            large: true,
+    return Column(
+      children: [
+        _summaryRow(
+          "Type",
+          _isSell ? "SELL USD" : "BUY USD",
+          color: _isSell ? _C.red : _C.green,
+        ),
+        _summaryRow(
+          "USD Amount",
+          "\$${_amount.toStringAsFixed(2)}",
+        ),
+        _summaryRow(
+          "USD Rate",
+          "\$${_usdRate.toStringAsFixed(2)}",
+        ),
+        _summaryRow(
+          "Converted INR",
+          "₹${_converted.toStringAsFixed(2)}",
+        ),
+        _summaryRow(
+          "Xynder Fee",
+          "₹${_fee.toStringAsFixed(2)}",
+        ),
+        _summaryRow(
+          "Network Fee",
+          "₹${_netFee.toStringAsFixed(2)}",
+        ),
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 4),
+          child: Divider(
+            color: _C.borderFaint,
+            height: 1,
+            thickness: 1,
           ),
-        ],
-      ),
+        ),
+        _summaryRow(
+          "Total INR",
+          "₹${_total.toStringAsFixed(2)}",
+          color: _C.gold,
+          bold: true,
+          large: true,
+        ),
+      ],
     );
   }
 
@@ -558,27 +642,29 @@ class _RequestScreenState extends State<RequestScreen>
     bool large = false,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(vertical: 7),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            k,
-            style: TextStyle(
-              color: _C.textSecondary,
-              fontSize: large ? 13 : 12,
-              fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
+          Expanded(
+            child: Text(
+              k,
+              style: TextStyle(
+                color: _C.textSecondary,
+                fontSize: large ? 13 : 12.5,
+                fontWeight:
+                    bold ? FontWeight.w700 : FontWeight.w500,
+              ),
             ),
           ),
-          Flexible(
-            child: Text(
-              v,
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                color: color ?? Colors.white,
-                fontSize: large ? 16 : 13,
-                fontWeight: bold ? FontWeight.w900 : FontWeight.w600,
-              ),
+          const SizedBox(width: 16),
+          Text(
+            v,
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              color: color ?? _C.textPrimary,
+              fontSize: large ? 16 : 13.5,
+              fontWeight:
+                  bold ? FontWeight.w900 : FontWeight.w700,
             ),
           ),
         ],
@@ -592,43 +678,51 @@ class _RequestScreenState extends State<RequestScreen>
     bool loading = false,
     IconData? icon,
   }) {
-    return GestureDetector(
-      onTap: loading ? null : onTap,
-      child: Container(
-        width: double.infinity,
-        height: 56,
-        decoration: BoxDecoration(
-          gradient: _C.gradientAccent,
-          borderRadius: BorderRadius.circular(17),
+    return SizedBox(
+      width: double.infinity,
+      height: 52,
+      child: ElevatedButton(
+        onPressed: loading ? null : onTap,
+        style: ElevatedButton.styleFrom(
+          elevation: 0,
+          backgroundColor: _C.orange,
+          disabledBackgroundColor:
+              _C.orange.withOpacity(0.45),
+          foregroundColor: Colors.black,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(6),
+          ),
         ),
-        child: Center(
-          child: loading
-              ? const SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    color: Colors.white,
-                  ),
-                )
-              : Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (icon != null) ...[
-                      Icon(icon, color: Colors.white, size: 18),
-                      const SizedBox(width: 8),
-                    ],
-                    Text(
-                      label,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 15,
-                      ),
-                    ),
-                  ],
+        child: loading
+            ? const SizedBox(
+                width: 21,
+                height: 21,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.4,
+                  color: Colors.black,
                 ),
-        ),
+              )
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (icon != null) ...[
+                    Icon(
+                      icon,
+                      color: Colors.black,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }
@@ -685,7 +779,7 @@ class _RequestScreenState extends State<RequestScreen>
                             : "Select Online Merchant — Buy",
                         style: const TextStyle(
                           color: _C.textPrimary,
-                          fontSize: 18,
+                          fontSize: 15,
                           fontWeight: FontWeight.w900,
                         ),
                       ),
@@ -724,7 +818,7 @@ class _RequestScreenState extends State<RequestScreen>
                     label: _isSell ? "Submit Sell P2P" : "Submit Buy P2P",
                     icon: Icons.send_rounded,
                     loading: _submitting,
-                    onTap: _submitFinal,
+                    onTap: () => _submitFinal(ctx),
                   ),
                 ),
               ],
@@ -761,14 +855,14 @@ class _RequestScreenState extends State<RequestScreen>
     return Column(
       children: [
         Text(label,
-            style: const TextStyle(color: _C.textSecondary, fontSize: 10)),
+            style: const TextStyle(color: _C.textSecondary, fontSize: 9)),
         const SizedBox(height: 3),
         Text(
           value,
           style: TextStyle(
             color: color,
             fontWeight: FontWeight.w900,
-            fontSize: 13,
+            fontSize: 11,
           ),
         ),
       ],
@@ -794,7 +888,7 @@ class _RequestScreenState extends State<RequestScreen>
         duration: const Duration(milliseconds: 220),
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xff2A2100) : _C.bg,
+          color: selected ? const Color(0xff2A1600) : _C.bg,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: selected ? _C.gold : _C.border,
@@ -820,7 +914,7 @@ class _RequestScreenState extends State<RequestScreen>
                       style: const TextStyle(
                         color: _C.textPrimary,
                         fontWeight: FontWeight.w800,
-                        fontSize: 15,
+                        fontSize: 13,
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -828,7 +922,7 @@ class _RequestScreenState extends State<RequestScreen>
                       m["email"]?.toString() ?? "",
                       style: const TextStyle(
                         color: _C.textSecondary,
-                        fontSize: 11,
+                        fontSize: 10,
                       ),
                     ),
                   ],
@@ -845,7 +939,7 @@ class _RequestScreenState extends State<RequestScreen>
                   "ONLINE",
                   style: TextStyle(
                     color: _C.green,
-                    fontSize: 10,
+                    fontSize: 9,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -884,7 +978,7 @@ class _RequestScreenState extends State<RequestScreen>
                 ? "Your Sell USD P2P has been submitted successfully. Chat is open only while request is pending."
                 : "Your Buy USD P2P has been submitted successfully. Chat is open only while request is pending.",
             textAlign: TextAlign.center,
-            style: const TextStyle(color: _C.textSecondary, fontSize: 13),
+            style: const TextStyle(color: _C.textSecondary, fontSize: 11),
           ),
           const SizedBox(height: 14),
           if (requestNo != null)
@@ -901,7 +995,7 @@ class _RequestScreenState extends State<RequestScreen>
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: _C.gold,
-                  fontSize: 13,
+                  fontSize: 11,
                   fontWeight: FontWeight.w900,
                 ),
               ),

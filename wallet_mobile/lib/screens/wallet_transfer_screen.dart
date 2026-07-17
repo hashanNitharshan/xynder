@@ -1,58 +1,19 @@
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
-import '../widgets/pinwheel_loader.dart';
+import 'package:flutter/services.dart';
 
-// ─────────────────────────────────────────────────────────────
-//  DESIGN TOKENS - SAME STYLE AS request_screen.dart (dark yellow)
-// ─────────────────────────────────────────────────────────────
+import '../services/api_service.dart';
+import 'transaction_detail_screen.dart';
+
 class _C {
   static const bg = Color(0xff000000);
-  static const surface = Color(0xff0D0D0D);
-  static const surfaceAlt = Color(0xff171717);
+  static const divider = Color(0xff252525);
 
-  static const border = Color(0xff2E2E2E);
-  static const borderFaint = Color(0xff202020);
-
-  // Theme (Dark Yellow / Goldenrod)
-  static const orange = Color(0xffB8860B); // dark goldenrod
-  static const amber = Color(0xff9A6B00); // deep amber
-  static const gold = Color(0xffD4A017); // muted gold highlight
-
-  static const red = Color(0xffEF4444);
-  static const blue = Color(0xffB8860B);
+  static const gold = Color(0xffFF9F2E);
+  static const green = Color(0xff00C076);
+  static const red = Color(0xffF6465D);
 
   static const textPrimary = Colors.white;
-  static const textSecondary = Color(0xffA3A3A3);
-
-  static const gradientAccent = LinearGradient(
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
-    colors: [
-      Color(0xff8A6300),
-      Color(0xffB8860B),
-      Color(0xffD4A017),
-    ],
-  );
-
-  static const gradientCard = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [
-      Color(0xff050505),
-      Color(0xff111111),
-      Color(0xff1A1500),
-    ],
-  );
-
-  static const gradientGlow = RadialGradient(
-    center: Alignment(-0.2, -0.6),
-    radius: 1.2,
-    colors: [
-      Color(0x55B8860B),
-      Color(0x22D4A017),
-      Color(0x00000000),
-    ],
-  );
+  static const textSecondary = Color(0xff737378);
 }
 
 class WalletTransferScreen extends StatefulWidget {
@@ -66,11 +27,11 @@ class WalletTransferScreen extends StatefulWidget {
   });
 
   @override
-  State<WalletTransferScreen> createState() => _WalletTransferScreenState();
+  State<WalletTransferScreen> createState() =>
+      _WalletTransferScreenState();
 }
 
-class _WalletTransferScreenState extends State<WalletTransferScreen>
-    with SingleTickerProviderStateMixin {
+class _WalletTransferScreenState extends State<WalletTransferScreen> {
   final walletCtrl = TextEditingController();
   final amountCtrl = TextEditingController();
   final noteCtrl = TextEditingController();
@@ -80,35 +41,8 @@ class _WalletTransferScreenState extends State<WalletTransferScreen>
 
   Map<String, dynamic>? receiver;
 
-  String? _lastTransferId;
-  Map<String, dynamic>? _lastReceiverUser;
-
-  late AnimationController _anim;
-  late Animation<double> _fade;
-  late Animation<Offset> _slide;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _anim = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 650),
-    );
-
-    _fade = CurvedAnimation(parent: _anim, curve: Curves.easeOut);
-
-    _slide = Tween<Offset>(
-      begin: const Offset(0, 0.05),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _anim, curve: Curves.easeOut));
-
-    _anim.forward();
-  }
-
   @override
   void dispose() {
-    _anim.dispose();
     walletCtrl.dispose();
     amountCtrl.dispose();
     noteCtrl.dispose();
@@ -116,37 +50,43 @@ class _WalletTransferScreenState extends State<WalletTransferScreen>
   }
 
   double toDouble(dynamic value) {
-    return double.tryParse(value?.toString() ?? "0") ?? 0;
+    return double.tryParse(value?.toString() ?? '0') ?? 0;
   }
 
   bool get isVerified {
-    return widget.user["is_verified"] == true ||
-        widget.user["is_verified"] == 1 ||
-        widget.user["is_verified"]?.toString() == "1";
+    return widget.user['is_verified'] == true ||
+        widget.user['is_verified'] == 1 ||
+        widget.user['is_verified']?.toString() == '1';
   }
 
   void showSnack(String message, {bool success = true}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: success ? _C.amber : _C.red,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        content: Text(
-          message,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
+    if (!mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          backgroundColor: success ? _C.green : _C.red,
+          behavior: SnackBarBehavior.fixed,
+          content: Text(
+            message,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
-      ),
-    );
+      );
   }
 
   Future<void> lookupWallet() async {
     final walletId = walletCtrl.text.trim();
 
     if (walletId.isEmpty) {
-      showSnack("Enter receiver wallet address.", success: false);
+      showSnack('Enter receiver wallet address.', success: false);
       return;
     }
 
@@ -158,14 +98,20 @@ class _WalletTransferScreenState extends State<WalletTransferScreen>
     final res = await ApiService.walletLookup(walletId);
 
     if (!mounted) return;
-    setState(() => lookupLoading = false);
 
-    if (res["success"] == true) {
+    setState(() {
+      lookupLoading = false;
+    });
+
+    if (res['success'] == true) {
       setState(() {
-        receiver = Map<String, dynamic>.from(res["user"]);
+        receiver = Map<String, dynamic>.from(res['user']);
       });
     } else {
-      showSnack(res["message"] ?? "Wallet not found.", success: false);
+      showSnack(
+        res['message']?.toString() ?? 'Wallet not found.',
+        success: false,
+      );
     }
   }
 
@@ -176,19 +122,24 @@ class _WalletTransferScreenState extends State<WalletTransferScreen>
     final amount = amountCtrl.text.trim();
 
     if (walletId.isEmpty || amount.isEmpty) {
-      showSnack("Wallet address and amount are required.", success: false);
-      return;
-    }
-
-    if (!isVerified) {
       showSnack(
-        "Your account is not verified yet. Transfers are disabled.",
+        'Wallet address and amount are required.',
         success: false,
       );
       return;
     }
 
-    setState(() => loading = true);
+    if (!isVerified) {
+      showSnack(
+        'Your account is not verified yet. Transfers are disabled.',
+        success: false,
+      );
+      return;
+    }
+
+    setState(() {
+      loading = true;
+    });
 
     final res = await ApiService.walletTransfer(
       receiverWalletId: walletId,
@@ -197,473 +148,98 @@ class _WalletTransferScreenState extends State<WalletTransferScreen>
     );
 
     if (!mounted) return;
-    setState(() => loading = false);
 
-    if (res["success"] == true) {
+    setState(() {
+      loading = false;
+    });
+
+    if (res['success'] == true) {
       final transferId =
-          res["transfer"]?["id"]?.toString() ?? res["transfer_id"]?.toString();
+          res['transfer']?['id']?.toString() ??
+          res['transfer_id']?.toString();
 
-      final transferNo = res["transfer"]?["transaction_no"]?.toString() ??
-          (transferId != null ? "TRA${transferId.padLeft(9, "0")}" : null);
+      final transferNo =
+          res['transfer']?['transaction_no']?.toString() ??
+          (transferId != null
+              ? 'TRA${transferId.padLeft(9, '0')}'
+              : null);
 
-      final receiverSnapshot =
-          receiver != null ? Map<String, dynamic>.from(receiver!) : null;
+      final receiverSnapshot = receiver != null
+          ? Map<String, dynamic>.from(receiver!)
+          : null;
+
+      final submittedWalletId = walletCtrl.text.trim();
+      final submittedAmount = amountCtrl.text.trim();
+      final submittedNote = noteCtrl.text.trim();
+
+      final transferItem = res['transfer'] is Map
+          ? Map<String, dynamic>.from(res['transfer'])
+          : <String, dynamic>{};
+
+      transferItem.addAll({
+        if (transferItem['id'] == null && transferId != null)
+          'id': transferId,
+        if (transferItem['transaction_no'] == null &&
+            transferNo != null)
+          'transaction_no': transferNo,
+        if (transferItem['amount'] == null)
+          'amount': submittedAmount,
+        if (transferItem['note'] == null)
+          'note': submittedNote,
+        if (transferItem['status'] == null)
+          'status': 'completed',
+        if (transferItem['sender_id'] == null)
+          'sender_id': widget.user['id'],
+        if (transferItem['sender_wallet_id'] == null)
+          'sender_wallet_id': widget.user['wallet_id'],
+        if (transferItem['sender_name'] == null)
+          'sender_name': widget.user['name'],
+        if (transferItem['receiver_id'] == null)
+          'receiver_id': receiverSnapshot?['id'],
+        if (transferItem['receiver_wallet_id'] == null)
+          'receiver_wallet_id':
+              receiverSnapshot?['wallet_id'] ?? submittedWalletId,
+        if (transferItem['receiver_name'] == null)
+          'receiver_name': receiverSnapshot?['name'],
+        if (transferItem['receiver_photo_url'] == null)
+          'receiver_photo_url': receiverSnapshot?['photo_url'],
+        if (transferItem['receiver_photo'] == null)
+          'receiver_photo': receiverSnapshot?['photo'],
+        if (transferItem['created_at'] == null)
+          'created_at': DateTime.now().toIso8601String(),
+      });
 
       walletCtrl.clear();
       amountCtrl.clear();
       noteCtrl.clear();
 
-      setState(() {
-        receiver = null;
-        _lastTransferId = transferId;
-        _lastReceiverUser = receiverSnapshot;
-      });
+      if (mounted) {
+        setState(() {
+          receiver = null;
+        });
+      }
 
       if (widget.onSuccess != null) {
         await widget.onSuccess!();
       }
 
-      _showSuccessDialog(
-        transferId: transferId,
-        transferNo: transferNo,
-        receiverUser: receiverSnapshot,
-        message: res["message"] ?? "Transfer successful.",
+      if (!mounted) return;
+
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => TransactionDetailScreen(
+            item: transferItem,
+            sourceType: 'transfer',
+            user: Map<String, dynamic>.from(widget.user),
+          ),
+        ),
       );
     } else {
-      showSnack(res["message"] ?? "Transfer failed.", success: false);
+      showSnack(
+        res['message']?.toString() ?? 'Transfer failed.',
+        success: false,
+      );
     }
-  }
-
-  // ═══════════════════════════════════════════
-  //  FORM CARD
-  // ═══════════════════════════════════════════
-  Widget _transferForm() {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(20, 18, 20, 28),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: _C.surface,
-        borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: _C.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _formHeader(),
-          _myWalletCard(),
-          const SizedBox(height: 20),
-          _field(
-            controller: walletCtrl,
-            label: "Receiver Wallet Address",
-            icon: Icons.account_balance_wallet_rounded,
-            iconColor: _C.orange,
-          ),
-          const SizedBox(height: 12),
-          _outlineBtn(
-            label: lookupLoading ? "Checking Receiver..." : "Check Receiver",
-            icon: Icons.search_rounded,
-            loading: lookupLoading,
-            onTap: lookupWallet,
-          ),
-          if (receiver != null) ...[
-            const SizedBox(height: 16),
-            _receiverCard(),
-          ],
-          const SizedBox(height: 16),
-          _field(
-            controller: amountCtrl,
-            label: "USD Amount",
-            icon: Icons.attach_money_rounded,
-            iconColor: _C.gold,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          ),
-          const SizedBox(height: 16),
-          _field(
-            controller: noteCtrl,
-            label: "Note (optional)",
-            icon: Icons.notes_rounded,
-            iconColor: _C.textSecondary,
-            maxLines: 3,
-          ),
-          const SizedBox(height: 22),
-          _gradientBtn(
-            label: loading ? "Processing..." : "Transfer Now",
-            icon: Icons.send_rounded,
-            loading: loading,
-            onTap: sendTransfer,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _formHeader() {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(9),
-          decoration: BoxDecoration(
-            color: _C.orange.withOpacity(0.12),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Icon(
-            Icons.send_rounded,
-            color: _C.gold,
-            size: 18,
-          ),
-        ),
-        const SizedBox(width: 12),
-        const Expanded(
-          child: Text(
-            "Transfer Details",
-            style: TextStyle(
-              color: _C.textPrimary,
-              fontSize: 17,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _field({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    Color iconColor = _C.amber,
-    TextInputType? keyboardType,
-    int maxLines = 1,
-  }) {
-    return TextField(
-      controller: controller,
-      keyboardType: keyboardType,
-      maxLines: maxLines,
-      style: const TextStyle(
-        color: Colors.white,
-        fontWeight: FontWeight.w600,
-      ),
-      decoration: InputDecoration(
-        prefixIcon: Icon(icon, color: iconColor, size: 20),
-        labelText: label,
-        labelStyle: const TextStyle(
-          color: _C.textSecondary,
-          fontSize: 14,
-        ),
-        filled: true,
-        fillColor: _C.bg,
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: _C.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: _C.orange, width: 1.5),
-        ),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-      ),
-    );
-  }
-
-  Widget _outlineBtn({
-    required String label,
-    required IconData icon,
-    required VoidCallback onTap,
-    bool loading = false,
-  }) {
-    return GestureDetector(
-      onTap: loading ? null : onTap,
-      child: Container(
-        width: double.infinity,
-        height: 52,
-        decoration: BoxDecoration(
-          color: _C.bg,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: _C.gold, width: 1.3),
-        ),
-        child: Center(
-          child: loading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    color: _C.gold,
-                    strokeWidth: 2.2,
-                  ),
-                )
-              : Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(icon, color: _C.gold, size: 18),
-                    const SizedBox(width: 8),
-                    Text(
-                      label,
-                      style: const TextStyle(
-                        color: _C.gold,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-        ),
-      ),
-    );
-  }
-
-  Widget _gradientBtn({
-    required String label,
-    required VoidCallback onTap,
-    bool loading = false,
-    IconData? icon,
-  }) {
-    return GestureDetector(
-      onTap: loading ? null : onTap,
-      child: Container(
-        width: double.infinity,
-        height: 56,
-        decoration: BoxDecoration(
-          gradient: _C.gradientAccent,
-          borderRadius: BorderRadius.circular(17),
-          boxShadow: [
-            BoxShadow(
-              color: _C.orange.withOpacity(0.3),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Center(
-          child: loading
-              ? const SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    color: Colors.white,
-                  ),
-                )
-              : Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (icon != null) ...[
-                      Icon(icon, color: Colors.white, size: 18),
-                      const SizedBox(width: 8),
-                    ],
-                    Text(
-                      label,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 15,
-                      ),
-                    ),
-                  ],
-                ),
-        ),
-      ),
-    );
-  }
-
-  Widget _receiverCard() {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: const Color(0xff2A2100),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _C.orange, width: 1.4),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Container(
-                    width: 46,
-                    height: 46,
-                    decoration: BoxDecoration(
-                      color: _C.gold.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: const Icon(
-                      Icons.person_rounded,
-                      color: _C.gold,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "Receiver Found",
-                          style: TextStyle(
-                            color: _C.gold,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          receiver?["name"]?.toString() ?? "User",
-                          style: const TextStyle(
-                            color: _C.textPrimary,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 15,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          receiver?["email"]?.toString() ?? "",
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: _C.textSecondary,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(
-                    Icons.check_circle_rounded,
-                    color: _C.gold,
-                    size: 22,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showSuccessDialog({
-    String? transferId,
-    String? transferNo,
-    Map<String, dynamic>? receiverUser,
-    required String message,
-  }) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) {
-        return AlertDialog(
-          backgroundColor: _C.surfaceAlt,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(26),
-          ),
-          contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-          titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
-          title: Column(
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: _C.gold.withOpacity(0.12),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: _C.gold.withOpacity(0.3),
-                    width: 2,
-                  ),
-                ),
-                child: const Icon(
-                  Icons.check_rounded,
-                  color: _C.gold,
-                  size: 32,
-                ),
-              ),
-              const SizedBox(height: 14),
-              const Text(
-                "Transfer Sent!",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 20,
-                ),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: _C.textSecondary,
-                  fontSize: 13,
-                ),
-              ),
-              if (transferId != null) ...[
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: _C.bg,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: _C.border),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.tag_rounded,
-                        color: _C.gold,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 7),
-                      Text(
-                        "Transfer ${transferNo ?? transferId}",
-                        style: const TextStyle(
-                          color: _C.gold,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  "Transfer completed successfully.",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white38,
-                    fontSize: 11,
-                  ),
-                ),
-              ],
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: TextButton.styleFrom(
-                    foregroundColor: _C.textSecondary,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      side: const BorderSide(color: _C.border),
-                    ),
-                  ),
-                  child: const Text(
-                    "Close",
-                    style: TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
   }
 
   @override
@@ -672,10 +248,50 @@ class _WalletTransferScreenState extends State<WalletTransferScreen>
       backgroundColor: _C.bg,
       body: SafeArea(
         child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 30),
           physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _transferForm(),
+              _header(),
+              const SizedBox(height: 22),
+              _myWalletSummary(),
+              const SizedBox(height: 22),
+              _sectionTitle('Receiver'),
+              const SizedBox(height: 8),
+              _field(
+                controller: walletCtrl,
+                label: 'Receiver Wallet Address',
+                icon: Icons.account_balance_wallet_outlined,
+              ),
+              const SizedBox(height: 6),
+              _checkReceiverButton(),
+              if (receiver != null) ...[
+                const SizedBox(height: 12),
+                _receiverDetails(),
+              ],
+              const SizedBox(height: 18),
+              _field(
+                controller: amountCtrl,
+                label: 'USD Amount',
+                icon: Icons.attach_money_rounded,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(
+                    RegExp(r'^\d*\.?\d{0,8}'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              _field(
+                controller: noteCtrl,
+                label: 'Note (optional)',
+                icon: Icons.notes_rounded,
+                maxLines: 2,
+              ),
+              const SizedBox(height: 26),
+              _transferButton(),
             ],
           ),
         ),
@@ -683,56 +299,274 @@ class _WalletTransferScreenState extends State<WalletTransferScreen>
     );
   }
 
-  // ═══════════════════════════════════════════
-  //  STANDARD WALLET SUMMARY CARD (redesigned)
-  // ═══════════════════════════════════════════
-  Widget _myWalletCard() {
-    final walletId = widget.user["wallet_id"]?.toString() ?? "Not available";
-    final balance = toDouble(widget.user["balance"]);
+  Widget _header() {
+    return Row(
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: _C.gold.withOpacity(0.14),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.arrow_upward_rounded,
+            color: _C.gold,
+            size: 19,
+          ),
+        ),
+        const SizedBox(width: 11),
+        const Expanded(
+          child: Text(
+            'Wallet Transfer',
+            style: TextStyle(
+              color: _C.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
-    return Container(
-      margin: const EdgeInsets.only(top: 16),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: _C.surfaceAlt,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _C.border),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  walletId,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: _C.textPrimary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.2,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            width: 1,
-            height: 28,
-            margin: const EdgeInsets.symmetric(horizontal: 14),
-            color: _C.border,
-          ),
-          Text(
-            "\$${balance.toStringAsFixed(2)}",
+  Widget _myWalletSummary() {
+    final walletId =
+        widget.user['wallet_id']?.toString() ?? 'Not available';
+    final balance = toDouble(widget.user['balance']);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionTitle('My Wallet'),
+        const SizedBox(height: 10),
+        _detailRow(
+          label: 'Wallet ID',
+          value: walletId,
+        ),
+        const SizedBox(height: 9),
+        _detailRow(
+          label: 'Balance',
+          value: '\$${balance.toStringAsFixed(2)}',
+          valueColor: _C.gold,
+        ),
+        const SizedBox(height: 14),
+        const Divider(
+          color: _C.divider,
+          height: 1,
+          thickness: 1,
+        ),
+      ],
+    );
+  }
+
+  Widget _receiverDetails() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _detailRow(
+          label: 'Receiver',
+          value: receiver?['name']?.toString() ?? 'User',
+        ),
+        const SizedBox(height: 8),
+        _detailRow(
+          label: 'Email',
+          value: receiver?['email']?.toString() ?? '-',
+          valueColor: _C.textSecondary,
+        ),
+        const SizedBox(height: 8),
+        _detailRow(
+          label: 'Status',
+          value: 'Receiver Found',
+          valueColor: _C.green,
+        ),
+        const SizedBox(height: 14),
+        const Divider(
+          color: _C.divider,
+          height: 1,
+          thickness: 1,
+        ),
+      ],
+    );
+  }
+
+  Widget _detailRow({
+    required String label,
+    required String value,
+    Color valueColor = _C.textPrimary,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 92,
+          child: Text(
+            label,
             style: const TextStyle(
-              color: _C.gold,
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
+              color: _C.textSecondary,
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
             ),
           ),
-        ],
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+            style: TextStyle(
+              color: valueColor,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _sectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        color: _C.textSecondary,
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+      ),
+    );
+  }
+
+  Widget _field({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+    int maxLines = 1,
+  }) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
+      maxLines: maxLines,
+      cursorColor: _C.gold,
+      style: const TextStyle(
+        color: _C.textPrimary,
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+      ),
+      decoration: InputDecoration(
+        isDense: true,
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 12),
+
+        labelText: label,
+        labelStyle: const TextStyle(
+          color: _C.textSecondary,
+          fontSize: 14,
+        ),
+        floatingLabelStyle: const TextStyle(
+          color: _C.gold,
+          fontSize: 12,
+        ),
+        enabledBorder: const UnderlineInputBorder(
+          borderSide: BorderSide(color: _C.divider),
+        ),
+        focusedBorder: const UnderlineInputBorder(
+          borderSide: BorderSide(
+            color: _C.gold,
+            width: 1.2,
+          ),
+        ),
+        border: const UnderlineInputBorder(
+          borderSide: BorderSide(color: _C.divider),
+        ),
+      ),
+    );
+  }
+
+  Widget _checkReceiverButton() {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: TextButton.icon(
+        onPressed: lookupLoading ? null : lookupWallet,
+        style: TextButton.styleFrom(
+          foregroundColor: _C.gold,
+          padding: const EdgeInsets.symmetric(
+            horizontal: 4,
+            vertical: 6,
+          ),
+          textStyle: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        icon: lookupLoading
+            ? const SizedBox(
+                width: 13,
+                height: 13,
+                child: CircularProgressIndicator(
+                  strokeWidth: 1.7,
+                  color: _C.gold,
+                ),
+              )
+            : const Icon(
+                Icons.search_rounded,
+                size: 16,
+              ),
+        label: Text(
+          lookupLoading
+              ? 'Checking...'
+              : 'Check Receiver',
+        ),
+      ),
+    );
+  }
+
+  Widget _transferButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 46,
+      child: ElevatedButton(
+        onPressed: loading ? null : sendTransfer,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: _C.gold,
+          disabledBackgroundColor:
+              _C.gold.withOpacity(0.45),
+          foregroundColor: Colors.black,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+        ),
+        child: loading
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  color: Colors.black,
+                  strokeWidth: 2,
+                ),
+              )
+            : const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.arrow_upward_rounded,
+                    size: 17,
+                  ),
+                  SizedBox(width: 7),
+                  Text(
+                    'Transfer Now',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }

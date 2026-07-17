@@ -7,7 +7,6 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use App\Models\UserBankAccount;
 
@@ -18,15 +17,6 @@ class UserController extends Controller
         if (! Auth::user() || Auth::user()->role !== 'admin') {
             abort(403);
         }
-    }
-
-    private function generateWalletId(): string
-    {
-        do {
-            $walletId = 'XYW' . strtoupper(Str::random(10));
-        } while (User::where('wallet_id', $walletId)->exists());
-
-        return $walletId;
     }
 
     public function index(Request $request)
@@ -198,7 +188,6 @@ class UserController extends Controller
         $data['password'] = Hash::make($data['password']);
         $data['status'] = $request->input('status', 'active');
         $data['is_active'] = $data['status'] === 'active';
-        $data['wallet_id'] = $this->generateWalletId();
 
         User::create($data);
 
@@ -234,8 +223,7 @@ class UserController extends Controller
         }
 
         if (empty($user->wallet_id)) {
-            $data['wallet_id'] = $this->generateWalletId();
-        }
+            }
 
         $data['status'] = $request->input('status', $user->status ?? 'active');
         $data['is_active'] = $data['status'] === 'active';

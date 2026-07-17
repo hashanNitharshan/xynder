@@ -12,11 +12,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Conversation;
-class AuthController extends Controller
 
+class AuthController extends Controller
 {
     private function ensureVerified(User $user)
     {
@@ -453,22 +452,12 @@ public function createRequest(Request $request)
         ]);
     }
 
-    private function generateWalletId(): string
-    {
-        do {
-            $walletId = 'XYW' . strtoupper(Str::random(20));
-        } while (User::where('wallet_id', $walletId)->exists());
-
-        return $walletId;
-    }
-
     public function register(Request $request)
     {
         $data = $this->validateProfile($request);
         $data = $this->cleanImageFields($data);
 
         $data['role']        = 'client';
-        $data['wallet_id']   = $this->generateWalletId();
         $data['password']    = Hash::make($request->password);
         $data['balance']     = 0;
         $data['status']      = 'active';
@@ -679,49 +668,78 @@ public function createRequest(Request $request)
         ]);
     }
 
-    // -----------------------------------------------------------------------
-    // Merchant closes a request (removes it from the active pending/approved
-    // list without reversing any balance changes already applied by
-    // approve/reject). Blocked only if the request is already closed.
-    // -----------------------------------------------------------------------
+    /**
+     * Close a pending P2P request.
+     * Allowed for: the client who owns the request, OR the assigned merchant.
+     * Not allowed once the request is approved / rejected / already closed.
+     */
     public function merchantCloseRequest(Request $request, WalletRequest $walletRequest)
     {
-        $merchant = $request->user();
+        $currentUser = $request->user();
 
-        if ($merchant->role !== 'merchant') {
+        if ($walletRequest->status !== 'pending') {
             return response()->json([
                 'success' => false,
-                'message' => 'Only merchant can close this request.',
-            ], 403);
-        }
-
-        if ($walletRequest->merchant_id != $merchant->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized request.',
-            ], 403);
-        }
-
-        if ($walletRequest->status === 'closed') {
-            return response()->json([
-                'success' => false,
-                'message' => 'This request is already closed.',
+                'message' => 'Only a pending request can be closed.',
             ], 422);
         }
 
-        $walletRequest->update([
-            'status'      => 'closed',
-            'approved_by' => $merchant->id,
-            'approved_at' => $walletRequest->approved_at ?? now(),
-        ]);
+        $isClientOwner = $currentUser->role === 'client'
+            && (int) $walletRequest->user_id === (int) $currentUser->id;
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Request closed successfully.',
-            'request' => $walletRequest->fresh(['user', 'merchant']),
-        ]);
+        $isAssignedMerchant = $currentUser->role === 'merchant'
+            && (int) $walletRequest->merchant_id === (int) $currentUser->id;
+
+        if (! $isClientOwner && ! $isAssignedMerchant) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not allowed to close this request.',
+            ], 403);
+        }
+
+        try {
+            DB::transaction(function () use ($walletRequest, $currentUser) {
+                $lockedRequest = WalletRequest::where('id', $walletRequest->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                if ($lockedRequest->status !== 'pending') {
+                    abort(422, 'Only a pending request can be closed.');
+                }
+
+                $lockedRequest->update([
+                    'status' => 'closed',
+                    'approved_by' => $currentUser->role === 'merchant'
+                        ? $currentUser->id
+                        : null,
+                    'approved_at' => now(),
+                ]);
+
+                $conversation = Conversation::where(
+                    'wallet_request_id',
+                    $lockedRequest->id
+                )->first();
+
+                if ($conversation) {
+                    $conversation->update([
+                        'locked_at' => now(),
+                        'lock_reason' => 'Transaction request closed.',
+                    ]);
+                }
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'The transaction request is now closed.',
+                'request' => $walletRequest->fresh(['user', 'merchant']),
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage() ?: 'Unable to close this request.',
+            ], 422);
+        }
     }
-
     // -----------------------------------------------------------------------
     // FIX: Also unset null values — not just '0', 0, ''.
     //

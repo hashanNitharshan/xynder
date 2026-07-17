@@ -1,23 +1,18 @@
-// login_screen.dart
 import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
-import 'register_screen.dart';
+import 'admin_dashboard.dart';
 import 'client_dashboard.dart';
 import 'merchant_dashboard.dart';
-import 'admin_dashboard.dart';
+import 'register_screen.dart';
 
 class _C {
   static const bg = Color(0xff0B0E11);
   static const field = Color(0xff1E2329);
   static const border = Color(0xff2B3139);
-
   static const yellow = Color(0xffF0B90B);
-  static const yellowDark = Color(0xffC99400);
   static const red = Color(0xffEF4444);
-
   static const text = Colors.white;
-  static const muted = Color(0xff848E9C);
 }
 
 class LoginScreen extends StatefulWidget {
@@ -42,63 +37,74 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> login() async {
-    if (emailCtrl.text.trim().isEmpty || passwordCtrl.text.trim().isEmpty) {
-      showMessage("Please enter email and password");
+    final email = emailCtrl.text.trim();
+    final password = passwordCtrl.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      showMessage('Please enter email and password');
       return;
     }
+
+    if (loading) return;
 
     setState(() => loading = true);
 
     try {
-      final data = await ApiService.login(
-        emailCtrl.text.trim(),
-        passwordCtrl.text.trim(),
-      );
+      final data = await ApiService.login(email, password);
 
       if (!mounted) return;
 
-      if (data["success"] == true) {
-        final user = data["user"];
-        final role = user["role"]?.toString().toLowerCase();
-
-        if (role == "admin") {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const AdminDashboard()),
-          );
-        } else if (role == "merchant") {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => MerchantDashboard(user: user)),
-          );
-        } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => ClientDashboard(user: user)),
-          );
-        }
-      } else {
-        showMessage(data["message"]?.toString() ?? "Login failed");
+      if (data['success'] != true || data['user'] is! Map) {
+        showMessage(data['message']?.toString() ?? 'Login failed');
+        return;
       }
-    } catch (e) {
-      if (mounted) showMessage("Login error: $e");
+
+      // ApiService.login() already replaces this with a fresh /profile user.
+      final user = Map<String, dynamic>.from(data['user'] as Map);
+      final role = user['role']?.toString().trim().toLowerCase() ?? '';
+
+      Widget dashboard;
+      if (role == 'admin') {
+        dashboard = const AdminDashboard();
+      } else if (role == 'merchant') {
+        dashboard = MerchantDashboard(user: user);
+      } else {
+        dashboard = ClientDashboard(user: user);
+      }
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => dashboard),
+      );
+    } catch (error) {
+      if (mounted) {
+        showMessage('Login error: $error');
+      }
     } finally {
-      if (mounted) setState(() => loading = false);
+      if (mounted) {
+        setState(() => loading = false);
+      }
     }
   }
 
-  void showMessage(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: _C.red,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        content: Text(
-          msg,
-          style: const TextStyle(fontWeight: FontWeight.w700),
+  void showMessage(String message) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          backgroundColor: _C.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          content: Text(
+            message,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
         ),
-      ),
-    );
+      );
   }
 
   Widget fieldLabel(String text) {
@@ -120,8 +126,10 @@ class _LoginScreenState extends State<LoginScreen> {
       suffixIcon: suffix,
       filled: true,
       fillColor: _C.field,
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 14,
+      ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(6),
         borderSide: const BorderSide(color: _C.border),
@@ -130,7 +138,9 @@ class _LoginScreenState extends State<LoginScreen> {
         borderRadius: BorderRadius.circular(6),
         borderSide: const BorderSide(color: _C.yellow, width: 1.2),
       ),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(6),
+      ),
     );
   }
 
@@ -145,23 +155,18 @@ class _LoginScreenState extends State<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 40),
-
-              // Logo
               Center(
                 child: Image.asset(
-                  "assets/images/bitxnow_logo.jpeg",
+                  'assets/images/bitxnow_logo.jpeg',
                   width: 120,
                   height: 120,
                   fit: BoxFit.contain,
                 ),
               ),
-
               const SizedBox(height: 8),
-
-              // BITXNOW wordmark
               const Center(
                 child: Text(
-                  "BITXNOW",
+                  'BITXNOW',
                   style: TextStyle(
                     color: _C.yellow,
                     fontSize: 30,
@@ -170,14 +175,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 46),
-
-              // Email
-              fieldLabel("Email"),
+              fieldLabel('Email'),
               TextField(
                 controller: emailCtrl,
                 keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
@@ -185,14 +188,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 cursorColor: _C.yellow,
                 decoration: inputBox(),
               ),
-
               const SizedBox(height: 22),
-
-              // Password
-              fieldLabel("Password"),
+              fieldLabel('Password'),
               TextField(
                 controller: passwordCtrl,
                 obscureText: hidePassword,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => login(),
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
@@ -212,10 +214,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 36),
-
-              // Login button (outlined, Binance style)
               GestureDetector(
                 onTap: loading ? null : login,
                 child: Container(
@@ -236,7 +235,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           )
                         : const Text(
-                            "Login",
+                            'Login',
                             style: TextStyle(
                               color: _C.yellow,
                               fontWeight: FontWeight.w700,
@@ -246,27 +245,18 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 24),
-
-              // Forgot password
-              Center(
-                child: GestureDetector(
-                  onTap: () {},
-                  child: const Text(
-                    "Forgot your password?",
-                    style: TextStyle(
-                      color: _C.yellow,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                    ),
+              const Center(
+                child: Text(
+                  'Forgot your password?',
+                  style: TextStyle(
+                    color: _C.yellow,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
                   ),
                 ),
               ),
-
               const SizedBox(height: 20),
-
-              // Register line
               Center(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -291,7 +281,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               );
                             },
                       child: const Text(
-                        "Register",
+                        'Register',
                         style: TextStyle(
                           color: _C.yellow,
                           fontWeight: FontWeight.w700,
@@ -302,7 +292,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
               ),
-
               const SizedBox(height: 40),
             ],
           ),

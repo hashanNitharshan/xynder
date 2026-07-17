@@ -2,52 +2,60 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../services/api_service.dart';
-import '../widgets/top_bar.dart';
 
 class _C {
-  static const bg = Color(0xff0B0E11);
-  static const surface = Color(0xff181A20);
-  static const surfaceAlt = Color(0xff1E2329);
-  static const border = Color(0xff2B3139);
+  static const bg = Color(0xff000000);
+  static const surface = Color(0xff121214);
+  static const divider = Color(0xff242428);
 
-  static const orange = Color(0xffF0B90B);
-  static const amber = Color(0xffC99400);
-  static const gold = Color(0xffFFD45A);
-  static const red = Color(0xffef4444);
+  static const orange = Color(0xffFF9F2E);
+  static const red = Color(0xffF6465D);
+  static const green = Color(0xff00C076);
 
   static const textPrimary = Colors.white;
-  static const textSecondary = Color(0xff848E9C);
-
-  static const gradientAccent = LinearGradient(
-    colors: [Color(0xffC99400), Color(0xffF0B90B), Color(0xffFFD45A)],
-  );
+  static const textSecondary = Color(0xff77777F);
+  static const textMuted = Color(0xff55555C);
 }
 
 class PaymentMethodsScreen extends StatefulWidget {
   final Map user;
 
-  const PaymentMethodsScreen({super.key, required this.user});
+  const PaymentMethodsScreen({
+    super.key,
+    required this.user,
+  });
 
   @override
-  State<PaymentMethodsScreen> createState() => _PaymentMethodsScreenState();
+  State<PaymentMethodsScreen> createState() =>
+      _PaymentMethodsScreenState();
 }
 
 class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
   late Map user;
+
   List banks = [];
 
   final upiNameCtrl = TextEditingController();
   final upiIdCtrl = TextEditingController();
 
   bool loading = false;
+  bool initialLoading = true;
+  int selectedTab = 0;
+
   XFile? upiQr;
 
   @override
   void initState() {
     super.initState();
+
     user = widget.user;
-    upiNameCtrl.text = user["upi_name"]?.toString() ?? "";
-    upiIdCtrl.text = user["upi_id"]?.toString() ?? "";
+
+    upiNameCtrl.text =
+        user["upi_name"]?.toString() ?? "";
+
+    upiIdCtrl.text =
+        user["upi_id"]?.toString() ?? "";
+
     _load();
   }
 
@@ -58,225 +66,797 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
     super.dispose();
   }
 
-  String get _role => user["role"]?.toString() ?? "user";
-
   Future<void> _load() async {
-    final data = await ApiService.paymentMethods();
+    try {
+      final data = await ApiService.paymentMethods();
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    if (data["success"] == true) {
-      final freshUser = Map<String, dynamic>.from(data["user"] ?? user);
-      final apiBanks = List.from(data["bank_accounts"] ?? []);
+      if (data["success"] == true) {
+        final freshUser = Map<String, dynamic>.from(
+          data["user"] ?? user,
+        );
 
-      final oldBankName = freshUser["bank_name"]?.toString().trim() ?? "";
-      final oldBranch = freshUser["branch"]?.toString().trim() ?? "";
-      final oldAccount = freshUser["account_number"]?.toString().trim() ?? "";
-      final oldAccountType =
-          freshUser["account_type"]?.toString().trim() ?? "";
-      final oldIfsc = freshUser["ifsc"]?.toString().trim() ?? "";
+        final apiBanks = List.from(
+          data["bank_accounts"] ?? [],
+        );
 
-      if (apiBanks.isEmpty &&
-          (oldBankName.isNotEmpty ||
-              oldBranch.isNotEmpty ||
-              oldAccount.isNotEmpty ||
-              oldAccountType.isNotEmpty ||
-              oldIfsc.isNotEmpty)) {
-        apiBanks.add({
-          "id": "old",
-          "bank_name": oldBankName,
-          "branch": oldBranch,
-          "account_number": oldAccount,
-          "account_type": oldAccountType,
-          "ifsc": oldIfsc,
-          "is_default": true,
-          "old_user_bank": true,
+        final oldBankName =
+            freshUser["bank_name"]?.toString().trim() ?? "";
+
+        final oldBranch =
+            freshUser["branch"]?.toString().trim() ?? "";
+
+        final oldAccount =
+            freshUser["account_number"]?.toString().trim() ?? "";
+
+        final oldAccountType =
+            freshUser["account_type"]?.toString().trim() ?? "";
+
+        final oldIfsc =
+            freshUser["ifsc"]?.toString().trim() ?? "";
+
+        if (apiBanks.isEmpty &&
+            (oldBankName.isNotEmpty ||
+                oldBranch.isNotEmpty ||
+                oldAccount.isNotEmpty ||
+                oldAccountType.isNotEmpty ||
+                oldIfsc.isNotEmpty)) {
+          apiBanks.add({
+            "id": "old",
+            "bank_name": oldBankName,
+            "branch": oldBranch,
+            "account_number": oldAccount,
+            "account_type": oldAccountType,
+            "ifsc": oldIfsc,
+            "is_default": true,
+            "old_user_bank": true,
+          });
+        }
+
+        setState(() {
+          user = freshUser;
+          banks = apiBanks;
+
+          upiNameCtrl.text =
+              user["upi_name"]?.toString() ?? "";
+
+          upiIdCtrl.text =
+              user["upi_id"]?.toString() ?? "";
+
+          initialLoading = false;
         });
+      } else {
+        setState(() {
+          initialLoading = false;
+        });
+
+        _snack(
+          data["message"]?.toString() ?? "Failed to load",
+          ok: false,
+        );
       }
+    } catch (_) {
+      if (!mounted) return;
 
       setState(() {
-        user = freshUser;
-        banks = apiBanks;
-        upiNameCtrl.text = user["upi_name"]?.toString() ?? "";
-        upiIdCtrl.text = user["upi_id"]?.toString() ?? "";
+        initialLoading = false;
       });
-    } else {
-      _snack(data["message"]?.toString() ?? "Failed to load", ok: false);
+
+      _snack(
+        "Failed to load payment methods",
+        ok: false,
+      );
     }
   }
 
-  void _snack(String msg, {bool ok = true}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: ok ? _C.amber : _C.red,
-        behavior: SnackBarBehavior.floating,
-        content: Text(
-          msg,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w800,
+  void _snack(
+    String message, {
+    bool ok = true,
+  }) {
+    if (!mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          backgroundColor: ok ? _C.green : _C.red,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          content: Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
-      ),
-    );
+      );
   }
 
-  Widget _field({
-    required String label,
-    required TextEditingController controller,
-    required IconData icon,
-    int maxLines = 1,
-  }) {
+  Widget _topBar() {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: TextField(
-        controller: controller,
-        maxLines: maxLines,
-        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-        decoration: InputDecoration(
-          prefixIcon: Icon(icon, color: _C.orange, size: 20),
-          labelText: label,
-          labelStyle: const TextStyle(color: _C.textSecondary),
-          filled: true,
-          fillColor: _C.bg,
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: _C.border),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: _C.orange),
-          ),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-        ),
-      ),
-    );
-  }
-
-  Widget _sectionCard({
-    required String title,
-    required IconData icon,
-    required List<Widget> children,
-    Widget? action,
-  }) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(20, 18, 20, 0),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: _C.surface,
-        borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: _C.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.fromLTRB(8, 10, 8, 6),
+      child: Row(
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(9),
-                decoration: BoxDecoration(
-                  color: _C.orange.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: _C.gold, size: 18),
+          SizedBox(
+            width: 44,
+            child: IconButton(
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(
+                Icons.arrow_back_rounded,
+                color: _C.textPrimary,
+                size: 21,
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    color: _C.textPrimary,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-              if (action != null) action,
-            ],
+            ),
           ),
-          const SizedBox(height: 20),
-          ...children,
+          const Expanded(
+            child: Text(
+              "Payment Methods",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _C.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          SizedBox(
+            width: 44,
+            child: IconButton(
+              onPressed: initialLoading ? null : _load,
+              icon: const Icon(
+                Icons.refresh_rounded,
+                color: _C.textPrimary,
+                size: 20,
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _button({
-    required String label,
-    required VoidCallback onTap,
-    IconData? icon,
-    bool danger = false,
-  }) {
-    return GestureDetector(
-      onTap: loading ? null : onTap,
-      child: Container(
-        height: 52,
-        decoration: BoxDecoration(
-          gradient: danger ? null : _C.gradientAccent,
-          color: danger ? _C.red.withOpacity(0.12) : null,
-          borderRadius: BorderRadius.circular(16),
-          border: danger ? Border.all(color: _C.red) : null,
-        ),
-        child: Center(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (icon != null) ...[
-                Icon(icon, color: danger ? _C.red : Colors.black, size: 18),
-                const SizedBox(width: 8),
-              ],
-              Text(
-                label,
-                style: TextStyle(
-                  color: danger ? _C.red : Colors.black,
-                  fontWeight: FontWeight.w900,
+  Widget _tabs() {
+    final labels = [
+      "Bank Details",
+      "UPI Details",
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      child: Row(
+        children: List.generate(
+          labels.length,
+          (index) {
+            final active = selectedTab == index;
+
+            return Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    selectedTab = index;
+                  });
+                },
+                child: Container(
+                  height: 38,
+                  margin: EdgeInsets.only(
+                    right: index == 0 ? 8 : 0,
+                    left: index == 1 ? 8 : 0,
+                  ),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: active
+                        ? _C.surface
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: active
+                          ? _C.orange
+                          : _C.divider,
+                      width: active ? 1.1 : 0.8,
+                    ),
+                  ),
+                  child: Text(
+                    labels[index],
+                    style: TextStyle(
+                      color: active
+                          ? _C.textPrimary
+                          : _C.textSecondary,
+                      fontSize: 12,
+                      fontWeight: active
+                          ? FontWeight.w700
+                          : FontWeight.w500,
+                    ),
+                  ),
                 ),
               ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
   }
 
+  Widget _sectionTitle({
+    required String title,
+    required String subtitle,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 2, 16, 12),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                color: _C.textPrimary,
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: const TextStyle(
+                color: _C.textMuted,
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _editableRow({
+    required String label,
+    required IconData icon,
+    required TextEditingController controller,
+    TextInputType? keyboardType,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        vertical: 12,
+      ),
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: _C.divider,
+            width: 0.7,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 28,
+            child: Icon(
+              icon,
+              color: _C.textPrimary,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 7),
+          SizedBox(
+            width: 112,
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: _C.textPrimary,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              keyboardType: keyboardType,
+              textAlign: TextAlign.right,
+              cursorColor: _C.orange,
+              style: const TextStyle(
+                color: _C.textSecondary,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w500,
+              ),
+              decoration: const InputDecoration(
+                isDense: true,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(
+                  vertical: 3,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 5),
+          const Icon(
+            Icons.chevron_right_rounded,
+            color: _C.textSecondary,
+            size: 18,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _actionRow({
+    required String label,
+    required String value,
+    required IconData icon,
+    required VoidCallback onTap,
+    Color valueColor = _C.textSecondary,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      splashColor: Colors.white.withOpacity(0.03),
+      highlightColor: Colors.white.withOpacity(0.015),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          vertical: 14,
+        ),
+        decoration: const BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: _C.divider,
+              width: 0.7,
+            ),
+          ),
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 28,
+              child: Icon(
+                icon,
+                color: _C.textPrimary,
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 7),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: _C.textPrimary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            Flexible(
+              child: Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.right,
+                style: TextStyle(
+                  color: valueColor,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            const SizedBox(width: 5),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: _C.textSecondary,
+              size: 18,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _bankInformationRow({
+    required String label,
+    required String value,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(
+        top: 4,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 105,
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: _C.textMuted,
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value.isNotEmpty ? value : "-",
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                color: _C.textSecondary,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _bankTile(Map bank) {
+    final isDefault =
+        bank["is_default"] == true ||
+        bank["is_default"] == 1 ||
+        bank["is_default"]?.toString() == "1";
+
+    final isOld =
+        bank["old_user_bank"] == true;
+
+    final bankName =
+        bank["bank_name"]?.toString().trim() ?? "";
+
+    final branch =
+        bank["branch"]?.toString().trim() ?? "";
+
+    final account =
+        bank["account_number"]?.toString().trim() ?? "";
+
+    final accountType =
+        bank["account_type"]?.toString().trim() ?? "";
+
+    final ifsc =
+        bank["ifsc"]?.toString().trim() ?? "";
+
+    return Container(
+      margin: const EdgeInsets.symmetric(
+        horizontal: 16,
+      ),
+      padding: const EdgeInsets.symmetric(
+        vertical: 14,
+      ),
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: _C.divider,
+            width: 0.7,
+          ),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(
+            width: 28,
+            child: Icon(
+              Icons.account_balance_outlined,
+              color: _C.textPrimary,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 7),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        bankName.isNotEmpty
+                            ? bankName
+                            : "Bank Account",
+                        style: const TextStyle(
+                          color: _C.textPrimary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    if (isDefault)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _C.orange.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text(
+                          "DEFAULT",
+                          style: TextStyle(
+                            color: _C.orange,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 7),
+                _bankInformationRow(
+                  label: "Branch",
+                  value: branch,
+                ),
+                _bankInformationRow(
+                  label: "Account Number",
+                  value: account,
+                ),
+                _bankInformationRow(
+                  label: "Account Type",
+                  value: accountType,
+                ),
+                _bankInformationRow(
+                  label: "IFSC",
+                  value: ifsc,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          if (isOld)
+            const Icon(
+              Icons.lock_outline_rounded,
+              color: _C.textSecondary,
+              size: 18,
+            )
+          else if (!isDefault)
+            PopupMenuButton<String>(
+              color: _C.surface,
+              padding: EdgeInsets.zero,
+              icon: const Icon(
+                Icons.more_vert_rounded,
+                color: _C.textSecondary,
+                size: 19,
+              ),
+              onSelected: (value) {
+                if (value == "default") {
+                  _setDefaultBank(bank);
+                }
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(
+                  value: "default",
+                  child: Text(
+                    "Set as Default",
+                    style: TextStyle(
+                      color: _C.textPrimary,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ],
+            )
+          else
+            const Icon(
+              Icons.verified_rounded,
+              color: _C.orange,
+              size: 18,
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _bankTab() {
+    return Column(
+      children: [
+        _sectionTitle(
+          title: "Bank Details",
+          subtitle: "Add and manage your bank accounts",
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 16,
+          ),
+          child: _actionRow(
+            label: "Add Bank Account",
+            value: "",
+            icon: Icons.add_card_rounded,
+            onTap: _showAddBankDialog,
+          ),
+        ),
+        if (banks.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(
+              vertical: 38,
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.account_balance_outlined,
+                  color: _C.textMuted,
+                  size: 28,
+                ),
+                SizedBox(height: 10),
+                Text(
+                  "No bank accounts added",
+                  style: TextStyle(
+                    color: _C.textSecondary,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          ...banks.map(
+            (bank) => _bankTile(
+              Map<String, dynamic>.from(bank),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _upiTab() {
+    final qrUrl = ApiService.fixUrl(
+      user["upi_qr_url"],
+    );
+
+    return Column(
+      children: [
+        _sectionTitle(
+          title: "UPI Details",
+          subtitle: "Add or update your UPI payment details",
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 16,
+          ),
+          child: Column(
+            children: [
+              _editableRow(
+                label: "UPI Name",
+                icon: Icons.account_circle_outlined,
+                controller: upiNameCtrl,
+              ),
+              _editableRow(
+                label: "UPI ID",
+                icon: Icons.link_rounded,
+                controller: upiIdCtrl,
+              ),
+              _actionRow(
+                label: "UPI QR",
+                value: upiQr != null
+                    ? "Selected"
+                    : qrUrl.isNotEmpty
+                        ? "Uploaded"
+                        : "Upload",
+                icon: Icons.qr_code_2_rounded,
+                valueColor: upiQr != null
+                    ? _C.green
+                    : _C.textSecondary,
+                onTap: _pickQr,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 46,
+                child: ElevatedButton(
+                  onPressed: loading
+                      ? null
+                      : _saveUpi,
+                  style: ElevatedButton.styleFrom(
+                    elevation: 0,
+                    backgroundColor: _C.orange,
+                    disabledBackgroundColor:
+                        _C.orange.withOpacity(0.45),
+                    foregroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                  ),
+                  child: loading
+                      ? const SizedBox(
+                          width: 19,
+                          height: 19,
+                          child: CircularProgressIndicator(
+                            color: Colors.black,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          "Save UPI Details",
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _tabContent() {
+    if (selectedTab == 1) {
+      return _upiTab();
+    }
+
+    return _bankTab();
+  }
+
   Future<void> _pickQr() async {
-    final img = await ImagePicker().pickImage(
+    final image = await ImagePicker().pickImage(
       source: ImageSource.gallery,
       imageQuality: 70,
     );
 
-    if (img != null) setState(() => upiQr = img);
+    if (image != null && mounted) {
+      setState(() {
+        upiQr = image;
+      });
+    }
   }
 
   Future<void> _saveUpi() async {
     if (loading) return;
 
-    setState(() => loading = true);
-
-    final res = await ApiService.updateUpiMultipart(
-      upiName: upiNameCtrl.text.trim(),
-      upiId: upiIdCtrl.text.trim(),
-      upiQr: upiQr,
-    );
-
-    if (!mounted) return;
+    FocusScope.of(context).unfocus();
 
     setState(() {
-      loading = false;
-      upiQr = null;
+      loading = true;
     });
 
-    _snack(
-      res["message"]?.toString() ?? "UPI updated",
-      ok: res["success"] == true,
-    );
+    try {
+      final response =
+          await ApiService.updateUpiMultipart(
+        upiName: upiNameCtrl.text.trim(),
+        upiId: upiIdCtrl.text.trim(),
+        upiQr: upiQr,
+      );
 
-    if (res["success"] == true) _load();
+      if (!mounted) return;
+
+      setState(() {
+        loading = false;
+        upiQr = null;
+      });
+
+      _snack(
+        response["message"]?.toString() ??
+            "UPI details updated",
+        ok: response["success"] == true,
+      );
+
+      if (response["success"] == true) {
+        await _load();
+      }
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        loading = false;
+      });
+
+      _snack(
+        "Failed to update UPI details",
+        ok: false,
+      );
+    }
   }
 
-  // Add-only dialog. Existing bank accounts can no longer be edited or
-  // deleted here — only added, or promoted to default (see _bankTile).
   Future<void> _showAddBankDialog() async {
     final bankNameCtrl = TextEditingController();
     final branchCtrl = TextEditingController();
@@ -287,51 +867,53 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
     bool isDefault = false;
     bool saving = false;
 
-    await showDialog(
+    await showDialog<void>(
       context: context,
+      barrierColor: Colors.black.withOpacity(0.75),
       builder: (_) {
         return StatefulBuilder(
-          builder: (ctx, setDialog) {
+          builder: (dialogContext, setDialogState) {
             return AlertDialog(
-              backgroundColor: _C.surfaceAlt,
+              backgroundColor: _C.surface,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(22),
+                borderRadius: BorderRadius.circular(18),
+                side: const BorderSide(
+                  color: _C.divider,
+                  width: 0.8,
+                ),
               ),
               title: const Text(
                 "Add Bank Account",
                 style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
+                  color: _C.textPrimary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _field(
-                      label: "Bank Name",
-                      controller: bankNameCtrl,
-                      icon: Icons.account_balance_rounded,
+                    _dialogField(
+                      "Bank Name",
+                      bankNameCtrl,
                     ),
-                    _field(
-                      label: "Branch",
-                      controller: branchCtrl,
-                      icon: Icons.location_city_rounded,
+                    _dialogField(
+                      "Branch",
+                      branchCtrl,
                     ),
-                    _field(
-                      label: "Account Number",
-                      controller: accountCtrl,
-                      icon: Icons.credit_card_rounded,
+                    _dialogField(
+                      "Account Number",
+                      accountCtrl,
+                      keyboardType: TextInputType.number,
                     ),
-                    _field(
-                      label: "Account Type",
-                      controller: accountTypeCtrl,
-                      icon: Icons.category_rounded,
+                    _dialogField(
+                      "Account Type",
+                      accountTypeCtrl,
                     ),
-                    _field(
-                      label: "IFSC",
-                      controller: ifscCtrl,
-                      icon: Icons.code_rounded,
+                    _dialogField(
+                      "IFSC",
+                      ifscCtrl,
                     ),
                     SwitchListTile(
                       value: isDefault,
@@ -340,53 +922,79 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                       title: const Text(
                         "Set as default",
                         style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
+                          color: _C.textPrimary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                      onChanged: (v) => setDialog(() => isDefault = v),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          isDefault = value;
+                        });
+                      },
                     ),
                   ],
                 ),
               ),
               actions: [
                 TextButton(
-                  onPressed: saving ? null : () => Navigator.pop(ctx),
-                  child: const Text("Cancel"),
-                ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _C.orange,
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                  onPressed: saving
+                      ? null
+                      : () => Navigator.pop(
+                            dialogContext,
+                          ),
+                  child: const Text(
+                    "Cancel",
+                    style: TextStyle(
+                      color: _C.textSecondary,
                     ),
                   ),
+                ),
+                ElevatedButton(
                   onPressed: saving
                       ? null
                       : () async {
-                          setDialog(() => saving = true);
+                          setDialogState(() {
+                            saving = true;
+                          });
 
-                          final res = await ApiService.addBankAccount(
-                            bankName: bankNameCtrl.text.trim(),
-                            branch: branchCtrl.text.trim(),
-                            accountNumber: accountCtrl.text.trim(),
-                            accountType: accountTypeCtrl.text.trim(),
-                            ifsc: ifscCtrl.text.trim(),
+                          final response =
+                              await ApiService.addBankAccount(
+                            bankName:
+                                bankNameCtrl.text.trim(),
+                            branch:
+                                branchCtrl.text.trim(),
+                            accountNumber:
+                                accountCtrl.text.trim(),
+                            accountType:
+                                accountTypeCtrl.text.trim(),
+                            ifsc:
+                                ifscCtrl.text.trim(),
                             isDefault: isDefault,
                           );
 
-                          if (!ctx.mounted) return;
+                          if (!dialogContext.mounted) return;
 
-                          Navigator.pop(ctx);
+                          Navigator.pop(dialogContext);
 
                           _snack(
-                            res["message"]?.toString() ?? "Saved",
-                            ok: res["success"] == true,
+                            response["message"]?.toString() ??
+                                "Bank account saved",
+                            ok: response["success"] == true,
                           );
 
-                          if (res["success"] == true) _load();
+                          if (response["success"] == true) {
+                            await _load();
+                          }
                         },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _C.orange,
+                    foregroundColor: Colors.black,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                  ),
                   child: saving
                       ? const SizedBox(
                           width: 18,
@@ -398,7 +1006,9 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                         )
                       : const Text(
                           "Save",
-                          style: TextStyle(fontWeight: FontWeight.w900),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                 ),
               ],
@@ -407,324 +1017,135 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
         );
       },
     );
+
+    bankNameCtrl.dispose();
+    branchCtrl.dispose();
+    accountCtrl.dispose();
+    accountTypeCtrl.dispose();
+    ifscCtrl.dispose();
   }
 
-  // Promotes an existing bank account to default, reusing its own saved
-  // details — no editing of the account's fields happens here.
+  Widget _dialogField(
+    String label,
+    TextEditingController controller, {
+    TextInputType? keyboardType,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(
+        bottom: 12,
+      ),
+      child: TextField(
+        controller: controller,
+        keyboardType: keyboardType,
+        cursorColor: _C.orange,
+        style: const TextStyle(
+          color: _C.textPrimary,
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
+        decoration: InputDecoration(
+          isDense: true,
+          labelText: label,
+          labelStyle: const TextStyle(
+            color: _C.textSecondary,
+            fontSize: 12.5,
+          ),
+          enabledBorder: const UnderlineInputBorder(
+            borderSide: BorderSide(
+              color: _C.divider,
+            ),
+          ),
+          focusedBorder: const UnderlineInputBorder(
+            borderSide: BorderSide(
+              color: _C.orange,
+              width: 1.2,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _setDefaultBank(Map bank) async {
     if (bank["old_user_bank"] == true) {
-      _snack("Old profile bank details cannot be changed here.", ok: false);
+      _snack(
+        "Old profile bank details cannot be changed here",
+        ok: false,
+      );
       return;
     }
 
-    final isAlreadyDefault = bank["is_default"] == true ||
+    final isAlreadyDefault =
+        bank["is_default"] == true ||
         bank["is_default"] == 1 ||
         bank["is_default"]?.toString() == "1";
 
     if (isAlreadyDefault) return;
 
-    final res = await ApiService.updateBankAccount(
-      id: bank["id"].toString(),
-      bankName: bank["bank_name"]?.toString() ?? "",
-      branch: bank["branch"]?.toString() ?? "",
-      accountNumber: bank["account_number"]?.toString() ?? "",
-      accountType: bank["account_type"]?.toString() ?? "",
-      ifsc: bank["ifsc"]?.toString() ?? "",
-      isDefault: true,
-    );
+    try {
+      final response =
+          await ApiService.updateBankAccount(
+        id: bank["id"].toString(),
+        bankName:
+            bank["bank_name"]?.toString() ?? "",
+        branch:
+            bank["branch"]?.toString() ?? "",
+        accountNumber:
+            bank["account_number"]?.toString() ?? "",
+        accountType:
+            bank["account_type"]?.toString() ?? "",
+        ifsc:
+            bank["ifsc"]?.toString() ?? "",
+        isDefault: true,
+      );
 
-    _snack(
-      res["message"]?.toString() ?? "Default bank updated",
-      ok: res["success"] == true,
-    );
+      _snack(
+        response["message"]?.toString() ??
+            "Default bank updated",
+        ok: response["success"] == true,
+      );
 
-    if (res["success"] == true) _load();
-  }
-
-  Widget _bankTile(Map bank) {
-    final isDefault = bank["is_default"] == true ||
-        bank["is_default"] == 1 ||
-        bank["is_default"]?.toString() == "1";
-
-    final isOld = bank["old_user_bank"] == true;
-
-    final bankName = bank["bank_name"]?.toString().trim() ?? "";
-    final branch = bank["branch"]?.toString().trim() ?? "";
-    final account = bank["account_number"]?.toString().trim() ?? "";
-    final accountType = bank["account_type"]?.toString().trim() ?? "";
-    final ifsc = bank["ifsc"]?.toString().trim() ?? "";
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: _C.bg,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: isDefault ? _C.orange : _C.border,
-          width: isDefault ? 1.3 : 1,
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: _C.orange.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const Icon(Icons.account_balance_rounded, color: _C.gold),
-          ),
-          const SizedBox(width: 13),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  bankName.isNotEmpty ? bankName : "Bank Account",
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "Branch: ${branch.isNotEmpty ? branch : "-"}",
-                  style: const TextStyle(color: _C.textSecondary, fontSize: 12),
-                ),
-                Text(
-                  "Account: ${account.isNotEmpty ? account : "-"}",
-                  style: const TextStyle(color: _C.textSecondary, fontSize: 12),
-                ),
-                Text(
-                  "Type: ${accountType.isNotEmpty ? accountType : "-"}",
-                  style: const TextStyle(color: _C.textSecondary, fontSize: 12),
-                ),
-                Text(
-                  "IFSC: ${ifsc.isNotEmpty ? ifsc : "-"}",
-                  style: const TextStyle(color: _C.textSecondary, fontSize: 12),
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    if (isDefault)
-                      const Text(
-                        "DEFAULT",
-                        style: TextStyle(
-                          color: _C.gold,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 10,
-                        ),
-                      ),
-                    if (isOld) ...[
-                      if (isDefault) const SizedBox(width: 8),
-                      const Text(
-                        "OLD PROFILE BANK",
-                        style: TextStyle(
-                          color: _C.textSecondary,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 10,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ],
-            ),
-          ),
-          if (isOld)
-            const Padding(
-              padding: EdgeInsets.only(top: 8),
-              child: Icon(
-                Icons.lock_outline_rounded,
-                color: _C.textSecondary,
-                size: 18,
-              ),
-            )
-          else if (!isDefault)
-            PopupMenuButton<String>(
-              color: _C.surfaceAlt,
-              icon: const Icon(Icons.more_vert_rounded, color: Colors.white70),
-              onSelected: (v) {
-                if (v == "default") _setDefaultBank(bank);
-              },
-              itemBuilder: (_) => const [
-                PopupMenuItem(
-                  value: "default",
-                  child: Text(
-                    "Set as Default",
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-              ],
-            )
-          else
-            const Padding(
-              padding: EdgeInsets.only(top: 8),
-              child: Icon(
-                Icons.verified_rounded,
-                color: _C.gold,
-                size: 18,
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _upiSection() {
-    final qrUrl = ApiService.fixUrl(user["upi_qr_url"]);
-
-    return _sectionCard(
-      title: "UPI Details",
-      icon: Icons.qr_code_rounded,
-      children: [
-        _field(
-          label: "UPI Account Name",
-          controller: upiNameCtrl,
-          icon: Icons.account_circle_rounded,
-        ),
-        _field(
-          label: "UPI ID",
-          controller: upiIdCtrl,
-          icon: Icons.link_rounded,
-        ),
-        if (qrUrl.isNotEmpty && upiQr == null)
-          Container(
-            width: double.infinity,
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: _C.bg,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: _C.border),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(14),
-              child: Image.network(
-                qrUrl,
-                height: 150,
-                fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) {
-                  return const Padding(
-                    padding: EdgeInsets.all(18),
-                    child: Text(
-                      "UPI QR image not available",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: _C.textSecondary),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-        if (upiQr != null)
-          Container(
-            width: double.infinity,
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(13),
-            decoration: BoxDecoration(
-              color: _C.gold.withOpacity(0.10),
-              borderRadius: BorderRadius.circular(15),
-              border: Border.all(color: _C.gold.withOpacity(0.30)),
-            ),
-            child: const Text(
-              "New UPI QR selected",
-              style: TextStyle(color: _C.gold, fontWeight: FontWeight.w800),
-            ),
-          ),
-        _button(
-          label: upiQr == null ? "Upload / Change UPI QR" : "UPI QR Selected",
-          icon: Icons.qr_code_2_rounded,
-          onTap: _pickQr,
-        ),
-        const SizedBox(height: 12),
-        _button(
-          label: loading ? "Saving..." : "Save UPI Details",
-          icon: Icons.save_rounded,
-          onTap: _saveUpi,
-        ),
-      ],
-    );
-  }
-
-  Widget _bankSection() {
-    return _sectionCard(
-      title: "Bank Accounts",
-      icon: Icons.account_balance_rounded,
-      action: GestureDetector(
-        onTap: _showAddBankDialog,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-          decoration: BoxDecoration(
-            color: _C.orange.withOpacity(0.12),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: _C.orange.withOpacity(0.35)),
-          ),
-          child: const Text(
-            "+ Add",
-            style: TextStyle(
-              color: _C.gold,
-              fontWeight: FontWeight.w900,
-              fontSize: 12,
-            ),
-          ),
-        ),
-      ),
-      children: [
-        if (banks.isEmpty)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: _C.bg,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: _C.border),
-            ),
-            child: const Text(
-              "No bank accounts added yet.",
-              textAlign: TextAlign.center,
-              style: TextStyle(color: _C.textSecondary),
-            ),
-          )
-        else
-          ...banks.map((b) => _bankTile(Map<String, dynamic>.from(b))),
-      ],
-    );
+      if (response["success"] == true) {
+        await _load();
+      }
+    } catch (_) {
+      _snack(
+        "Failed to update default bank",
+        ok: false,
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _C.bg,
-      appBar: TopBar(
-        title: "Payment Methods",
-        user: user,
-        role: _role,
-        showBack: true,
-        backToRoot: false,
-      ),
-      body: RefreshIndicator(
-        color: _C.orange,
-        onRefresh: _load,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 760),
-              child: Column(
-                children: [
-                  _bankSection(),
-                  _upiSection(),
-                  const SizedBox(height: 30),
-                ],
+      body: SafeArea(
+        child: initialLoading
+            ? const Center(
+                child: CircularProgressIndicator(
+                  color: _C.orange,
+                  strokeWidth: 2.5,
+                ),
+              )
+            : RefreshIndicator(
+                color: _C.orange,
+                backgroundColor: _C.surface,
+                onRefresh: _load,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(
+                    parent: BouncingScrollPhysics(),
+                  ),
+                  child: Column(
+                    children: [
+                      _topBar(),
+                      _tabs(),
+                      _tabContent(),
+                      const SizedBox(height: 30),
+                    ],
+                  ),
+                ),
               ),
-            ),
-          ),
-        ),
       ),
     );
   }

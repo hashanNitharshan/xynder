@@ -1,134 +1,170 @@
 import 'package:flutter/material.dart';
+
 import '../services/api_service.dart';
 import 'chat_screen.dart';
+import 'transaction_detail_screen.dart';
 
 class _C {
-  static const bg = Color(0xff0B0E11);
-  static const surface = Color(0xff181A20);
-  static const surfaceAlt = Color(0xff1E2329);
+  static const bg = Color(0xff000000);
+  static const surface = Color(0xff101010);
+  static const border = Color(0xff252525);
 
-  static const border = Color(0xff2B3139);
-
-  // Theme
-  static const orange = Color(0xffF0B90B);
-  static const amber = Color(0xffF0B90B);
-  static const gold = Color(0xffFFD45A);
-
-  static const success = Color(0xff22C55E);
-  static const red = Color(0xffEF4444);
-  static const blue = Color(0xffF0B90B);
+  static const orange = Color(0xffFF9F2E);
+  static const green = Color(0xff00C076);
+  static const red = Color(0xffF6465D);
 
   static const textPrimary = Colors.white;
-  static const textSecondary = Color(0xff848E9C);
-
-  static const gradientAccent = LinearGradient(
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
-    colors: [
-      Color(0xffF0B90B),
-      Color(0xffC99400),
-      Color(0xffFFD45A),
-    ],
-  );
-
-  static const gradientCard = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [
-      Color(0xff0B0E11),
-      Color(0xff181A20),
-      Color(0xff1E2329),
-    ],
-  );
-
-  static const gradientGlow = RadialGradient(
-    center: Alignment(-0.2, -0.6),
-    radius: 1.2,
-    colors: [
-      Color(0x33F0B90B),
-      Color(0x22C99400),
-      Color(0x00000000),
-    ],
-  );
+  static const textSecondary = Color(0xff68686E);
+  static const textMuted = Color(0xff4E4E54);
 }
 
 class MerchantRequestsScreen extends StatefulWidget {
   const MerchantRequestsScreen({super.key});
 
   @override
-  State<MerchantRequestsScreen> createState() => _MerchantRequestsScreenState();
+  State<MerchantRequestsScreen> createState() =>
+      _MerchantRequestsScreenState();
 }
 
-class _MerchantRequestsScreenState extends State<MerchantRequestsScreen>
-    with SingleTickerProviderStateMixin {
+class _MerchantRequestsScreenState
+    extends State<MerchantRequestsScreen> {
   bool loading = true;
-  List requests = [];
-
-  // How many pending cards to show before the user taps "View All".
-  static const int _pendingPreviewCount = 3;
+  bool refreshing = false;
   bool showAllPending = false;
 
-  // Fixed height for the scrollable history box.
-  static const double _historyBoxHeight = 320;
+  List requests = [];
 
-  late AnimationController _anim;
-  late Animation<double> _fade;
-  late Animation<Offset> _slide;
+  static const int _pendingPreviewCount = 3;
 
   @override
   void initState() {
     super.initState();
-
-    _anim = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 650),
-    );
-
-    _fade = CurvedAnimation(parent: _anim, curve: Curves.easeOut);
-    _slide = Tween<Offset>(
-      begin: const Offset(0, 0.05),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _anim, curve: Curves.easeOut));
-
-    _anim.forward();
     loadRequests();
   }
 
-  @override
-  void dispose() {
-    _anim.dispose();
-    super.dispose();
+  Future<void> loadRequests({
+    bool showLoader = true,
+  }) async {
+    if (showLoader && mounted) {
+      setState(() {
+        loading = true;
+      });
+    }
+
+    try {
+      final data = await ApiService.myRequests();
+
+      if (!mounted) return;
+
+      setState(() {
+        requests = data["success"] == true
+            ? List.from(data["requests"] ?? [])
+            : [];
+
+        loading = false;
+        refreshing = false;
+      });
+
+      if (data["success"] != true) {
+        _showSnack(
+          data["message"]?.toString() ??
+              "Failed to load requests",
+          success: false,
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        loading = false;
+        refreshing = false;
+      });
+
+      _showSnack(
+        "Failed to load requests",
+        success: false,
+      );
+    }
   }
 
-  Future<void> loadRequests() async {
-    setState(() => loading = true);
-
-    final data = await ApiService.myRequests();
-
-    if (!mounted) return;
+  Future<void> _refreshRequests() async {
+    if (refreshing) return;
 
     setState(() {
-      loading = false;
-      requests = data["success"] == true ? List.from(data["requests"] ?? []) : [];
+      refreshing = true;
     });
+
+    await loadRequests(showLoader: false);
   }
 
   Future<void> approve(String id) async {
     final data = await ApiService.approveRequest(id);
-    showMsg(data["message"]?.toString() ?? "Done");
-    await loadRequests();
+
+    if (!mounted) return;
+
+    _showSnack(
+      data["message"]?.toString() ?? "Request approved",
+      success: data["success"] == true,
+    );
+
+    await loadRequests(showLoader: false);
   }
 
   Future<void> reject(String id) async {
     final data = await ApiService.rejectRequest(id);
-    showMsg(data["message"]?.toString() ?? "Done", success: false);
-    await loadRequests();
+
+    if (!mounted) return;
+
+    _showSnack(
+      data["message"]?.toString() ?? "Request rejected",
+      success: data["success"] == true,
+    );
+
+    await loadRequests(showLoader: false);
   }
 
   Future<void> close(String id) async {
     final data = await ApiService.closeRequest(id);
-    showMsg(data["message"]?.toString() ?? "Closed");
-    await loadRequests();
+
+    if (!mounted) return;
+
+    _showSnack(
+      data["message"]?.toString() ?? "Request closed",
+      success: data["success"] == true,
+    );
+
+    await loadRequests(showLoader: false);
+  }
+
+  void _showSnack(
+    String message, {
+    bool success = true,
+  }) {
+    if (!mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          backgroundColor: success ? _C.green : _C.red,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          content: Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12.5,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      );
   }
 
   Future<void> _confirmAction({
@@ -136,62 +172,73 @@ class _MerchantRequestsScreenState extends State<MerchantRequestsScreen>
     required String message,
     required String confirmText,
     required Color color,
-    required VoidCallback onConfirm,
+    required Future<void> Function() onConfirm,
   }) async {
-    final ok = await showDialog<bool>(
+    final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) {
+      barrierColor: Colors.black.withOpacity(0.75),
+      builder: (dialogContext) {
         return AlertDialog(
           backgroundColor: _C.surface,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-            side: const BorderSide(color: _C.border),
+            borderRadius: BorderRadius.circular(18),
+            side: const BorderSide(
+              color: _C.border,
+              width: 0.8,
+            ),
           ),
           title: Text(
             title,
             style: const TextStyle(
               color: _C.textPrimary,
               fontSize: 16,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
             ),
           ),
           content: Text(
             message,
             style: const TextStyle(
               color: _C.textSecondary,
-              fontSize: 13,
+              fontSize: 12.5,
               height: 1.45,
               fontWeight: FontWeight.w500,
             ),
           ),
-          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context, false),
+              onPressed: () {
+                Navigator.pop(dialogContext, false);
+              },
               child: const Text(
                 "Cancel",
                 style: TextStyle(
                   color: _C.textSecondary,
-                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
             ElevatedButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, true);
+              },
               style: ElevatedButton.styleFrom(
+                elevation: 0,
                 backgroundColor: color,
                 foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 10,
                 ),
               ),
-              onPressed: () => Navigator.pop(context, true),
               child: Text(
                 confirmText,
                 style: const TextStyle(
                   fontSize: 12,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ),
@@ -200,123 +247,195 @@ class _MerchantRequestsScreenState extends State<MerchantRequestsScreen>
       },
     );
 
-    if (ok == true) onConfirm();
+    if (confirmed == true) {
+      await onConfirm();
+    }
   }
 
-  void showMsg(String msg, {bool success = true}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: success ? _C.amber : _C.red,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        content: Text(
-          msg,
-          style: TextStyle(
-            color: success ? Colors.black : Colors.white,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-      ),
-    );
+  List<Map<String, dynamic>> get _normalized {
+    return requests
+        .map((item) => Map<String, dynamic>.from(item))
+        .toList();
   }
 
-  Color statusColor(String status) {
-    status = status.toLowerCase();
-    if (status == "approved") return _C.success;
-    if (status == "rejected") return _C.red;
-    if (status == "closed") return _C.textSecondary;
-    return _C.amber;
+  List<Map<String, dynamic>> get pendingList {
+    return _normalized.where((item) {
+      final status =
+          item["status"]?.toString().toLowerCase().trim() ??
+              "pending";
+
+      return status == "pending";
+    }).toList();
   }
 
-  List<Map<String, dynamic>> get _normalized =>
-      requests.map((e) => Map<String, dynamic>.from(e)).toList();
+  List<Map<String, dynamic>> get historyList {
+    return _normalized.where((item) {
+      final status =
+          item["status"]?.toString().toLowerCase().trim() ??
+              "pending";
 
-  List<Map<String, dynamic>> get pendingList =>
-      _normalized.where((r) => (r["status"]?.toString() ?? "pending") == "pending").toList();
+      return status != "pending";
+    }).toList();
+  }
 
-  List<Map<String, dynamic>> get historyList =>
-      _normalized.where((r) => (r["status"]?.toString() ?? "pending") != "pending").toList();
+  List<Map<String, dynamic>> get visiblePendingList {
+    if (showAllPending) {
+      return pendingList;
+    }
 
-  // Pending list actually rendered on screen (respects the "View All" toggle).
-  List<Map<String, dynamic>> get visiblePendingList => showAllPending
-      ? pendingList
-      : pendingList.take(_pendingPreviewCount).toList();
+    return pendingList
+        .take(_pendingPreviewCount)
+        .toList();
+  }
 
   int get pendingCount => pendingList.length;
 
-  int get approvedCount =>
-      _normalized.where((r) => r["status"]?.toString() == "approved").length;
+  int get approvedCount {
+    return _normalized.where((item) {
+      return item["status"]?.toString().toLowerCase() ==
+          "approved";
+    }).length;
+  }
 
-  int get rejectedCount =>
-      _normalized.where((r) => r["status"]?.toString() == "rejected").length;
+  int get rejectedCount {
+    return _normalized.where((item) {
+      return item["status"]?.toString().toLowerCase() ==
+          "rejected";
+    }).length;
+  }
 
-  int get closedCount =>
-      _normalized.where((r) => r["status"]?.toString() == "closed").length;
+  int get closedCount {
+    return _normalized.where((item) {
+      return item["status"]?.toString().toLowerCase() ==
+          "closed";
+    }).length;
+  }
 
-  // ================= TOP BAR =================
+  bool _isBuy(Map<String, dynamic> request) {
+    final type =
+        request["type"]?.toString().toLowerCase().trim() ??
+            "";
+
+    return type == "deposit" ||
+        type == "buy" ||
+        type == "buying";
+  }
+
+  String _typeText(Map<String, dynamic> request) {
+    return _isBuy(request) ? "BUY USD" : "SELL USD";
+  }
+
+  Color _typeColor(Map<String, dynamic> request) {
+    return _isBuy(request) ? _C.green : _C.red;
+  }
+
+  String _statusText(Map<String, dynamic> request) {
+    final status =
+        request["status"]?.toString().toLowerCase().trim() ??
+            "pending";
+
+    if (status == "approved") return "Approved";
+    if (status == "rejected") return "Rejected";
+    if (status == "closed") return "Closed";
+
+    return "Pending";
+  }
+
+  Color _statusColor(Map<String, dynamic> request) {
+    final status =
+        request["status"]?.toString().toLowerCase().trim() ??
+            "pending";
+
+    if (status == "approved") return _C.green;
+    if (status == "rejected") return _C.red;
+    if (status == "closed") return _C.textSecondary;
+
+    return _C.orange;
+  }
+
+  String _requestNumber(Map<String, dynamic> request) {
+    final transactionNo =
+        request["transaction_no"]?.toString().trim() ?? "";
+
+    if (transactionNo.isNotEmpty &&
+        transactionNo.toLowerCase() != "null") {
+      return transactionNo;
+    }
+
+    final id = request["id"]?.toString() ?? "";
+
+    if (id.isEmpty) return "—";
+
+    return "TNS${id.padLeft(9, "0")}";
+  }
+
+  String _displayAmount(dynamic value) {
+    final number = double.tryParse(
+          value?.toString().replaceAll(",", "").trim() ?? "0",
+        ) ??
+        0;
+
+    final parts = number.toStringAsFixed(2).split(".");
+
+    final whole = parts.first.replaceAllMapped(
+      RegExp(r"\B(?=(\d{3})+(?!\d))"),
+      (_) => ",",
+    );
+
+    return "$whole.${parts.last}";
+  }
 
   Widget _topBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.fromLTRB(8, 10, 8, 4),
       child: Row(
         children: [
-          GestureDetector(
-            onTap: () => Navigator.maybePop(context),
-            child: Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: _C.surface,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: _C.border),
-              ),
-              child: const Icon(
-                Icons.arrow_back_ios_new_rounded,
-                color: Colors.white,
-                size: 18,
-              ),
-            ),
+          SizedBox(
+            width: 44,
+            child: Navigator.canPop(context)
+                ? IconButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    icon: const Icon(
+                      Icons.arrow_back_rounded,
+                      color: _C.textPrimary,
+                      size: 21,
+                    ),
+                  )
+                : null,
           ),
-          const SizedBox(width: 14),
           const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "P2P Requests",
-                  style: TextStyle(
-                    color: _C.textPrimary,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  "Approve or reject client requests",
-                  style: TextStyle(
-                    color: _C.textSecondary,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
+            child: Text(
+              "P2P Requests",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _C.textPrimary,
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
-          GestureDetector(
-            onTap: loadRequests,
-            child: Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                gradient: _C.gradientAccent,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.refresh_rounded,
-                color: Colors.black,
-                size: 19,
-              ),
+          SizedBox(
+            width: 44,
+            child: IconButton(
+              onPressed: refreshing
+                  ? null
+                  : _refreshRequests,
+              icon: refreshing
+                  ? const SizedBox(
+                      width: 17,
+                      height: 17,
+                      child: CircularProgressIndicator(
+                        color: _C.orange,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Icon(
+                      Icons.refresh_rounded,
+                      color: _C.textPrimary,
+                      size: 20,
+                    ),
             ),
           ),
         ],
@@ -324,138 +443,131 @@ class _MerchantRequestsScreenState extends State<MerchantRequestsScreen>
     );
   }
 
-  // ================= STATS STRIP =================
-
-  Widget _statChip({
-    required String label,
-    required int value,
-    required Color color,
-    required IconData icon,
-  }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 10),
-        decoration: BoxDecoration(
-          color: _C.surface,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: _C.border),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 26,
-              height: 26,
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(9),
-                border: Border.all(color: color.withOpacity(0.3)),
-              ),
-              child: Icon(icon, color: color, size: 14),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              value.toString(),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: const TextStyle(
-                color: _C.textSecondary,
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _statsStrip() {
+  Widget _summaryStrip() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 4),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
       child: Row(
         children: [
-          _statChip(
+          _summaryItem(
             label: "Pending",
             value: pendingCount,
-            color: _C.amber,
-            icon: Icons.pending_actions_rounded,
+            color: _C.orange,
           ),
-          const SizedBox(width: 10),
-          _statChip(
+          const SizedBox(width: 8),
+          _summaryItem(
             label: "Approved",
             value: approvedCount,
-            color: _C.success,
-            icon: Icons.check_circle_rounded,
+            color: _C.green,
           ),
-          const SizedBox(width: 10),
-          _statChip(
+          const SizedBox(width: 8),
+          _summaryItem(
             label: "Rejected",
             value: rejectedCount,
             color: _C.red,
-            icon: Icons.cancel_rounded,
           ),
-          const SizedBox(width: 10),
-          _statChip(
+          const SizedBox(width: 8),
+          _summaryItem(
             label: "Closed",
             value: closedCount,
             color: _C.textSecondary,
-            icon: Icons.lock_rounded,
           ),
         ],
       ),
     );
   }
 
-  // ================= SECTION HEADER =================
-
-  Widget _sectionHeader(
-    String title,
-    IconData icon, {
-    String? tag,
-    Widget? trailing,
+  Widget _summaryItem({
+    required String label,
+    required int value,
+    required Color color,
   }) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
-      child: Row(
-        children: [
-          Icon(icon, color: _C.amber, size: 14),
-          const SizedBox(width: 8),
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 0.2,
-            ),
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          vertical: 11,
+          horizontal: 8,
+        ),
+        decoration: BoxDecoration(
+          color: _C.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: _C.border,
+            width: 0.8,
           ),
-          if (tag != null) ...[
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: _C.amber.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: _C.amber.withOpacity(0.3)),
+        ),
+        child: Column(
+          children: [
+            Text(
+              value.toString(),
+              style: TextStyle(
+                color: color,
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
               ),
-              child: Text(
-                tag,
-                style: const TextStyle(
-                  color: _C.amber,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w900,
-                ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: _C.textSecondary,
+                fontSize: 9.5,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _sectionHeader({
+    required String title,
+    required int count,
+    Widget? trailing,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        16,
+        18,
+        16,
+        9,
+      ),
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              color: _C.textPrimary,
+              fontSize: 13.5,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(width: 7),
+          Container(
+            constraints: const BoxConstraints(
+              minWidth: 20,
+              minHeight: 20,
+            ),
+            height: 20,
+            padding: const EdgeInsets.symmetric(
+              horizontal: 6,
+            ),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: _C.orange.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              count.toString(),
+              style: const TextStyle(
+                color: _C.orange,
+                fontSize: 9.5,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
           if (trailing != null) ...[
             const Spacer(),
             trailing,
@@ -465,284 +577,200 @@ class _MerchantRequestsScreenState extends State<MerchantRequestsScreen>
     );
   }
 
-  // View All / Show Less toggle button for the pending section.
-  Widget _viewAllPendingButton() {
-    return GestureDetector(
-      onTap: () => setState(() => showAllPending = !showAllPending),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: _C.amber.withOpacity(0.12),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: _C.amber.withOpacity(0.3)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              showAllPending ? "Show Less" : "View All",
-              style: const TextStyle(
-                color: _C.amber,
-                fontSize: 10,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(width: 3),
-            Icon(
-              showAllPending
-                  ? Icons.expand_less_rounded
-                  : Icons.expand_more_rounded,
-              color: _C.amber,
-              size: 14,
-            ),
-          ],
-        ),
-      ),
+  Widget _requestCard(
+    Map<String, dynamic> request,
+  ) {
+    final client = Map<String, dynamic>.from(
+      request["user"] ?? {},
     );
-  }
 
-  // ================= PENDING CARD (medium action card) =================
+    final id = request["id"]?.toString() ?? "";
+    final name =
+        client["name"]?.toString().trim().isNotEmpty == true
+            ? client["name"].toString()
+            : "Client";
+    final email =
+        client["email"]?.toString().trim() ?? "";
+    final note =
+        request["note"]?.toString().trim() ?? "";
 
-  Widget _statusPill(String status) {
-    final color = statusColor(status);
+    final typeColor = _typeColor(request);
+    final statusColor = _statusColor(request);
+    final requestNo = _requestNumber(request);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.35)),
+      margin: const EdgeInsets.fromLTRB(
+        16,
+        0,
+        16,
+        10,
       ),
-      child: Text(
-        status.toUpperCase(),
-        style: TextStyle(
-          color: color,
-          fontSize: 10,
-          fontWeight: FontWeight.w900,
-          letterSpacing: 0.5,
-        ),
+      padding: const EdgeInsets.fromLTRB(
+        0,
+        12,
+        0,
+        12,
       ),
-    );
-  }
-
-  Widget _typeBadge({
-    required String type,
-    required bool isBuy,
-    required String id,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-      decoration: BoxDecoration(
-        color: isBuy ? _C.blue.withOpacity(0.10) : _C.orange.withOpacity(0.10),
-        borderRadius: BorderRadius.circular(9),
-        border: Border.all(
-          color: isBuy ? _C.blue.withOpacity(0.28) : _C.orange.withOpacity(0.28),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            isBuy ? Icons.trending_up_rounded : Icons.trending_down_rounded,
-            color: _C.amber,
-            size: 12,
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: _C.border,
+            width: 0.8,
           ),
-          const SizedBox(width: 5),
-          Text(
-            "$type  #$id",
-            style: const TextStyle(
-              color: _C.amber,
-              fontSize: 10,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Compact info row - reduced bottom padding vs original for a tighter box.
-  Widget _infoRow(String title, dynamic value, {Color? color}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: _C.textSecondary,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const Spacer(),
-          Flexible(
-            child: Text(
-              value?.toString() ?? "-",
-              textAlign: TextAlign.right,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: color ?? Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _requestCard(Map<String, dynamic> r) {
-    final user = Map<String, dynamic>.from(r["user"] ?? {});
-    final id = r["id"].toString();
-    final isBuy = r["type"] == "deposit";
-    final type = isBuy ? "BUY USD" : "SELL USD";
-    final status = r["status"]?.toString() ?? "pending";
-    final note = (r["note"] ?? "").toString();
-
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: _C.surface,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: _C.border,
-          width: 1,
         ),
       ),
       child: Column(
         children: [
           Row(
             children: [
-              _typeBadge(type: type, isBuy: isBuy, id: id),
+              Text(
+                _typeText(request),
+                style: TextStyle(
+                  color: typeColor,
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
               const Spacer(),
-              _statusPill(status),
+              Text(
+                _statusText(request),
+                style: TextStyle(
+                  color: statusColor,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 12),
-
+          const SizedBox(height: 11),
           Row(
             children: [
               CircleAvatar(
-                radius: 20,
-                backgroundColor: _C.surfaceAlt,
+                radius: 19,
+                backgroundColor: _C.surface,
                 child: Text(
-                  (user["name"]?.toString().isNotEmpty ?? false)
-                      ? user["name"].toString()[0].toUpperCase()
-                      : "U",
+                  name.substring(0, 1).toUpperCase(),
                   style: const TextStyle(
-                    color: _C.amber,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 14,
+                    color: _C.orange,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
                   children: [
                     Text(
-                      user["name"]?.toString() ?? "Client",
+                      name,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 14,
+                        color: _C.textPrimary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      user["email"]?.toString() ?? "-",
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: _C.textSecondary,
-                        fontSize: 12,
+                    if (email.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        email,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: _C.textSecondary,
+                          fontSize: 10.5,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
             ],
           ),
-
-          const SizedBox(height: 12),
-
-          // Compact info box - reduced padding so it takes up less vertical space.
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            decoration: BoxDecoration(
-              color: _C.bg,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: _C.border),
-            ),
-            child: Column(
-              children: [
-                _infoRow("USD Amount", r["amount"]),
-                _infoRow(
-                  "INR Total",
-                  r["total_amount"],
-                  color: _C.amber,
-                ),
-                if (note.isNotEmpty) _infoRow("Note", note),
-              ],
-            ),
+          const SizedBox(height: 13),
+          _informationRow(
+            label: "USD Amount",
+            value:
+                "\$${_displayAmount(request["amount"])}",
           ),
-
-          const SizedBox(height: 10),
-
-          // Compact action row - Accept / Reject shrunk down.
+          const SizedBox(height: 6),
+          _informationRow(
+            label: "INR Total",
+            value:
+                "₹${_displayAmount(request["total_amount"])}",
+            valueColor: _C.orange,
+            bold: true,
+          ),
+          const SizedBox(height: 6),
+          _informationRow(
+            label: "Request No.",
+            value: requestNo,
+          ),
+          if (note.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            _informationRow(
+              label: "Note",
+              value: note,
+            ),
+          ],
+          const SizedBox(height: 13),
           Row(
             children: [
               Expanded(
-                child: _solidButton(
+                child: _actionButton(
                   label: "Accept",
                   icon: Icons.check_rounded,
-                  color: _C.success,
-                  onTap: () => _confirmAction(
-                    title: "Accept request?",
-                    message: "This will approve the client request and update the transaction status.",
-                    confirmText: "Accept",
-                    color: _C.success,
-                    onConfirm: () => approve(id),
-                  ),
+                  backgroundColor: _C.green,
+                  foregroundColor: Colors.white,
+                  onTap: () {
+                    _confirmAction(
+                      title: "Accept request?",
+                      message:
+                          "This will approve the client request.",
+                      confirmText: "Accept",
+                      color: _C.green,
+                      onConfirm: () => approve(id),
+                    );
+                  },
                 ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 8),
               Expanded(
-                child: _solidButton(
+                child: _actionButton(
                   label: "Reject",
                   icon: Icons.close_rounded,
-                  color: _C.red,
-                  onTap: () => _confirmAction(
-                    title: "Reject request?",
-                    message: "This will reject the client request. Please confirm before continuing.",
-                    confirmText: "Reject",
-                    color: _C.red,
-                    onConfirm: () => reject(id),
-                  ),
+                  backgroundColor: _C.red,
+                  foregroundColor: Colors.white,
+                  onTap: () {
+                    _confirmAction(
+                      title: "Reject request?",
+                      message:
+                          "This will reject the client request.",
+                      confirmText: "Reject",
+                      color: _C.red,
+                      onConfirm: () => reject(id),
+                    );
+                  },
                 ),
               ),
             ],
           ),
-
-          const SizedBox(height: 6),
-
-          // Compact secondary row - Chat / Close shrunk down.
+          const SizedBox(height: 8),
           Row(
             children: [
               Expanded(
                 child: _outlineButton(
                   label: "Chat",
-                  icon: Icons.chat_rounded,
+                  icon: Icons.chat_bubble_outline_rounded,
                   onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => ChatScreen(
-                          otherUser: user,
+                          otherUser: client,
                           chatType: "request",
                           chatId: id,
                         ),
@@ -751,23 +779,103 @@ class _MerchantRequestsScreenState extends State<MerchantRequestsScreen>
                   },
                 ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 8),
               Expanded(
                 child: _outlineButton(
                   label: "Close",
                   icon: Icons.lock_outline_rounded,
-                  onTap: () => _confirmAction(
-                    title: "Close request?",
-                    message: "This will mark the request as closed without approving or rejecting it.",
-                    confirmText: "Close",
-                    color: _C.textSecondary,
-                    onConfirm: () => close(id),
-                  ),
+                  onTap: () {
+                    _confirmAction(
+                      title: "Close request?",
+                      message:
+                          "This will close the request without approving or rejecting it.",
+                      confirmText: "Close",
+                      color: _C.textSecondary,
+                      onConfirm: () => close(id),
+                    );
+                  },
                 ),
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _informationRow({
+    required String label,
+    required String value,
+    Color valueColor = _C.textPrimary,
+    bool bold = false,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: _C.textSecondary,
+            fontSize: 11.5,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            value,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              color: valueColor,
+              fontSize: 12,
+              fontWeight:
+                  bold ? FontWeight.w800 : FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _actionButton({
+    required String label,
+    required IconData icon,
+    required Color backgroundColor,
+    required Color foregroundColor,
+    required VoidCallback onTap,
+  }) {
+    return SizedBox(
+      height: 36,
+      child: ElevatedButton(
+        onPressed: onTap,
+        style: ElevatedButton.styleFrom(
+          elevation: 0,
+          backgroundColor: backgroundColor,
+          foregroundColor: foregroundColor,
+          padding: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 14,
+            ),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -777,26 +885,34 @@ class _MerchantRequestsScreenState extends State<MerchantRequestsScreen>
     required IconData icon,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 32,
-        decoration: BoxDecoration(
-          color: _C.bg,
-          borderRadius: BorderRadius.circular(9),
-          border: Border.all(color: _C.amber),
+    return SizedBox(
+      height: 36,
+      child: OutlinedButton(
+        onPressed: onTap,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: _C.orange,
+          side: const BorderSide(
+            color: _C.border,
+            width: 0.8,
+          ),
+          padding: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: _C.amber, size: 13),
+            Icon(
+              icon,
+              size: 14,
+            ),
             const SizedBox(width: 5),
             Text(
               label,
               style: const TextStyle(
-                color: _C.amber,
-                fontWeight: FontWeight.w900,
-                fontSize: 12,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ],
@@ -805,222 +921,118 @@ class _MerchantRequestsScreenState extends State<MerchantRequestsScreen>
     );
   }
 
-  Widget _solidButton({
-    required String label,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 32,
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(9),
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.22),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: Colors.white, size: 13),
-            const SizedBox(width: 5),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-      ),
+  Widget _historyItem(
+    Map<String, dynamic> request,
+  ) {
+    final client = Map<String, dynamic>.from(
+      request["user"] ?? {},
     );
-  }
 
-  // ================= HISTORY TABLE (approved / rejected / closed) =================
+    final name =
+        client["name"]?.toString().trim().isNotEmpty == true
+            ? client["name"].toString()
+            : "Client";
 
-  Widget _historyTableHeader() {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: _C.surfaceAlt,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
-        border: Border.all(color: _C.border),
-      ),
-      child: const Row(
-        children: [
-          Expanded(
-            flex: 4,
-            child: Text(
-              "CLIENT / TYPE",
-              style: TextStyle(
-                color: _C.textSecondary,
-                fontSize: 10,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 0.4,
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              "AMOUNT",
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                color: _C.textSecondary,
-                fontSize: 10,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 0.4,
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              "STATUS",
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                color: _C.textSecondary,
-                fontSize: 10,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 0.4,
-              ),
-            ),
-          ),
-          SizedBox(width: 28),
-        ],
-      ),
-    );
-  }
-
-  Widget _historyRow(Map<String, dynamic> r, bool isLast) {
-    final user = Map<String, dynamic>.from(r["user"] ?? {});
-    final id = r["id"].toString();
-    final isBuy = r["type"] == "deposit";
-    final status = r["status"]?.toString() ?? "pending";
-    final color = statusColor(status);
+    final statusColor = _statusColor(request);
 
     return InkWell(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        await Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => ChatScreen(
-              otherUser: user,
-              chatType: "request",
-              chatId: id,
+            builder: (_) => TransactionDetailScreen(
+              item: request,
+              sourceType: "request",
+              user: const <String, dynamic>{
+                "role": "merchant",
+              },
             ),
           ),
         );
+
+        if (mounted) {
+          await loadRequests(showLoader: false);
+        }
       },
+      splashColor: Colors.white.withOpacity(0.03),
+      highlightColor: Colors.white.withOpacity(0.015),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-        decoration: BoxDecoration(
-          color: _C.surface,
-          border: Border(
-            bottom: isLast
-                ? BorderSide.none
-                : const BorderSide(color: _C.border, width: 1),
-          ),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
         ),
         child: Row(
           children: [
+            CircleAvatar(
+              radius: 18,
+              backgroundColor: _C.surface,
+              child: Icon(
+                _isBuy(request)
+                    ? Icons.trending_up_rounded
+                    : Icons.trending_down_rounded,
+                color: _typeColor(request),
+                size: 16,
+              ),
+            ),
+            const SizedBox(width: 10),
             Expanded(
-              flex: 4,
-              child: Row(
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 30,
-                    height: 30,
-                    decoration: BoxDecoration(
-                      color: (isBuy ? _C.blue : _C.orange).withOpacity(0.10),
-                      borderRadius: BorderRadius.circular(9),
-                    ),
-                    child: Icon(
-                      isBuy ? Icons.trending_up_rounded : Icons.trending_down_rounded,
-                      color: _C.amber,
-                      size: 15,
+                  Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: _C.textPrimary,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          user["name"]?.toString() ?? "Client",
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 13,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          "#$id · ${isBuy ? 'Buy' : 'Sell'}",
-                          style: const TextStyle(
-                            color: _C.textSecondary,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
+                  const SizedBox(height: 3),
+                  Text(
+                    "${_typeText(request)} • ${_requestNumber(request)}",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: _C.textSecondary,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
               ),
             ),
-            Expanded(
-              flex: 3,
-              child: Text(
-                r["amount"]?.toString() ?? "-",
-                textAlign: TextAlign.right,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 13,
-                ),
-              ),
-            ),
-            Expanded(
-              flex: 3,
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: color.withOpacity(0.35)),
-                  ),
-                  child: Text(
-                    status.toUpperCase(),
-                    style: TextStyle(
-                      color: color,
-                      fontSize: 9,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.4,
-                    ),
+            const SizedBox(width: 10),
+            Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment.end,
+              children: [
+                Text(
+                  "\$${_displayAmount(request["amount"])}",
+                  style: const TextStyle(
+                    color: _C.textPrimary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-              ),
+                const SizedBox(height: 3),
+                Text(
+                  _statusText(request),
+                  style: TextStyle(
+                    color: statusColor,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 4),
             const Icon(
               Icons.chevron_right_rounded,
-              color: _C.textSecondary,
-              size: 20,
+              color: _C.textMuted,
+              size: 18,
             ),
           ],
         ),
@@ -1028,109 +1040,83 @@ class _MerchantRequestsScreenState extends State<MerchantRequestsScreen>
     );
   }
 
-  Widget _historyTable() {
-    if (historyList.isEmpty) {
-      return Container(
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: _C.surface,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: _C.border),
-        ),
-        child: const Center(
-          child: Text(
-            "No resolved requests yet",
-            style: TextStyle(
-              color: _C.textSecondary,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      );
-    }
-
+  Widget _historyBox() {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: _C.border),
+      height: 300,
+      margin: const EdgeInsets.fromLTRB(
+        16,
+        0,
+        16,
+        12,
       ),
-      child: Column(
-        children: [
-          _historyTableHeader(),
-          // Own fixed-height scrollable box so a long history doesn't push
-          // the rest of the page down endlessly - it scrolls internally.
-          SizedBox(
-            height: _historyBoxHeight,
-            child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(10)),
-              child: Container(
-                color: _C.surface,
-                child: Scrollbar(
-                  thumbVisibility: true,
-                  child: ListView.builder(
-                    padding: EdgeInsets.zero,
-                    physics: const ClampingScrollPhysics(),
-                    itemCount: historyList.length,
-                    itemBuilder: (context, i) =>
-                        _historyRow(historyList[i], i == historyList.length - 1),
-                  ),
-                ),
-              ),
+      decoration: BoxDecoration(
+        color: _C.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: _C.border,
+          width: 0.8,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: Scrollbar(
+          thumbVisibility: true,
+          child: ListView.separated(
+            primary: false,
+            physics: const ClampingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(
+              vertical: 4,
             ),
+            itemCount: historyList.length,
+            separatorBuilder: (_, __) => const Divider(
+              height: 1,
+              thickness: 0.8,
+              indent: 14,
+              endIndent: 14,
+              color: _C.border,
+            ),
+            itemBuilder: (context, index) {
+              return _historyItem(
+                historyList[index],
+              );
+            },
           ),
-        ],
+        ),
       ),
     );
   }
 
-  // ================= EMPTY / LOADING =================
-
   Widget _emptyState() {
     return Center(
-      child: Container(
-        margin: const EdgeInsets.all(20),
-        padding: const EdgeInsets.all(22),
-        decoration: BoxDecoration(
-          color: _C.surface,
-          borderRadius: BorderRadius.circular(26),
-          border: Border.all(color: _C.border),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 30,
+          vertical: 70,
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: _C.amber.withOpacity(0.10),
+              width: 58,
+              height: 58,
+              decoration: const BoxDecoration(
+                color: _C.surface,
                 shape: BoxShape.circle,
-                border: Border.all(color: _C.amber.withOpacity(0.30)),
               ),
               child: const Icon(
-                Icons.receipt_long_rounded,
-                color: _C.amber,
-                size: 30,
+                Icons.receipt_long_outlined,
+                color: _C.textSecondary,
+                size: 25,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 11),
             const Text(
-              "No requests yet",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              "Client Buy/Sell USD requests will appear here",
+              "No requests available",
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: _C.textSecondary,
-                fontSize: 12,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],
@@ -1149,31 +1135,72 @@ class _MerchantRequestsScreenState extends State<MerchantRequestsScreen>
       );
     }
 
-    if (requests.isEmpty) return _emptyState();
+    if (requests.isEmpty) {
+      return RefreshIndicator(
+        color: _C.orange,
+        backgroundColor: _C.surface,
+        onRefresh: _refreshRequests,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            _summaryStrip(),
+            _emptyState(),
+          ],
+        ),
+      );
+    }
 
     return RefreshIndicator(
       color: _C.orange,
       backgroundColor: _C.surface,
-      onRefresh: loadRequests,
+      onRefresh: _refreshRequests,
       child: ListView(
-        padding: const EdgeInsets.only(bottom: 30),
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
+        padding: const EdgeInsets.only(
+          bottom: 30,
+        ),
         children: [
-          _statsStrip(),
-
+          _summaryStrip(),
           if (pendingList.isNotEmpty) ...[
             _sectionHeader(
-              "Pending Requests",
-              Icons.pending_actions_rounded,
-              tag: pendingCount.toString(),
-              trailing: pendingCount > _pendingPreviewCount
-                  ? _viewAllPendingButton()
-                  : null,
+              title: "Pending Requests",
+              count: pendingCount,
+              trailing:
+                  pendingCount > _pendingPreviewCount
+                      ? GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              showAllPending =
+                                  !showAllPending;
+                            });
+                          },
+                          child: Text(
+                            showAllPending
+                                ? "Show Less"
+                                : "View All",
+                            style: const TextStyle(
+                              color: _C.orange,
+                              fontSize: 11,
+                              fontWeight:
+                                  FontWeight.w700,
+                            ),
+                          ),
+                        )
+                      : null,
             ),
-            for (final r in visiblePendingList) _requestCard(r),
+            ...visiblePendingList.map(
+              _requestCard,
+            ),
           ],
-
-          _sectionHeader("Request History", Icons.history_rounded),
-          _historyTable(),
+          if (historyList.isNotEmpty) ...[
+            _sectionHeader(
+              title: "Request History",
+              count: historyList.length,
+            ),
+            _historyBox(),
+          ],
         ],
       ),
     );
@@ -1187,7 +1214,9 @@ class _MerchantRequestsScreenState extends State<MerchantRequestsScreen>
         child: Column(
           children: [
             _topBar(),
-            Expanded(child: _listBody()),
+            Expanded(
+              child: _listBody(),
+            ),
           ],
         ),
       ),

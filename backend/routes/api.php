@@ -14,7 +14,7 @@ Route::options('/{any}', function () {
 Route::get('/version', function () {
     return response()->json([
         'success'      => true,
-        'version'      => '1.1.3',
+        'version'      => '1.1.4',
         'apk_url'      => 'https://wallet.bitxnow.com/apk/wallet-mobile.apk',
         'force_update' => false,
     ]);
@@ -40,9 +40,26 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/requests', [AuthController::class, 'myRequests']);
     Route::post('/requests', [AuthController::class, 'createRequest']);
-    Route::match(['post', 'put', 'patch'], '/requests/{walletRequest}/approve', [AuthController::class, 'merchantApproveRequest']);
-    Route::match(['post', 'put', 'patch'], '/requests/{walletRequest}/reject', [AuthController::class, 'merchantRejectRequest']);
-    Route::match(['post', 'put', 'patch'], '/requests/{walletRequest}/close', [AuthController::class, 'merchantCloseRequest']);
+
+    Route::match(
+        ['post', 'put', 'patch'],
+        '/requests/{walletRequest}/approve',
+        [AuthController::class, 'merchantApproveRequest']
+    );
+
+    Route::match(
+        ['post', 'put', 'patch'],
+        '/requests/{walletRequest}/reject',
+        [AuthController::class, 'merchantRejectRequest']
+    );
+
+    // Close a pending request — allowed for the owning client OR the
+    // assigned merchant. Role/ownership checks happen in the controller.
+    Route::match(
+        ['post', 'put', 'patch'],
+        '/requests/{walletRequest}/close',
+        [AuthController::class, 'merchantCloseRequest']
+    );
 
     Route::get('/support-tickets', [SupportTicketController::class, 'index']);
     Route::post('/support-tickets', [SupportTicketController::class, 'store']);
@@ -51,13 +68,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/wallet/transfer', [AuthController::class, 'walletTransfer']);
     Route::get('/wallet/transfers', [AuthController::class, 'walletTransfers']);
 
-Route::get('/payment-methods', [AuthController::class, 'paymentMethods']);
-Route::post('/bank-accounts', [AuthController::class, 'storeBankAccount']);
-Route::put('/bank-accounts/{bankAccount}', [AuthController::class, 'updateBankAccount']);
-Route::delete('/bank-accounts/{bankAccount}', [AuthController::class, 'deleteBankAccount']);
-Route::put('/payment-upi', [AuthController::class, 'updateUpi']);
-    
-
+    Route::get('/payment-methods', [AuthController::class, 'paymentMethods']);
+    Route::post('/bank-accounts', [AuthController::class, 'storeBankAccount']);
+    Route::put('/bank-accounts/{bankAccount}', [AuthController::class, 'updateBankAccount']);
+    Route::delete('/bank-accounts/{bankAccount}', [AuthController::class, 'deleteBankAccount']);
+    Route::put('/payment-upi', [AuthController::class, 'updateUpi']);
 
     Route::get('/chat/conversations', [ChatController::class, 'conversations']);
     Route::get('/chat/transfer/{transferId}/messages', [ChatController::class, 'transferMessages']);
