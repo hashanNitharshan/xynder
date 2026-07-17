@@ -594,10 +594,10 @@ class _TransactionDetailScreenState
   }
 
   // ---------------------------------------------------------------------------
-  // CLOSE REQUEST (CLIENT ONLY)
+  // CLOSE TRANSACTION (CLIENT ONLY)
   // ---------------------------------------------------------------------------
 
-  // Only the client who owns this request sees the Close Request button,
+  // Only the client who owns this request sees the Close Transaction button,
   // and only while the request is still pending. The backend
   // (AuthController@merchantCloseRequest) independently re-verifies both
   // the "pending" status and request ownership, so this is UI gating only.
@@ -628,7 +628,7 @@ class _TransactionDetailScreenState
             side: const BorderSide(color: border),
           ),
           title: const Text(
-            'Close transaction?',
+            'Close Transaction?',
             style: TextStyle(
               color: textPrimary,
               fontSize: 18,
@@ -636,7 +636,7 @@ class _TransactionDetailScreenState
             ),
           ),
           content: const Text(
-            'Are you sure you want to close this transaction request?',
+            'Are you sure you want to close this transaction?',
             style: TextStyle(
               color: textSecondary,
               fontSize: 13,
@@ -671,7 +671,7 @@ class _TransactionDetailScreenState
                 ),
               ),
               child: const Text(
-                'Yes, close',
+                'Yes, Close Transaction',
                 style: TextStyle(
                   fontWeight: FontWeight.w800,
                 ),
@@ -735,66 +735,52 @@ class _TransactionDetailScreenState
 
     showSnack(
       response['message']?.toString() ??
-          'The transaction request is now closed.',
+          'The transaction is now closed.',
     );
   }
 
-  Widget closeRequestBottomBar() {
-    return SafeArea(
-      top: false,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-        decoration: const BoxDecoration(
-          color: bg,
-          border: Border(
-            top: BorderSide(
-              color: border,
-              width: 1,
+
+  Widget inlineCloseRequestButton() {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: SizedBox(
+        height: 38,
+        child: ElevatedButton(
+          onPressed:
+              _closingRequest ? null : confirmCloseRequest,
+          style: ElevatedButton.styleFrom(
+            elevation: 0,
+            backgroundColor: amber,
+            disabledBackgroundColor:
+                amber.withOpacity(0.45),
+            foregroundColor: Colors.black,
+            padding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 0,
+            ),
+            minimumSize: const Size(0, 38),
+            tapTargetSize:
+                MaterialTapTargetSize.shrinkWrap,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
             ),
           ),
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: amber.withOpacity(0.13),
-            borderRadius: BorderRadius.circular(9),
-            border: Border.all(
-              color: amber.withOpacity(0.75),
-            ),
-          ),
-          child: SizedBox(
-            width: double.infinity,
-            height: 54,
-            child: ElevatedButton(
-              onPressed:
-                  _closingRequest ? null : confirmCloseRequest,
-              style: ElevatedButton.styleFrom(
-                elevation: 0,
-                backgroundColor: amber,
-                disabledBackgroundColor: amber.withOpacity(0.45),
-                foregroundColor: Colors.black,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+          child: _closingRequest
+              ? const SizedBox(
+                  width: 17,
+                  height: 17,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.black,
+                  ),
+                )
+              : const Text(
+                  'Close Transaction',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
-              ),
-              child: _closingRequest
-                  ? const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.4,
-                        color: Colors.black,
-                      ),
-                    )
-                  : const Text(
-                      'Close Request',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-            ),
-          ),
         ),
       ),
     );
@@ -1221,8 +1207,6 @@ class _TransactionDetailScreenState
           ),
         ],
       ),
-      bottomNavigationBar:
-          canClientCloseRequest ? closeRequestBottomBar() : null,
       body: SafeArea(
         top: false,
         child: SingleChildScrollView(
@@ -1254,6 +1238,10 @@ class _TransactionDetailScreenState
                   isTransfer
                       ? statusSection()
                       : paymentMethodSection(),
+                  if (canClientCloseRequest) ...[
+                    const SizedBox(height: 18),
+                    inlineCloseRequestButton(),
+                  ],
                   const SizedBox(height: 30),
                 ],
               ),

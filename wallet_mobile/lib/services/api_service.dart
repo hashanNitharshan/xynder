@@ -845,6 +845,7 @@ class ApiService {
 
   static Future<Map<String, dynamic>>
       walletTransfer({
+    required String transferType,
     required String receiverWalletId,
     required String amount,
     String? note,
@@ -857,8 +858,8 @@ class ApiService {
             ),
             headers: await headers(),
             body: {
-              "receiver_wallet_id":
-                  receiverWalletId,
+              "transfer_type": transferType,
+              "receiver_wallet_id": receiverWalletId,
               "amount": amount,
               "note": note ?? "",
             },
@@ -868,6 +869,11 @@ class ApiService {
           );
 
       return decode(response);
+    } on TimeoutException {
+      return {
+        "success": false,
+        "message": "Wallet transfer timeout.",
+      };
     } catch (error) {
       return {
         "success": false,

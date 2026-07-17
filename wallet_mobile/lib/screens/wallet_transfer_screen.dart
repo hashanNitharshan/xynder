@@ -7,10 +7,12 @@ import 'transaction_detail_screen.dart';
 class _C {
   static const bg = Color(0xff000000);
   static const divider = Color(0xff252525);
+  static const panel = Color(0xff171717);
 
   static const gold = Color(0xffFF9F2E);
   static const green = Color(0xff00C076);
   static const red = Color(0xffF6465D);
+  static const blue = Color(0xff60A5FA);
 
   static const textPrimary = Colors.white;
   static const textSecondary = Color(0xff737378);
@@ -38,8 +40,11 @@ class _WalletTransferScreenState extends State<WalletTransferScreen> {
 
   bool loading = false;
   bool lookupLoading = false;
+  String transferType = 'internal';
 
   Map<String, dynamic>? receiver;
+
+  bool get isExternal => transferType == 'external';
 
   @override
   void dispose() {
@@ -82,7 +87,19 @@ class _WalletTransferScreenState extends State<WalletTransferScreen> {
       );
   }
 
+  void changeTransferType(String value) {
+    if (loading || lookupLoading) return;
+
+    setState(() {
+      transferType = value;
+      receiver = null;
+      walletCtrl.clear();
+    });
+  }
+
   Future<void> lookupWallet() async {
+    if (isExternal) return;
+
     final walletId = walletCtrl.text.trim();
 
     if (walletId.isEmpty) {
@@ -103,7 +120,7 @@ class _WalletTransferScreenState extends State<WalletTransferScreen> {
       lookupLoading = false;
     });
 
-    if (res['success'] == true) {
+    if (res['success'] == true && res['user'] is Map) {
       setState(() {
         receiver = Map<String, dynamic>.from(res['user']);
       });
@@ -115,13 +132,19 @@ class _WalletTransferScreenState extends State<WalletTransferScreen> {
     }
   }
 
+  bool _validExternalWallet(String value) {
+    return RegExp(r'^[A-Za-z0-9]+$').hasMatch(value);
+  }
+
   Future<void> sendTransfer() async {
     if (loading) return;
 
     final walletId = walletCtrl.text.trim();
-    final amount = amountCtrl.text.trim();
+    final amountText = amountCtrl.text.trim();
+    final amount = double.tryParse(amountText) ?? 0;
+    final balance = toDouble(widget.user['balance']);
 
-    if (walletId.isEmpty || amount.isEmpty) {
+    if (walletId.isEmpty || amountText.isEmpty) {
       showSnack(
         'Wallet address and amount are required.',
         success: false,
@@ -137,14 +160,55 @@ class _WalletTransferScreenState extends State<WalletTransferScreen> {
       return;
     }
 
+    if (amount < 1) {
+      showSnack(
+        'Transfer amount must be at least \$1.00.',
+        success: false,
+      );
+      return;
+    }
+
+    if (amount > balance) {
+      showSnack(
+        'Insufficient wallet balance.',
+        success: false,
+      );
+      return;
+    }
+
+    if (isExternal && !_validExternalWallet(walletId)) {
+      showSnack(
+        'External wallet address may contain letters and numbers only.',
+        success: false,
+      );
+      return;
+    }
+
+    if (!isExternal && receiver == null) {
+      showSnack(
+        'Please check and verify the internal receiver first.',
+        success: false,
+      );
+      return;
+    }
+
     setState(() {
       loading = true;
     });
 
+    final submittedWalletId = walletId;
+    final submittedAmount = amountText;
+    final submittedNote = noteCtrl.text.trim();
+    final submittedType = transferType;
+    final receiverSnapshot = receiver == null
+        ? null
+        : Map<String, dynamic>.from(receiver!);
+
     final res = await ApiService.walletTransfer(
-      receiverWalletId: walletId,
-      amount: amount,
-      note: noteCtrl.text.trim(),
+      transferType: submittedType,
+      receiverWalletId: submittedWalletId,
+      amount: submittedAmount,
+      note: submittedNote,
     );
 
     if (!mounted) return;
@@ -164,14 +228,6 @@ class _WalletTransferScreenState extends State<WalletTransferScreen> {
               ? 'TRA${transferId.padLeft(9, '0')}'
               : null);
 
-      final receiverSnapshot = receiver != null
-          ? Map<String, dynamic>.from(receiver!)
-          : null;
-
-      final submittedWalletId = walletCtrl.text.trim();
-      final submittedAmount = amountCtrl.text.trim();
-      final submittedNote = noteCtrl.text.trim();
-
       final transferItem = res['transfer'] is Map
           ? Map<String, dynamic>.from(res['transfer'])
           : <String, dynamic>{};
@@ -182,6 +238,8 @@ class _WalletTransferScreenState extends State<WalletTransferScreen> {
         if (transferItem['transaction_no'] == null &&
             transferNo != null)
           'transaction_no': transferNo,
+        if (transferItem['transfer_type'] == null)
+          'transfer_type': submittedType,
         if (transferItem['amount'] == null)
           'amount': submittedAmount,
         if (transferItem['note'] == null)
@@ -194,16 +252,20 @@ class _WalletTransferScreenState extends State<WalletTransferScreen> {
           'sender_wallet_id': widget.user['wallet_id'],
         if (transferItem['sender_name'] == null)
           'sender_name': widget.user['name'],
-        if (transferItem['receiver_id'] == null)
+        if (transferItem['receiver_id'] == null &&
+            submittedType == 'internal')
           'receiver_id': receiverSnapshot?['id'],
         if (transferItem['receiver_wallet_id'] == null)
-          'receiver_wallet_id':
-              receiverSnapshot?['wallet_id'] ?? submittedWalletId,
+          'receiver_wallet_id': submittedWalletId,
         if (transferItem['receiver_name'] == null)
-          'receiver_name': receiverSnapshot?['name'],
-        if (transferItem['receiver_photo_url'] == null)
+          'receiver_name': submittedType == 'external'
+              ? 'External Wallet'
+              : receiverSnapshot?['name'],
+        if (transferItem['receiver_photo_url'] == null &&
+            submittedType == 'internal')
           'receiver_photo_url': receiverSnapshot?['photo_url'],
-        if (transferItem['receiver_photo'] == null)
+        if (transferItem['receiver_photo'] == null &&
+            submittedType == 'internal')
           'receiver_photo': receiverSnapshot?['photo'],
         if (transferItem['created_at'] == null)
           'created_at': DateTime.now().toIso8601String(),
@@ -213,11 +275,9 @@ class _WalletTransferScreenState extends State<WalletTransferScreen> {
       amountCtrl.clear();
       noteCtrl.clear();
 
-      if (mounted) {
-        setState(() {
-          receiver = null;
-        });
-      }
+      setState(() {
+        receiver = null;
+      });
 
       if (widget.onSuccess != null) {
         await widget.onSuccess!();
@@ -257,18 +317,53 @@ class _WalletTransferScreenState extends State<WalletTransferScreen> {
               const SizedBox(height: 22),
               _myWalletSummary(),
               const SizedBox(height: 22),
-              _sectionTitle('Receiver'),
+              _transferModeSelector(),
+              const SizedBox(height: 22),
+              _sectionTitle(
+                isExternal ? 'External Wallet' : 'Receiver',
+              ),
               const SizedBox(height: 8),
               _field(
                 controller: walletCtrl,
-                label: 'Receiver Wallet Address',
-                icon: Icons.account_balance_wallet_outlined,
+                label: isExternal
+                    ? 'External Wallet Address'
+                    : 'Receiver Wallet Address',
+                icon: isExternal
+                    ? Icons.public_rounded
+                    : Icons.account_balance_wallet_outlined,
+                inputFormatters: isExternal
+                    ? [
+                        FilteringTextInputFormatter.allow(
+                          RegExp(r'[A-Za-z0-9]'),
+                        ),
+                      ]
+                    : null,
+                onChanged: (_) {
+                  if (!isExternal && receiver != null) {
+                    setState(() {
+                      receiver = null;
+                    });
+                  }
+                },
               ),
-              const SizedBox(height: 6),
-              _checkReceiverButton(),
-              if (receiver != null) ...[
-                const SizedBox(height: 12),
-                _receiverDetails(),
+              if (isExternal) ...[
+                const SizedBox(height: 8),
+                const Text(
+                  'No receiver lookup. The amount will only be deducted from your wallet balance.',
+                  style: TextStyle(
+                    color: _C.textSecondary,
+                    fontSize: 12,
+                    height: 1.4,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ] else ...[
+                const SizedBox(height: 6),
+                _checkReceiverButton(),
+                if (receiver != null) ...[
+                  const SizedBox(height: 12),
+                  _receiverDetails(),
+                ],
               ],
               const SizedBox(height: 18),
               _field(
@@ -276,7 +371,9 @@ class _WalletTransferScreenState extends State<WalletTransferScreen> {
                 label: 'USD Amount',
                 icon: Icons.attach_money_rounded,
                 keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                    const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(
                     RegExp(r'^\d*\.?\d{0,8}'),
@@ -327,6 +424,75 @@ class _WalletTransferScreenState extends State<WalletTransferScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _transferModeSelector() {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: _C.panel,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: _C.divider),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _modeButton(
+              value: 'internal',
+              label: 'Internal',
+              icon: Icons.people_alt_outlined,
+            ),
+          ),
+          Expanded(
+            child: _modeButton(
+              value: 'external',
+              label: 'External',
+              icon: Icons.public_rounded,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _modeButton({
+    required String value,
+    required String label,
+    required IconData icon,
+  }) {
+    final selected = transferType == value;
+
+    return InkWell(
+      onTap: () => changeTransferType(value),
+      borderRadius: BorderRadius.circular(20),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        height: 40,
+        decoration: BoxDecoration(
+          color: selected ? _C.gold : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: selected ? Colors.black : _C.textSecondary,
+            ),
+            const SizedBox(width: 7),
+            Text(
+              label,
+              style: TextStyle(
+                color: selected ? Colors.black : _C.textSecondary,
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -445,12 +611,14 @@ class _WalletTransferScreenState extends State<WalletTransferScreen> {
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
     int maxLines = 1,
+    ValueChanged<String>? onChanged,
   }) {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
       maxLines: maxLines,
+      onChanged: onChanged,
       cursorColor: _C.gold,
       style: const TextStyle(
         color: _C.textPrimary,
@@ -461,7 +629,6 @@ class _WalletTransferScreenState extends State<WalletTransferScreen> {
         isDense: true,
         contentPadding:
             const EdgeInsets.symmetric(vertical: 12),
-
         labelText: label,
         labelStyle: const TextStyle(
           color: _C.textSecondary,
@@ -550,17 +717,21 @@ class _WalletTransferScreenState extends State<WalletTransferScreen> {
                   strokeWidth: 2,
                 ),
               )
-            : const Row(
+            : Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    Icons.arrow_upward_rounded,
+                    isExternal
+                        ? Icons.public_rounded
+                        : Icons.arrow_upward_rounded,
                     size: 17,
                   ),
-                  SizedBox(width: 7),
+                  const SizedBox(width: 7),
                   Text(
-                    'Transfer Now',
-                    style: TextStyle(
+                    isExternal
+                        ? 'Send to External Wallet'
+                        : 'Transfer Now',
+                    style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
                     ),

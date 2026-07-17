@@ -263,86 +263,6 @@
 .rq-page-btn.disabled{opacity:.4;pointer-events:none}
 
 
-/* ===== Success popup ===== */
-.rq-modal-backdrop{
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,.72);
-    z-index:9999;
-    display:none;
-    align-items:center;
-    justify-content:center;
-    padding:18px;
-}
-.rq-modal-backdrop.show{display:flex}
-.rq-modal{
-    width:100%;
-    max-width:420px;
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:14px;
-    box-shadow:0 24px 70px rgba(0,0,0,.55);
-    overflow:hidden;
-}
-.rq-modal-head{
-    padding:22px 22px 12px;
-    text-align:center;
-}
-.rq-modal-icon{
-    width:58px;
-    height:58px;
-    border-radius:50%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    margin:0 auto 14px;
-    background:rgba(14,203,129,.12);
-    color:var(--green);
-    border:1px solid rgba(14,203,129,.35);
-    font-size:30px;
-}
-.rq-modal-title{
-    color:#fff;
-    font-size:20px;
-    font-weight:800;
-    margin-bottom:8px;
-}
-.rq-modal-text{
-    color:var(--muted);
-    font-size:13px;
-    line-height:1.6;
-}
-.rq-modal-actions{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:10px;
-    padding:18px 22px 22px;
-}
-.rq-modal-btn{
-    height:44px;
-    border-radius:14px;
-    border:1px solid var(--border);
-    background:var(--surface-alt);
-    color:#fff;
-    font-size:13px;
-    font-weight:800;
-    cursor:pointer;
-    text-decoration:none;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:8px;
-}
-.rq-modal-btn.primary{
-    background:var(--orange);
-    color:#0B0E11;
-    border-color:var(--orange);
-}
-.rq-modal-btn:hover{filter:brightness(1.08)}
-
-@media(max-width:480px){
-    .rq-modal-actions{grid-template-columns:1fr}
-}
 
 /* ===== Responsive ===== */
 @media(max-width:1100px){
@@ -411,21 +331,6 @@
     $filterQ      = request('q');
     $filterType   = request('type', 'all');
     $filterStatus = request('status', 'all');
-
-    /*
-        For success popup chat button:
-        In your controller redirect, pass one of these:
-        ->with('chat_url', route('client.chats.request', $walletRequest))
-        OR
-        ->with('created_request_id', $walletRequest->id)
-    */
-    $chatUrl = session('chat_url');
-    if (! $chatUrl && session('popup_transaction.chat_url')) {
-        $chatUrl = session('popup_transaction.chat_url');
-    }
-    if (! $chatUrl && session('created_request_id')) {
-        $chatUrl = route('client.chats.request', session('created_request_id'));
-    }
 @endphp
 
 <div class="rq-page">
@@ -766,56 +671,12 @@
     </section>
 </div>
 
-@if(session('success'))
-    <div class="rq-modal-backdrop show" id="successModal">
-        <div class="rq-modal">
-            <div class="rq-modal-head">
-                <div class="rq-modal-icon">
-                    <i class="ti ti-circle-check"></i>
-                </div>
-                <div class="rq-modal-title">Request Created</div>
-                <div class="rq-modal-text">
-                    {{ session('success') }}<br>
-                    You can open the transaction chat now.
-                </div>
-            </div>
-
-            <div class="rq-modal-actions">
-                @if($chatUrl)
-                    <a href="{{ $chatUrl }}" class="rq-modal-btn primary">
-                        <i class="ti ti-message-circle"></i> Open Chat
-                    </a>
-                @endif
-
-                <button type="button" class="rq-modal-btn" id="closeSuccessModal">
-                    Stay Here
-                </button>
-            </div>
-        </div>
-    </div>
-@endif
 
 <script>
 (function(){
     const INR_RATE = {{ (float)$config->inr_rate }};
     const TOTAL_FEES = {{ $totalFees }};
     const HAS_ONLINE_MERCHANTS = {{ $onlineMerchants->isEmpty() ? 'false' : 'true' }};
-
-
-    const successModal = document.getElementById('successModal');
-    const closeSuccessModal = document.getElementById('closeSuccessModal');
-
-    if(closeSuccessModal && successModal){
-        closeSuccessModal.addEventListener('click', function(){
-            successModal.classList.remove('show');
-        });
-
-        successModal.addEventListener('click', function(e){
-            if(e.target === successModal){
-                successModal.classList.remove('show');
-            }
-        });
-    }
 
     const amount = document.getElementById('amount');
     const totalDisp = document.getElementById('totalDisp');

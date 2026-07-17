@@ -46,7 +46,11 @@ class RequestController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('client.requests', compact('requests', 'config', 'merchants'));
+        return view('client.requests', compact(
+            'requests',
+            'config',
+            'merchants'
+        ));
     }
 
     public function store(Request $request)
@@ -56,11 +60,19 @@ class RequestController extends Controller
         abort_unless($user->role === 'client', 403);
 
         if (! $user->is_active || $user->status !== 'active') {
-            return back()->withErrors(['amount' => 'Your account has been blocked.'])->withInput();
+            return back()
+                ->withErrors([
+                    'amount' => 'Your account has been blocked.',
+                ])
+                ->withInput();
         }
 
         if (! $user->is_verified) {
-            return back()->withErrors(['amount' => 'Your account is not verified yet.'])->withInput();
+            return back()
+                ->withErrors([
+                    'amount' => 'Your account is not verified yet.',
+                ])
+                ->withInput();
         }
 
         $data = $request->validate([
@@ -78,32 +90,69 @@ class RequestController extends Controller
             ->first();
 
         if (! $merchant) {
-            return back()->withErrors(['merchant_id' => 'Selected merchant is not available.'])->withInput();
+            return back()
+                ->withErrors([
+                    'merchant_id' => 'Selected merchant is not available.',
+                ])
+                ->withInput();
         }
 
         if (! $merchant->is_online) {
-            return back()->withErrors(['merchant_id' => 'Selected merchant is offline. Please choose online merchant.'])->withInput();
+            return back()
+                ->withErrors([
+                    'merchant_id' => 'Selected merchant is offline. Please choose online merchant.',
+                ])
+                ->withInput();
         }
 
         $amount = round((float) $data['amount'], 2);
 
-        if ($data['type'] === 'withdrawal' && (float) $user->balance < $amount) {
-            return back()->withErrors(['amount' => 'Insufficient USD balance.'])->withInput();
+        if (
+            $data['type'] === 'withdrawal'
+            && (float) $user->balance < $amount
+        ) {
+            return back()
+                ->withErrors([
+                    'amount' => 'Insufficient USD balance.',
+                ])
+                ->withInput();
         }
 
         $config = SystemConfig::current();
 
-        $convertedAmount = round($amount * (float) $config->inr_rate, 2);
-        $xynderFee = round((float) $config->xynder_fee, 2);
-        $networkFee = round((float) $config->network_fee, 2);
-        $fee = round($xynderFee + $networkFee, 2);
+        $convertedAmount = round(
+            $amount * (float) $config->inr_rate,
+            2
+        );
+
+        $xynderFee = round(
+            (float) $config->xynder_fee,
+            2
+        );
+
+        $networkFee = round(
+            (float) $config->network_fee,
+            2
+        );
+
+        $fee = round(
+            $xynderFee + $networkFee,
+            2
+        );
 
         $totalAmount = $data['type'] === 'deposit'
             ? round($convertedAmount + $fee, 2)
             : round($convertedAmount - $fee, 2);
 
-        if ($data['type'] === 'withdrawal' && $totalAmount <= 0) {
-            return back()->withErrors(['amount' => 'Amount is too small after fees.'])->withInput();
+        if (
+            $data['type'] === 'withdrawal'
+            && $totalAmount <= 0
+        ) {
+            return back()
+                ->withErrors([
+                    'amount' => 'Amount is too small after fees.',
+                ])
+                ->withInput();
         }
 
         $walletRequest = WalletRequest::create([
@@ -124,28 +173,24 @@ class RequestController extends Controller
         ]);
 
         Conversation::firstOrCreate(
-            ['wallet_request_id' => $walletRequest->id],
+            [
+                'wallet_request_id' => $walletRequest->id,
+            ],
             [
                 'user_one_id' => $user->id,
                 'user_two_id' => $merchant->id,
             ]
         );
 
-        $chatUrl = route('client.chats.request', $walletRequest);
-        $isSell = $data['type'] === 'withdrawal';
-
+        /*
+         * After the request is created, go directly to the
+         * transaction details page. No popup, Open Chat button,
+         * or Stay Here option is shown.
+         */
         return redirect()
-            ->route('client.requests')
-            ->with('success', $isSell
-                ? 'Sell USD request submitted successfully.'
-                : 'Buy USD request submitted successfully.')
-            ->with('chat_url', $chatUrl)
-            ->with('popup_transaction', [
-                'title' => $isSell ? 'Sell USD Request Created' : 'Buy USD Request Created',
-                'no' => $walletRequest->transaction_no ?? 'TNS' . str_pad($walletRequest->id, 9, '0', STR_PAD_LEFT),
-                'amount' => number_format($amount, 2),
-                'status' => 'PENDING',
-                'chat_url' => $chatUrl,
-            ]);
+            ->route(
+                'client.history.show',
+                ['request', $walletRequest->id]
+            );
     }
 }

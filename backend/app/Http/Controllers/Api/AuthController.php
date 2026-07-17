@@ -293,9 +293,25 @@ public function createRequest(Request $request)
     public function walletTransfer(Request $request)
     {
         $data = $request->validate([
-            'receiver_wallet_id' => 'required|string|max:50',
-            'amount'             => 'required|numeric|min:1',
-            'note'               => 'nullable|string|max:500',
+            'transfer_type'       => ['required', Rule::in([
+                WalletTransfer::TYPE_INTERNAL,
+                WalletTransfer::TYPE_EXTERNAL,
+            ])],
+            'receiver_wallet_id'  => [
+                'required',
+                'string',
+                'max:255',
+                function (string $attribute, mixed $value, \Closure $fail) use ($request) {
+                    if (
+                        $request->input('transfer_type') === WalletTransfer::TYPE_EXTERNAL
+                        && ! preg_match('/^[A-Za-z0-9]+$/', (string) $value)
+                    ) {
+                        $fail('External wallet address may contain letters and numbers only.');
+                    }
+                },
+            ],
+            'amount'              => 'required|numeric|min:1',
+            'note'                => 'nullable|string|max:500',
         ]);
 
         $sender = $request->user();
@@ -311,13 +327,42 @@ public function createRequest(Request $request)
             return $response;
         }
 
+        $transferType = $data['transfer_type'];
         $amount = round((float) $data['amount'], 2);
 
         try {
-            $transfer = DB::transaction(function () use ($sender, $data, $amount) {
-                $lockedSender = User::where('id', $sender->id)->lockForUpdate()->first();
+            $transfer = DB::transaction(function () use (
+                $sender,
+                $data,
+                $amount,
+                $transferType
+            ) {
+                $lockedSender = User::whereKey($sender->id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
-                $receiver = User::where('wallet_id', $data['receiver_wallet_id'])
+                if ((float) $lockedSender->balance < $amount) {
+                    throw new \RuntimeException('Insufficient wallet balance.');
+                }
+
+                if ($transferType === WalletTransfer::TYPE_EXTERNAL) {
+                    $lockedSender->balance = round(
+                        (float) $lockedSender->balance - $amount,
+                        2
+                    );
+                    $lockedSender->save();
+
+                    return WalletTransfer::create([
+                        'sender_id'          => $lockedSender->id,
+                        'receiver_id'        => null,
+                        'receiver_wallet_id' => trim($data['receiver_wallet_id']),
+                        'transfer_type'      => WalletTransfer::TYPE_EXTERNAL,
+                        'amount'             => $amount,
+                        'note'               => $data['note'] ?? null,
+                    ]);
+                }
+
+                $receiver = User::where('wallet_id', trim($data['receiver_wallet_id']))
                     ->where('status', 'active')
                     ->where('is_active', true)
                     ->where('is_verified', true)
@@ -325,36 +370,60 @@ public function createRequest(Request $request)
                     ->first();
 
                 if (! $receiver) {
-                    abort(404, 'Receiver wallet address not found or receiver is not verified.');
+                    throw new \RuntimeException(
+                        'Receiver wallet address not found or receiver is not verified.'
+                    );
                 }
 
-                if ($receiver->id === $lockedSender->id) {
-                    abort(422, 'You cannot transfer to your own wallet.');
+                if ((int) $receiver->id === (int) $lockedSender->id) {
+                    throw new \RuntimeException(
+                        'You cannot transfer to your own wallet.'
+                    );
                 }
 
-                if ((float) $lockedSender->balance < $amount) {
-                    abort(422, 'Insufficient wallet balance.');
-                }
-
-                $lockedSender->balance = round((float) $lockedSender->balance - $amount, 2);
-                $receiver->balance     = round((float) $receiver->balance + $amount, 2);
+                $lockedSender->balance = round(
+                    (float) $lockedSender->balance - $amount,
+                    2
+                );
+                $receiver->balance = round(
+                    (float) $receiver->balance + $amount,
+                    2
+                );
 
                 $lockedSender->save();
                 $receiver->save();
 
-                return WalletTransfer::create([
+                $transfer = WalletTransfer::create([
                     'sender_id'          => $lockedSender->id,
                     'receiver_id'        => $receiver->id,
                     'receiver_wallet_id' => $receiver->wallet_id,
+                    'transfer_type'      => WalletTransfer::TYPE_INTERNAL,
                     'amount'             => $amount,
                     'note'               => $data['note'] ?? null,
                 ]);
+
+                Conversation::firstOrCreate(
+                    ['wallet_transfer_id' => $transfer->id],
+                    [
+                        'user_one_id' => $lockedSender->id,
+                        'user_two_id' => $receiver->id,
+                    ]
+                );
+
+                return $transfer;
             });
+
+            $isExternal = $transfer->transfer_type === WalletTransfer::TYPE_EXTERNAL;
 
             return response()->json([
                 'success'  => true,
-                'message'  => 'Wallet transfer completed successfully.',
-                'transfer' => $transfer->fresh(['receiver']),
+                'message'  => $isExternal
+                    ? 'External wallet transfer completed successfully.'
+                    : 'Internal wallet transfer completed successfully.',
+                'transfer' => $transfer->fresh([
+                    'sender:id,name,email,wallet_id',
+                    'receiver:id,name,email,wallet_id',
+                ]),
                 'user'     => $request->user()->fresh(),
             ]);
         } catch (\Throwable $e) {

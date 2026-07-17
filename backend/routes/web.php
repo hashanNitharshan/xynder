@@ -82,10 +82,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/payment-details/bank/{bankAccount}/default', [WebPaymentDetailsController::class, 'setDefaultBank'])->name('payment-details.bank.default');
         Route::post('/payment-details/upi', [WebPaymentDetailsController::class, 'updateUpi'])->name('payment-details.upi');
         Route::post('/settings/bank', [WebSettingsController::class, 'storeBank'])->name('settings.bank.store');
-Route::put('/settings/bank/{bankAccount}', [WebSettingsController::class, 'updateBank'])->name('settings.bank.update');
-Route::delete('/settings/bank/{bankAccount}', [WebSettingsController::class, 'deleteBank'])->name('settings.bank.destroy');
-Route::post('/settings/bank/{bankAccount}/default', [WebSettingsController::class, 'setDefaultBank'])->name('settings.bank.default');
-Route::post('/settings/upi', [WebSettingsController::class, 'updateUpi'])->name('settings.upi');
+        Route::put('/settings/bank/{bankAccount}', [WebSettingsController::class, 'updateBank'])->name('settings.bank.update');
+        Route::delete('/settings/bank/{bankAccount}', [WebSettingsController::class, 'deleteBank'])->name('settings.bank.destroy');
+        Route::post('/settings/bank/{bankAccount}/default', [WebSettingsController::class, 'setDefaultBank'])->name('settings.bank.default');
+        Route::post('/settings/upi', [WebSettingsController::class, 'updateUpi'])->name('settings.upi');
     });
 
     Route::prefix('merchant')->name('merchant.')->group(function () {
@@ -127,10 +127,10 @@ Route::post('/settings/upi', [WebSettingsController::class, 'updateUpi'])->name(
         Route::post('/payment-details/bank/{bankAccount}/default', [WebPaymentDetailsController::class, 'setDefaultBank'])->name('payment-details.bank.default');
         Route::post('/payment-details/upi', [WebPaymentDetailsController::class, 'updateUpi'])->name('payment-details.upi');
         Route::post('/settings/bank', [WebSettingsController::class, 'storeBank'])->name('settings.bank.store');
-Route::put('/settings/bank/{bankAccount}', [WebSettingsController::class, 'updateBank'])->name('settings.bank.update');
-Route::delete('/settings/bank/{bankAccount}', [WebSettingsController::class, 'deleteBank'])->name('settings.bank.destroy');
-Route::post('/settings/bank/{bankAccount}/default', [WebSettingsController::class, 'setDefaultBank'])->name('settings.bank.default');
-Route::post('/settings/upi', [WebSettingsController::class, 'updateUpi'])->name('settings.upi');
+        Route::put('/settings/bank/{bankAccount}', [WebSettingsController::class, 'updateBank'])->name('settings.bank.update');
+        Route::delete('/settings/bank/{bankAccount}', [WebSettingsController::class, 'deleteBank'])->name('settings.bank.destroy');
+        Route::post('/settings/bank/{bankAccount}/default', [WebSettingsController::class, 'setDefaultBank'])->name('settings.bank.default');
+        Route::post('/settings/upi', [WebSettingsController::class, 'updateUpi'])->name('settings.upi');
     });
 
     Route::prefix('admin')->name('admin.')->group(function () {
@@ -146,7 +146,17 @@ Route::post('/settings/upi', [WebSettingsController::class, 'updateUpi'])->name(
         Route::post('wallet-requests/{walletRequest}/reject', [WalletRequestController::class, 'reject'])->name('wallet-requests.reject');
         Route::post('wallet-requests/{walletRequest}/close', [WalletRequestController::class, 'close'])->name('wallet-requests.close');
 
-        Route::get('wallet-transfers', [WalletTransferController::class, 'index'])->name('wallet-transfers.index');
+        Route::get(
+            'wallet-transfers',
+            [WalletTransferController::class, 'index']
+        )->name('wallet-transfers.index');
+
+        Route::get(
+            'wallet-transfers/{walletTransfer}',
+            [WalletTransferController::class, 'show']
+        )
+            ->whereNumber('walletTransfer')
+            ->name('wallet-transfers.show');
 
         Route::get('config', [ConfigController::class, 'index'])->name('config.index');
         Route::post('config', [ConfigController::class, 'store'])->name('config.store');
@@ -161,8 +171,8 @@ Route::post('/settings/upi', [WebSettingsController::class, 'updateUpi'])->name(
         Route::get('chats/{conversation}', [ChatController::class, 'show'])->name('chats.show');
         Route::post('chats/{conversation}/send', [ChatController::class, 'send'])->name('chats.send');
         Route::post('users/{user}/bank', [UserController::class, 'storeBank'])->name('users.bank.store');
-Route::put('users/{user}/bank/{bankAccount}', [UserController::class, 'updateBank'])->name('users.bank.update');
-Route::delete('users/{user}/bank/{bankAccount}', [UserController::class, 'deleteBank'])->name('users.bank.destroy');
-Route::post('users/{user}/bank/{bankAccount}/default', [UserController::class, 'setDefaultBank'])->name('users.bank.default');
+        Route::put('users/{user}/bank/{bankAccount}', [UserController::class, 'updateBank'])->name('users.bank.update');
+        Route::delete('users/{user}/bank/{bankAccount}', [UserController::class, 'deleteBank'])->name('users.bank.destroy');
+        Route::post('users/{user}/bank/{bankAccount}/default', [UserController::class, 'setDefaultBank'])->name('users.bank.default');
     });
 });
