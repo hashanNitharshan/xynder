@@ -52,14 +52,9 @@
 
 <section class="uf-hero">
     <div class="uf-hero-inner">
-        <div class="uf-eyebrow">BITXNOW Admin</div>
-        <h1 class="uf-title">
-            {{ $user->exists ? 'Edit User' : 'Add User' }}
-            <span>Client / Merchant</span>
-        </h1>
-        <div class="uf-subtitle">
-            Manage profile photo, Aadhaar photo, KYC, wallet balance, bank details, UPI details, and account status.
-        </div>
+        
+       
+       
     </div>
 </section>
 

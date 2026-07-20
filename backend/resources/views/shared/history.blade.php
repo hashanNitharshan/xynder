@@ -385,13 +385,7 @@
 @endphp
 
 <div class="hist-page">
-    <section class="hist-hero">
-        <div class="hist-hero-inner">
-            <div class="hist-eyebrow">BitXnow Wallet</div>
-            <h1 class="hist-title">Transaction <span>History</span></h1>
-            <div class="hist-sub">View all wallet requests and USD transfers in one clean history timeline.</div>
-        </div>
-    </section>
+
 
     <section class="hist-kpis">
         <div class="hist-kpi"><div class="hist-kpi-icon"><i class="ti ti-list-details"></i></div><div><small>Total Records</small><b>{{ $totalCount }}</b></div></div>

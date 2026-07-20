@@ -41,10 +41,7 @@
 @endpush
 
 <div class="tr-page">
-    <section class="tr-hero">
-        <h1 class="tr-title">Secure Wallet <span>USD Transfer</span></h1>
-        <a href="#transferBox" class="tr-main-btn"><i class="ti ti-send"></i> Send Transfer</a>
-    </section>
+  
 
     @if(session('success'))
         <div class="tr-alert ok">{{ session('success') }} @if(session('last_transfer_no')) — {{ session('last_transfer_no') }} @endif</div>

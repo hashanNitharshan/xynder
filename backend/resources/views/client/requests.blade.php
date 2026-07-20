@@ -336,18 +336,7 @@
 <div class="rq-page">
 
     <section class="rq-hero">
-        <div class="rq-content">
-            <div class="rq-eyebrow">BitXnow Wallet</div>
-
-            <h1 class="rq-title">
-                Secure Wallet
-                <span>Buy & Sell Request</span>
-            </h1>
-
-            <div class="rq-sub">
-                Enter an amount, pick an online merchant, and place your buy or sell request in seconds.
-            </div>
-        </div>
+       
 
         <div class="rq-art">
             <div class="arc"></div>

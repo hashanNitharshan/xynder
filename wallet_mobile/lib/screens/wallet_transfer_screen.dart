@@ -21,11 +21,13 @@ class _C {
 class WalletTransferScreen extends StatefulWidget {
   final Map user;
   final Future<void> Function()? onSuccess;
+  final VoidCallback? onHistoryTap;
 
   const WalletTransferScreen({
     super.key,
     required this.user,
     this.onSuccess,
+    this.onHistoryTap,
   });
 
   @override
@@ -420,6 +422,31 @@ class _WalletTransferScreenState extends State<WalletTransferScreen> {
               color: _C.textPrimary,
               fontSize: 18,
               fontWeight: FontWeight.w900,
+            ),
+          ),
+        ),
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: widget.onHistoryTap,
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              width: 36,
+              height: 36,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: _C.gold.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: _C.gold.withOpacity(0.30),
+                  width: 0.8,
+                ),
+              ),
+              child: const Icon(
+                Icons.history_rounded,
+                color: _C.gold,
+                size: 20,
+              ),
             ),
           ),
         ),

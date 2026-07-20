@@ -94,10 +94,7 @@ hr.sep{border:0;border-top:1px solid var(--border);margin:18px 0}
 @endphp
 
 <div class="set-page">
-    <section class="set-head">
-        <h1>Settings</h1>
-        <p>Manage password, bank accounts, UPI details, and support tickets.</p>
-    </section>
+   
 
     <section class="stat-row">
         <div class="stat-chip">

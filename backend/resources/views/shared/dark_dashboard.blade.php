@@ -287,14 +287,13 @@
 <div class="dash-page">
     <section class="dash-hero">
         <div class="dash-hero-content">
-            <div class="dash-eyebrow">BITXNOW Wallet</div>
+           
 
             <h1 class="dash-title">
                 Welcome Back,
                 <span>{{ $name }}</span>
             </h1>
-
-          
+ 
 
         </div>
     </section>

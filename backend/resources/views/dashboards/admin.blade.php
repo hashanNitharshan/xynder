@@ -112,21 +112,6 @@
 
 <div class="ad-page">
 
-    <section class="ad-hero">
-        <div class="ad-hero-content">
-            <div class="ad-eyebrow">Xynder Wallet Admin</div>
-
-            <h1 class="ad-title">
-                Admin Control
-                <span>Dashboard</span>
-            </h1>
-
-            <div class="ad-subtitle">
-                Manage users, merchants, wallet buy/sell requests, online activity,
-                approval status, and total approved INR volume from one secure panel.
-            </div>
-        </div>
-    </section>
 
     <main class="ad-wrap">
 

@@ -19,7 +19,12 @@ class _C {
 }
 
 class MerchantRequestsScreen extends StatefulWidget {
-  const MerchantRequestsScreen({super.key});
+  final VoidCallback? onHistoryTap;
+
+  const MerchantRequestsScreen({
+    super.key,
+    this.onHistoryTap,
+  });
 
   @override
   State<MerchantRequestsScreen> createState() =>
@@ -387,55 +392,91 @@ class _MerchantRequestsScreenState
 
   Widget _topBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 10, 8, 4),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
       child: Row(
         children: [
-          SizedBox(
-            width: 44,
-            child: Navigator.canPop(context)
-                ? IconButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    icon: const Icon(
-                      Icons.arrow_back_rounded,
-                      color: _C.textPrimary,
-                      size: 21,
-                    ),
-                  )
-                : null,
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: _C.orange.withOpacity(0.14),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.people_alt_rounded,
+              color: _C.orange,
+              size: 19,
+            ),
           ),
+          const SizedBox(width: 11),
           const Expanded(
             child: Text(
               "P2P Requests",
-              textAlign: TextAlign.center,
               style: TextStyle(
                 color: _C.textPrimary,
-                fontSize: 17,
-                fontWeight: FontWeight.w800,
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
               ),
             ),
           ),
-          SizedBox(
-            width: 44,
-            child: IconButton(
-              onPressed: refreshing
-                  ? null
-                  : _refreshRequests,
-              icon: refreshing
-                  ? const SizedBox(
-                      width: 17,
-                      height: 17,
-                      child: CircularProgressIndicator(
-                        color: _C.orange,
-                        strokeWidth: 2,
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: widget.onHistoryTap,
+              borderRadius: BorderRadius.circular(10),
+              child: Container(
+                width: 36,
+                height: 36,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: _C.orange.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: _C.orange.withOpacity(0.30),
+                    width: 0.8,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.history_rounded,
+                  color: _C.orange,
+                  size: 20,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: refreshing ? null : _refreshRequests,
+              borderRadius: BorderRadius.circular(10),
+              child: Container(
+                width: 36,
+                height: 36,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: _C.surface,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: _C.border,
+                    width: 0.8,
+                  ),
+                ),
+                child: refreshing
+                    ? const SizedBox(
+                        width: 17,
+                        height: 17,
+                        child: CircularProgressIndicator(
+                          color: _C.orange,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Icon(
+                        Icons.refresh_rounded,
+                        color: _C.textPrimary,
+                        size: 20,
                       ),
-                    )
-                  : const Icon(
-                      Icons.refresh_rounded,
-                      color: _C.textPrimary,
-                      size: 20,
-                    ),
+              ),
             ),
           ),
         ],

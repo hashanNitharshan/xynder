@@ -117,11 +117,7 @@
 @section('content')
 <div class="ad-page">
     <section class="ad-hero">
-        <div class="ad-hero-inner">
-          
-            <h1 class="ad-title-main">P2P <span>Requests</span></h1>
-           
-        </div>
+       
     </section>
 
     <main class="ad-wrap">

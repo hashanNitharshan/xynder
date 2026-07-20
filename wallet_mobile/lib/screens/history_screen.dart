@@ -22,10 +22,12 @@ class AppColors {
 
 class HistoryScreen extends StatefulWidget {
   final Map user;
+  final String initialType;
 
   const HistoryScreen({
     super.key,
     required this.user,
+    this.initialType = 'all',
   });
 
   @override
@@ -43,7 +45,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   // Type filter: all | request | transfer
   // Default view is Transfer, as requested.
- String _selectedType = 'all';
+  late String _selectedType;
 
   // Sort mode: date_new | date_old
   String _sortMode = 'date_new';
@@ -55,7 +57,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   void initState() {
     super.initState();
+
     user = widget.user;
+
+    const allowedTypes = <String>[
+      'all',
+      'request',
+      'transfer',
+    ];
+
+    _selectedType = allowedTypes.contains(widget.initialType)
+        ? widget.initialType
+        : 'all';
+
     _loadData();
   }
 

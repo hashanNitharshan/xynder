@@ -510,16 +510,11 @@
 <div class="hs-page">
     <section class="hs-hero">
         <div class="hs-hero-inner">
-            <div class="hs-eyebrow">BITXNOW ADMIN</div>
+           
 
-            <h1 class="hs-title-main">
-                Help &
-                <span>Support Tickets</span>
-            </h1>
+           
 
-            <div class="hs-subtitle-main">
-                Manage support messages, filter tickets automatically, and update each request status.
-            </div>
+         
         </div>
     </section>
 

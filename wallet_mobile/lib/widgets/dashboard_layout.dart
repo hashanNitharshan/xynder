@@ -49,6 +49,7 @@ class _DashboardLayoutState extends State<DashboardLayout> with WidgetsBindingOb
   late Map user;
 
   int currentIndex = 0;
+  String historyInitialType = 'all';
   bool balanceHidden = false;
   bool loading = true;
 
@@ -143,9 +144,31 @@ class _DashboardLayoutState extends State<DashboardLayout> with WidgetsBindingOb
     );
   }
 
+  void _openP2PRequestHistory() {
+    setState(() {
+      historyInitialType = 'request';
+      currentIndex = 3;
+    });
+
+    refreshProfile();
+  }
+
+  void _openTransferHistory() {
+    setState(() {
+      historyInitialType = 'transfer';
+      currentIndex = 3;
+    });
+
+    refreshProfile();
+  }
+
   void _switchTab(int index) {
     setState(() {
       currentIndex = index;
+
+      if (index == 3) {
+        historyInitialType = 'all';
+      }
     });
 
     // Refresh the authenticated user whenever a page that displays wallet
@@ -793,17 +816,25 @@ class _DashboardLayoutState extends State<DashboardLayout> with WidgetsBindingOb
 
       case 1:
         return role == 'merchant'
-            ? const MerchantRequestsScreen()
-            : const RequestScreen();
+            ? MerchantRequestsScreen(
+                onHistoryTap: _openP2PRequestHistory,
+              )
+            : RequestScreen(
+                onHistoryTap: _openP2PRequestHistory,
+              );
 
       case 2:
         return WalletTransferScreen(
           user: user,
           onSuccess: refreshProfile,
+          onHistoryTap: _openTransferHistory,
         );
 
       case 3:
-        return HistoryScreen(user: user);
+        return HistoryScreen(
+          user: user,
+          initialType: historyInitialType,
+        );
 
       default:
         return SettingsScreen(

@@ -51,7 +51,12 @@ class _C {
 }
 
 class RequestScreen extends StatefulWidget {
-  const RequestScreen({super.key});
+  final VoidCallback? onHistoryTap;
+
+  const RequestScreen({
+    super.key,
+    this.onHistoryTap,
+  });
 
   @override
   State<RequestScreen> createState() => _RequestScreenState();
@@ -396,6 +401,32 @@ class _RequestScreenState extends State<RequestScreen>
                     : Icons.warning_amber_rounded,
                 size: 15,
                 color: _isVerified ? _C.green : _C.gold,
+              ),
+              const SizedBox(width: 10),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: widget.onHistoryTap,
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    width: 34,
+                    height: 34,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: _C.orange.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: _C.orange.withOpacity(0.30),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.history_rounded,
+                      color: _C.orange,
+                      size: 19,
+                    ),
+                  ),
+                ),
               ),
             ],
           ),

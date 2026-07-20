@@ -207,20 +207,7 @@
 
 <div class="mreq-page">
 
-    <section class="mreq-hero">
-        <div class="mreq-content">
-            <div class="mreq-eyebrow">BITXNOW WALLET</div>
-
-            <h1 class="mreq-title">
-                Merchant
-                <span>Requests</span>
-            </h1>
-
-            <div class="mreq-sub">
-                Review client buy and sell USD requests, approve valid requests, reject incorrect requests, or keep closed records for audit.
-            </div>
-        </div>
-    </section>
+  
 
     <section class="mreq-kpis">
         <div class="mreq-kpi"><div><small>Total Requests</small><b>{{ $total }}</b></div><div class="mreq-kpi-icon"><i class="ti ti-list-details"></i></div></div>
