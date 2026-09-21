@@ -57,6 +57,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  // Adds @gmail.com or @icloud.com after the name the user typed.
+  // If the user already typed another domain, it is replaced.
+  void addEmailDomain(String domain) {
+    var text = emailCtrl.text.trim();
+
+    final at = text.indexOf('@');
+    if (at != -1) {
+      text = text.substring(0, at);
+    }
+
+    if (text.isEmpty) {
+      showMessage("Type your email name first");
+      return;
+    }
+
+    final newText = '$text$domain';
+
+    emailCtrl.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: newText.length),
+    );
+  }
+
   Future<void> register() async {
     if (nameCtrl.text.trim().isEmpty ||
         emailCtrl.text.trim().isEmpty ||
@@ -146,6 +169,42 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  // Small button that adds an email domain (Gmail or iCloud).
+  Widget domainButton({
+    required String label,
+    required String domain,
+    required IconData icon,
+  }) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: loading ? null : () => addEmailDomain(domain),
+        child: Container(
+          height: 42,
+          decoration: BoxDecoration(
+            color: _C.field,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: _C.border),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 18, color: _C.yellow),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: _C.text,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -216,6 +275,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 cursorColor: _C.yellow,
                 decoration: inputBox(),
+              ),
+
+              const SizedBox(height: 10),
+
+              Row(
+                children: [
+                  domainButton(
+                    label: "Gmail",
+                    domain: "@gmail.com",
+                    icon: Icons.mail_outline,
+                  ),
+                  const SizedBox(width: 10),
+                  domainButton(
+                    label: "iCloud",
+                    domain: "@icloud.com",
+                    icon: Icons.cloud_outlined,
+                  ),
+                ],
               ),
 
               const SizedBox(height: 20),
