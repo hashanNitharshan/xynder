@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\Presence;
 use Closure;
 use Illuminate\Http\Request;
 
@@ -9,12 +10,13 @@ class UpdateUserOnlineStatus
 {
     public function handle(Request $request, Closure $next)
     {
-        if ($request->user()) {
-            $request->user()->forceFill([
-                'is_online' => true,
-                'last_seen_at' => now(),
-            ])->save();
+        $user = $request->user();
+
+        if ($user) {
+            Presence::touch($user);
         }
+
+        Presence::sweep();
 
         return $next($request);
     }

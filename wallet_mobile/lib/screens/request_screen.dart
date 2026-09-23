@@ -71,11 +71,14 @@ class _RequestScreenState extends State<RequestScreen>
 
   bool _pageLoading = true;
   bool _merchantLoading = false;
+  bool _sheetRefreshing = false;
   bool _submitting = false;
 
   Map<String, dynamic>? _config;
   Map<String, dynamic>? _user;
-  List _merchants = [];
+
+  /// All merchants (online first, then offline).
+  List<Map<String, dynamic>> _merchants = [];
 
   Map<String, dynamic>? _selectedMerchant;
 
@@ -145,10 +148,39 @@ class _RequestScreenState extends State<RequestScreen>
   }
 
   bool _isOnlineMerchant(dynamic m) {
+    if (m == null) return false;
+
     return m["is_online"] == true ||
         m["is_online"] == 1 ||
         m["is_online"]?.toString() == "1" ||
         m["is_online"]?.toString().toLowerCase() == "true";
+  }
+
+  int get _onlineCount =>
+      _merchants.where((m) => _isOnlineMerchant(m)).length;
+
+  int get _offlineCount => _merchants.length - _onlineCount;
+
+  bool get _canSubmit =>
+      _selectedMerchant != null && _isOnlineMerchant(_selectedMerchant);
+
+  /// "Last seen 5 min ago" style text for offline merchants.
+  String _lastSeen(dynamic value) {
+    if (value == null || value.toString().trim().isEmpty) {
+      return "Offline";
+    }
+
+    final seen = DateTime.tryParse(value.toString());
+    if (seen == null) return "Offline";
+
+    final diff = DateTime.now().difference(seen.toLocal());
+
+    if (diff.inMinutes < 1) return "Last seen just now";
+    if (diff.inMinutes < 60) return "Last seen ${diff.inMinutes} min ago";
+    if (diff.inHours < 24) return "Last seen ${diff.inHours} h ago";
+    if (diff.inDays == 1) return "Last seen yesterday";
+
+    return "Last seen ${diff.inDays} days ago";
   }
 
   Future<void> _loadPage() async {
@@ -168,6 +200,49 @@ class _RequestScreenState extends State<RequestScreen>
     } catch (_) {}
 
     if (mounted) setState(() => _pageLoading = false);
+  }
+
+  /// Loads all merchants and puts online merchants first.
+  /// Returns an error message, or null when it worked.
+  Future<String?> _fetchMerchants() async {
+    final data = await ApiService.merchants();
+
+    if (data["success"] != true) {
+      return data["message"]?.toString() ?? "Failed to load merchants";
+    }
+
+    final raw = data["merchants"];
+    final list = <Map<String, dynamic>>[];
+
+    if (raw is List) {
+      for (final m in raw) {
+        if (m is Map) {
+          list.add(Map<String, dynamic>.from(m));
+        }
+      }
+    }
+
+    list.sort((a, b) {
+      final ao = _isOnlineMerchant(a) ? 0 : 1;
+      final bo = _isOnlineMerchant(b) ? 0 : 1;
+      return ao.compareTo(bo);
+    });
+
+    _merchants = list;
+
+    // If the selected merchant went offline, remove the selection.
+    if (_selectedMerchant != null) {
+      final id = _selectedMerchant!["id"]?.toString();
+      final fresh = _merchants.where((m) => m["id"]?.toString() == id);
+
+      if (fresh.isEmpty || !_isOnlineMerchant(fresh.first)) {
+        _selectedMerchant = null;
+      } else {
+        _selectedMerchant = fresh.first;
+      }
+    }
+
+    return null;
   }
 
   Future<void> _processRequest() async {
@@ -193,33 +268,52 @@ class _RequestScreenState extends State<RequestScreen>
 
     setState(() => _merchantLoading = true);
 
-    final data = await ApiService.merchants();
+    final error = await _fetchMerchants();
 
     if (mounted) {
       setState(() => _merchantLoading = false);
     }
 
-    if (data["success"] != true) {
-      _snack(data["message"] ?? "Failed to load merchants", ok: false);
+    if (error != null) {
+      _snack(error, ok: false);
       return;
     }
 
-    final allMerchants = data["merchants"] ?? [];
-    _merchants = allMerchants.where((m) => _isOnlineMerchant(m)).toList();
-
     if (_merchants.isEmpty) {
-      _snack("No online merchants available now", ok: false);
+      _snack("No merchants available now", ok: false);
       return;
     }
 
     _showMerchantSheet();
   }
 
-  Future<void> _submitFinal(BuildContext sheetContext) async {
+  Future<void> _refreshSheet(StateSetter setSheet) async {
+    if (_sheetRefreshing) return;
+
+    setSheet(() => _sheetRefreshing = true);
+
+    await _fetchMerchants();
+
+    _sheetRefreshing = false;
+
+    if (!mounted) return;
+
+    // The sheet may be closed while loading, so ignore that error.
+    try {
+      setSheet(() {});
+    } catch (_) {}
+
+    setState(() {});
+  }
+
+  Future<void> _submitFinal(
+    BuildContext sheetContext,
+    StateSetter setSheet,
+  ) async {
     if (_submitting) return;
 
     if (_selectedMerchant == null) {
-      _snack("Please select a merchant", ok: false);
+      _snack("Please select an online merchant", ok: false);
       return;
     }
 
@@ -230,6 +324,7 @@ class _RequestScreenState extends State<RequestScreen>
 
     if (mounted) {
       setState(() => _submitting = true);
+      setSheet(() {});
     }
 
     final data = await ApiService.createRequestMultipart(
@@ -242,12 +337,17 @@ class _RequestScreenState extends State<RequestScreen>
     if (!mounted) return;
 
     setState(() => _submitting = false);
+    setSheet(() {});
 
     if (data["success"] != true) {
-      _snack(
-        data["message"]?.toString() ?? "Request failed",
-        ok: false,
-      );
+      final message = data["message"]?.toString() ?? "Request failed";
+
+      // The merchant may have gone offline after the list was loaded.
+      if (message.toLowerCase().contains("offline")) {
+        await _refreshSheet(setSheet);
+      }
+
+      _snack(message, ok: false);
       return;
     }
 
@@ -376,10 +476,10 @@ class _RequestScreenState extends State<RequestScreen>
                 size: 17,
               ),
               const SizedBox(width: 9),
-              Expanded(
+              const Expanded(
                 child: Text(
                   "Available USD Balance",
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: _C.textSecondary,
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
@@ -707,19 +807,21 @@ class _RequestScreenState extends State<RequestScreen>
     required String label,
     required VoidCallback onTap,
     bool loading = false,
+    bool enabled = true,
     IconData? icon,
   }) {
     return SizedBox(
       width: double.infinity,
       height: 52,
       child: ElevatedButton(
-        onPressed: loading ? null : onTap,
+        onPressed: (loading || !enabled) ? null : onTap,
         style: ElevatedButton.styleFrom(
           elevation: 0,
           backgroundColor: _C.orange,
           disabledBackgroundColor:
               _C.orange.withOpacity(0.45),
           foregroundColor: Colors.black,
+          disabledForegroundColor: Colors.black54,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(6),
           ),
@@ -739,15 +841,15 @@ class _RequestScreenState extends State<RequestScreen>
                   if (icon != null) ...[
                     Icon(
                       icon,
-                      color: Colors.black,
+                      color: enabled ? Colors.black : Colors.black54,
                       size: 18,
                     ),
                     const SizedBox(width: 8),
                   ],
                   Text(
                     label,
-                    style: const TextStyle(
-                      color: Colors.black,
+                    style: TextStyle(
+                      color: enabled ? Colors.black : Colors.black54,
                       fontWeight: FontWeight.w900,
                       fontSize: 14,
                     ),
@@ -767,6 +869,11 @@ class _RequestScreenState extends State<RequestScreen>
       backgroundColor: Colors.transparent,
       builder: (_) => StatefulBuilder(
         builder: (ctx, setSheet) {
+          final online =
+              _merchants.where((m) => _isOnlineMerchant(m)).toList();
+          final offline =
+              _merchants.where((m) => !_isOnlineMerchant(m)).toList();
+
           return Container(
             height: MediaQuery.of(context).size.height * 0.88,
             decoration: const BoxDecoration(
@@ -804,14 +911,66 @@ class _RequestScreenState extends State<RequestScreen>
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Text(
-                        _isSell
-                            ? "Select Online Merchant — Sell"
-                            : "Select Online Merchant — Buy",
-                        style: const TextStyle(
-                          color: _C.textPrimary,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w900,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _isSell
+                                  ? "Select Merchant for Sell"
+                                  : "Select Merchant for Buy",
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: _C.textPrimary,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              "$_onlineCount online, $_offlineCount offline",
+                              style: const TextStyle(
+                                color: _C.textSecondary,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => _refreshSheet(setSheet),
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: _C.orange.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: _C.orange.withOpacity(0.30),
+                                width: 0.8,
+                              ),
+                            ),
+                            child: _sheetRefreshing
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: _C.orange,
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.refresh_rounded,
+                                    color: _C.orange,
+                                    size: 20,
+                                  ),
+                          ),
                         ),
                       ),
                     ],
@@ -824,14 +983,32 @@ class _RequestScreenState extends State<RequestScreen>
                 ),
                 const SizedBox(height: 14),
                 Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    children: _merchants.map((m) {
-                      return _merchantCard(
-                        Map<String, dynamic>.from(m),
-                        setSheet,
-                      );
-                    }).toList(),
+                  child: RefreshIndicator(
+                    color: _C.orange,
+                    onRefresh: () => _refreshSheet(setSheet),
+                    child: ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      children: [
+                        if (online.isEmpty) _noOnlineNotice(),
+                        if (online.isNotEmpty)
+                          _sectionLabel("Online merchants", _C.green),
+                        ...online.map(
+                          (m) => _merchantCard(m, setSheet),
+                        ),
+                        if (offline.isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          _sectionLabel(
+                            "Offline merchants",
+                            _C.textSecondary,
+                          ),
+                          ...offline.map(
+                            (m) => _merchantCard(m, setSheet),
+                          ),
+                        ],
+                        const SizedBox(height: 10),
+                      ],
+                    ),
                   ),
                 ),
                 Container(
@@ -846,16 +1023,80 @@ class _RequestScreenState extends State<RequestScreen>
                     border: Border(top: BorderSide(color: _C.border)),
                   ),
                   child: _gradientBtn(
-                    label: _isSell ? "Submit Sell P2P" : "Submit Buy P2P",
-                    icon: Icons.send_rounded,
+                    label: _canSubmit
+                        ? (_isSell ? "Submit Sell P2P" : "Submit Buy P2P")
+                        : "Select an online merchant",
+                    icon: _canSubmit ? Icons.send_rounded : null,
                     loading: _submitting,
-                    onTap: () => _submitFinal(ctx),
+                    enabled: _canSubmit,
+                    onTap: () => _submitFinal(ctx, setSheet),
                   ),
                 ),
               ],
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _sectionLabel(String text, Color color) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10, top: 2),
+      child: Row(
+        children: [
+          Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            text,
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _noOnlineNotice() {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _C.red.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _C.red.withOpacity(0.35)),
+      ),
+      child: const Row(
+        children: [
+          Icon(
+            Icons.wifi_off_rounded,
+            color: _C.red,
+            size: 20,
+          ),
+          SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              "No merchant is online right now. Pull down or tap refresh to check again.",
+              style: TextStyle(
+                color: _C.textPrimary,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                height: 1.35,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -905,167 +1146,210 @@ class _RequestScreenState extends State<RequestScreen>
   }
 
   Widget _merchantCard(Map<String, dynamic> m, StateSetter setSheet) {
-    final selected =
+    final isOnline = _isOnlineMerchant(m);
+
+    final selected = isOnline &&
         _selectedMerchant?["id"]?.toString() == m["id"]?.toString();
 
     return GestureDetector(
-      onTap: () {
-        setSheet(() {
-          _selectedMerchant = Map<String, dynamic>.from(m);
-        });
-        setState(() {});
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          color: selected ? const Color(0xff2A1600) : _C.bg,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: selected ? _C.gold : _C.border,
-            width: selected ? 1.8 : 1,
+      onTap: isOnline
+          ? () {
+              setSheet(() {
+                _selectedMerchant = Map<String, dynamic>.from(m);
+              });
+              setState(() {});
+            }
+          : null,
+      child: Opacity(
+        opacity: isOnline ? 1 : 0.55,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: selected ? const Color(0xff2A1600) : _C.bg,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: selected ? _C.gold : _C.border,
+              width: selected ? 1.8 : 1,
+            ),
           ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              const Icon(
-                Icons.storefront_rounded,
-                color: _C.green,
-                size: 26,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      m["name"]?.toString() ?? "Merchant",
-                      style: const TextStyle(
-                        color: _C.textPrimary,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 13,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      m["email"]?.toString() ?? "",
-                      style: const TextStyle(
-                        color: _C.textSecondary,
-                        fontSize: 10,
-                      ),
-                    ),
-                  ],
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Icon(
+                  isOnline
+                      ? Icons.storefront_rounded
+                      : Icons.store_mall_directory_outlined,
+                  color: isOnline ? _C.green : _C.textSecondary,
+                  size: 26,
                 ),
-              ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: _C.green.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Text(
-                  "ONLINE",
-                  style: TextStyle(
-                    color: _C.green,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w900,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        m["name"]?.toString() ?? "Merchant",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: isOnline
+                              ? _C.textPrimary
+                              : _C.textSecondary,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        m["email"]?.toString() ?? "",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: _C.textSecondary,
+                          fontSize: 10,
+                        ),
+                      ),
+                      if (!isOnline) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          "${_lastSeen(m["last_seen_at"])}. Cannot take requests now.",
+                          style: const TextStyle(
+                            color: _C.textSecondary,
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: isOnline
+                        ? _C.green.withOpacity(0.12)
+                        : Colors.white.withOpacity(0.06),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: isOnline ? _C.green : _C.textSecondary,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        isOnline ? "ONLINE" : "OFFLINE",
+                        style: TextStyle(
+                          color: isOnline ? _C.green : _C.textSecondary,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
- void _showSuccessDialog({
-  String? requestId,
-  String? requestNo,
-  Map<String, dynamic>? merchant,
-}) {
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (_) => AlertDialog(
-      backgroundColor: _C.surfaceAlt,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
-      title: const Text(
-        "P2P Submitted!",
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w900,
-        ),
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            _isSell
-                ? "Your Sell USD P2P has been submitted successfully. Chat is open only while request is pending."
-                : "Your Buy USD P2P has been submitted successfully. Chat is open only while request is pending.",
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: _C.textSecondary, fontSize: 11),
+  void _showSuccessDialog({
+    String? requestId,
+    String? requestNo,
+    Map<String, dynamic>? merchant,
+  }) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        backgroundColor: _C.surfaceAlt,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+        title: const Text(
+          "P2P Submitted!",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w900,
           ),
-          const SizedBox(height: 14),
-          if (requestNo != null)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: _C.bg,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: _C.border),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _isSell
+                  ? "Your Sell USD P2P has been submitted successfully. Chat is open only while request is pending."
+                  : "Your Buy USD P2P has been submitted successfully. Chat is open only while request is pending.",
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: _C.textSecondary, fontSize: 11),
+            ),
+            const SizedBox(height: 14),
+            if (requestNo != null)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: _C.bg,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: _C.border),
+                ),
+                child: Text(
+                  requestNo,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: _C.gold,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
               ),
-              child: Text(
-                requestNo,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: _C.gold,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w900,
+            const SizedBox(height: 20),
+            if (requestId != null && merchant != null)
+              _gradientBtn(
+                label: "Chat with Merchant",
+                icon: Icons.chat_rounded,
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ChatScreen(
+                        otherUser: merchant,
+                        chatType: "request",
+                        chatId: requestId,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            const SizedBox(height: 10),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                "Close",
+                style: TextStyle(
+                  color: _C.textSecondary,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ),
-          const SizedBox(height: 20),
-          if (requestId != null && merchant != null)
-            _gradientBtn(
-              label: "Chat with Merchant",
-              icon: Icons.chat_rounded,
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ChatScreen(
-                      otherUser: merchant,
-                      chatType: "request",
-                      chatId: requestId,
-                    ),
-                  ),
-                );
-              },
-            ),
-          const SizedBox(height: 10),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              "Close",
-              style: TextStyle(
-                color: _C.textSecondary,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   @override
   Widget build(BuildContext context) {

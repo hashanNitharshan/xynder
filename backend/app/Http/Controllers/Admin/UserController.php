@@ -4,11 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\UserBankAccount;
+use App\Support\Presence;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
-use App\Models\UserBankAccount;
 
 class UserController extends Controller
 {
@@ -22,6 +23,9 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $this->adminOnly();
+
+        // Make sure inactive admins are shown as offline.
+        Presence::sweep();
 
         $type = $request->get('type', 'client');
 
@@ -57,6 +61,7 @@ class UserController extends Controller
             })
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
             ->when($request->filled('online'), fn ($q) => $q->where('is_online', (bool) $request->online))
+            ->orderByDesc('is_online')
             ->latest()
             ->paginate(20)
             ->withQueryString();
@@ -79,8 +84,6 @@ class UserController extends Controller
             'user' => new User(),
         ]);
     }
-
-
 
     public function destroy(User $user)
     {
@@ -129,6 +132,41 @@ class UserController extends Controller
             'success',
             $user->is_verified ? 'User verified successfully.' : 'User marked as unverified.'
         );
+    }
+
+    /**
+     * Admin manual control: set a client or merchant Online / Offline.
+     *
+     * Offline: the user stays offline, even while using the app or web panel,
+     * until an admin sets them online again. An offline merchant cannot
+     * receive new P2P requests.
+     *
+     * Online: the user is shown as online right away.
+     */
+    public function toggleOnline(User $user)
+    {
+        $this->adminOnly();
+
+        if ($user->role === 'admin') {
+            return back()->withErrors('Admin online status cannot be changed from this page.');
+        }
+
+        if ($user->is_online) {
+            $user->forceFill([
+                'appear_offline' => true,
+                'is_online'      => false,
+            ])->save();
+
+            return back()->with('success', $user->name . ' is now offline.');
+        }
+
+        $user->forceFill([
+            'appear_offline' => false,
+            'is_online'      => true,
+            'last_seen_at'   => now(),
+        ])->save();
+
+        return back()->with('success', $user->name . ' is now online.');
     }
 
     private function validateUser(Request $request, ?int $userId = null): array
@@ -196,9 +234,33 @@ class UserController extends Controller
             ->with('success');
     }
 
+    public function edit(User $user)
+    {
+        $this->adminOnly();
+
+        // The user form only supports clients and merchants.
+        if ($user->role === 'admin') {
+            return redirect()
+                ->route('admin.users.index', ['type' => 'client'])
+                ->withErrors('Admin accounts cannot be edited from this page.');
+        }
+
+        $user->load(['bankAccounts' => function ($q) {
+            $q->orderByDesc('is_default')->latest();
+        }]);
+
+        return view('admin.users.form', compact('user'));
+    }
+
     public function update(Request $request, User $user)
     {
         $this->adminOnly();
+
+        if ($user->role === 'admin') {
+            return redirect()
+                ->route('admin.users.index', ['type' => 'client'])
+                ->withErrors('Admin accounts cannot be edited from this page.');
+        }
 
         $data = $this->validateUser($request, $user->id);
 
@@ -222,9 +284,6 @@ class UserController extends Controller
             unset($data['password']);
         }
 
-        if (empty($user->wallet_id)) {
-            }
-
         $data['status'] = $request->input('status', $user->status ?? 'active');
         $data['is_active'] = $data['status'] === 'active';
 
@@ -235,96 +294,85 @@ class UserController extends Controller
             ->with('success');
     }
 
-
     public function storeBank(Request $request, User $user)
-{
-    $this->adminOnly();
+    {
+        $this->adminOnly();
 
-    $data = $request->validate([
-        'bank_name' => 'required|string|max:255',
-        'branch' => 'nullable|string|max:255',
-        'account_number' => 'required|string|max:255',
-        'account_type' => 'nullable|string|max:255',
-        'ifsc' => 'nullable|string|max:255',
-        'is_default' => 'nullable|boolean',
-    ]);
+        $data = $request->validate([
+            'bank_name' => 'required|string|max:255',
+            'branch' => 'nullable|string|max:255',
+            'account_number' => 'required|string|max:255',
+            'account_type' => 'nullable|string|max:255',
+            'ifsc' => 'nullable|string|max:255',
+            'is_default' => 'nullable|boolean',
+        ]);
 
-    $data['user_id'] = $user->id;
+        $data['user_id'] = $user->id;
 
-    if ($request->boolean('is_default') || $user->bankAccounts()->count() === 0) {
-        $user->bankAccounts()->update(['is_default' => false]);
-        $data['is_default'] = true;
-    } else {
-        $data['is_default'] = false;
-    }
-
-    UserBankAccount::create($data);
-
-    return back()->with('success');
-}
-
-public function updateBank(Request $request, User $user, UserBankAccount $bankAccount)
-{
-    $this->adminOnly();
-
-    abort_unless((int) $bankAccount->user_id === (int) $user->id, 403);
-
-    $data = $request->validate([
-        'bank_name' => 'required|string|max:255',
-        'branch' => 'nullable|string|max:255',
-        'account_number' => 'required|string|max:255',
-        'account_type' => 'nullable|string|max:255',
-        'ifsc' => 'nullable|string|max:255',
-    ]);
-
-    $bankAccount->update($data);
-
-    return back()->with('success');
-}
-
-public function deleteBank(User $user, UserBankAccount $bankAccount)
-{
-    $this->adminOnly();
-
-    abort_unless((int) $bankAccount->user_id === (int) $user->id, 403);
-
-    $wasDefault = (bool) $bankAccount->is_default;
-
-    $bankAccount->delete();
-
-    if ($wasDefault) {
-        $nextBank = $user->bankAccounts()->oldest()->first();
-
-        if ($nextBank) {
-            $nextBank->update(['is_default' => true]);
+        if ($request->boolean('is_default') || $user->bankAccounts()->count() === 0) {
+            $user->bankAccounts()->update(['is_default' => false]);
+            $data['is_default'] = true;
+        } else {
+            $data['is_default'] = false;
         }
+
+        UserBankAccount::create($data);
+
+        return back()->with('success');
     }
 
-    return back()->with('success');
-}
+    public function updateBank(Request $request, User $user, UserBankAccount $bankAccount)
+    {
+        $this->adminOnly();
 
-public function setDefaultBank(User $user, UserBankAccount $bankAccount)
-{
-    $this->adminOnly();
+        abort_unless((int) $bankAccount->user_id === (int) $user->id, 403);
 
-    abort_unless((int) $bankAccount->user_id === (int) $user->id, 403);
+        $data = $request->validate([
+            'bank_name' => 'required|string|max:255',
+            'branch' => 'nullable|string|max:255',
+            'account_number' => 'required|string|max:255',
+            'account_type' => 'nullable|string|max:255',
+            'ifsc' => 'nullable|string|max:255',
+        ]);
 
-    $user->bankAccounts()->update(['is_default' => false]);
+        $bankAccount->update($data);
 
-    $bankAccount->update([
-        'is_default' => true,
-    ]);
+        return back()->with('success');
+    }
 
-    return back()->with('success');
-}
-public function edit(User $user)
-{
-    $this->adminOnly();
+    public function deleteBank(User $user, UserBankAccount $bankAccount)
+    {
+        $this->adminOnly();
 
-    $user->load(['bankAccounts' => function ($q) {
-        $q->orderByDesc('is_default')->latest();
-    }]);
+        abort_unless((int) $bankAccount->user_id === (int) $user->id, 403);
 
-    return view('admin.users.form', compact('user'));
-}
+        $wasDefault = (bool) $bankAccount->is_default;
+
+        $bankAccount->delete();
+
+        if ($wasDefault) {
+            $nextBank = $user->bankAccounts()->oldest()->first();
+
+            if ($nextBank) {
+                $nextBank->update(['is_default' => true]);
+            }
+        }
+
+        return back()->with('success');
+    }
+
+    public function setDefaultBank(User $user, UserBankAccount $bankAccount)
+    {
+        $this->adminOnly();
+
+        abort_unless((int) $bankAccount->user_id === (int) $user->id, 403);
+
+        $user->bankAccounts()->update(['is_default' => false]);
+
+        $bankAccount->update([
+            'is_default' => true,
+        ]);
+
+        return back()->with('success');
+    }
 }

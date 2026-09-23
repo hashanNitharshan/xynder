@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\StorageController;
 use App\Http\Controllers\Api\ConfigController;
 use App\Http\Controllers\Api\SupportTicketController;
 use App\Http\Controllers\Api\ChatController;
+use App\Http\Controllers\PresenceController;
 
 Route::options('/{any}', function () {
     return response()->json([], 204);
@@ -32,8 +33,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/profile', [AuthController::class, 'updateProfile']);
 
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::post('/ping', [AuthController::class, 'ping']);
     Route::post('/change-password', [AuthController::class, 'changePassword']);
+
+    // Online / offline
+    Route::post('/ping', [PresenceController::class, 'apiPing']);
+    Route::post('/presence/toggle', [PresenceController::class, 'apiToggle']);
 
     Route::get('/config', [ConfigController::class, 'current']);
     Route::get('/merchants', [AuthController::class, 'merchants']);

@@ -22,6 +22,7 @@ class User extends Authenticatable
         'is_active',
         'status',
         'is_online',
+        'appear_offline',
         'last_seen_at',
         'photo',
         'address',
@@ -51,14 +52,16 @@ class User extends Authenticatable
         'photo_url',
         'upi_qr_url',
         'aadhaar_photo_url',
+        'default_bank',
     ];
 
     protected $casts = [
-        'is_active'    => 'boolean',
-        'is_online'    => 'boolean',
-        'is_verified'  => 'boolean',
-        'last_seen_at' => 'datetime',
-        'balance'      => 'decimal:2',
+        'is_active'      => 'boolean',
+        'is_online'      => 'boolean',
+        'appear_offline' => 'boolean',
+        'is_verified'    => 'boolean',
+        'last_seen_at'   => 'datetime',
+        'balance'        => 'decimal:2',
     ];
 
     /**
@@ -75,6 +78,16 @@ class User extends Authenticatable
         static::creating(function (User $user) {
             if (empty($user->wallet_id)) {
                 $user->wallet_id = self::generateWalletId();
+            }
+        });
+
+        /*
+         * If a user chose "Go Offline", no other code can set them online.
+         * This also covers the mobile API login, which sets is_online = true.
+         */
+        static::saving(function (User $user) {
+            if ($user->appear_offline) {
+                $user->is_online = false;
             }
         });
     }
@@ -153,6 +166,53 @@ class User extends Authenticatable
             UserBankAccount::class,
             'user_id'
         );
+    }
+
+    /**
+     * The user's default bank account, used on the transaction detail screen.
+     *
+     * Order:
+     * 1. The bank account marked as default
+     * 2. The first saved bank account
+     * 3. The old bank fields on the users table (legacy)
+     */
+    public function getDefaultBankAttribute(): ?array
+    {
+        if (! $this->exists || ! in_array($this->role, ['client', 'merchant'], true)) {
+            return null;
+        }
+
+        $accounts = $this->relationLoaded('bankAccounts')
+            ? $this->bankAccounts
+            : $this->bankAccounts()->orderByDesc('is_default')->latest()->get();
+
+        $bank = $accounts->firstWhere('is_default', true) ?: $accounts->first();
+
+        if ($bank) {
+            return [
+                'bank_name'      => $bank->bank_name,
+                'branch'         => $bank->branch,
+                'account_number' => $bank->account_number,
+                'account_type'   => $bank->account_type,
+                'ifsc'           => $bank->ifsc,
+                'is_default'     => (bool) $bank->is_default,
+                'source'         => 'account',
+            ];
+        }
+
+        if ($this->bank_name || $this->account_number) {
+            return [
+                'bank_name'      => $this->bank_name,
+                'branch'         => $this->branch,
+                'account_number' => $this->account_number,
+                'account_type'   => $this->account_type,
+                'ifsc'           => $this->ifsc,
+                'is_default'     => true,
+                'source'         => 'legacy',
+            ];
+        }
+
+        return null;
     }
 
     public function getPhotoUrlAttribute(): ?string

@@ -1,3 +1,4 @@
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 
@@ -46,6 +47,10 @@ class DashboardLayout extends StatefulWidget {
 }
 
 class _DashboardLayoutState extends State<DashboardLayout> with WidgetsBindingObserver {
+  /// Online heartbeat. The server marks a user offline after about
+  /// 2 minutes with no heartbeat, so 45 seconds keeps the user online.
+  static const Duration _pingInterval = Duration(seconds: 45);
+
   late Map user;
 
   int currentIndex = 0;
@@ -53,16 +58,20 @@ class _DashboardLayoutState extends State<DashboardLayout> with WidgetsBindingOb
   bool balanceHidden = false;
   bool loading = true;
 
+  Timer? _pingTimer;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     user = Map<String, dynamic>.from(widget.user);
     refreshProfile();
+    _startPing();
   }
 
   @override
   void dispose() {
+    _stopPing();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -71,7 +80,25 @@ class _DashboardLayoutState extends State<DashboardLayout> with WidgetsBindingOb
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       refreshProfile();
+      _startPing();
     }
+
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      _stopPing();
+    }
+  }
+
+  void _startPing() {
+    _pingTimer?.cancel();
+    _pingTimer = Timer.periodic(_pingInterval, (_) {
+      ApiService.ping();
+    });
+  }
+
+  void _stopPing() {
+    _pingTimer?.cancel();
+    _pingTimer = null;
   }
 
   double _toDouble(dynamic value) {
@@ -133,6 +160,7 @@ class _DashboardLayoutState extends State<DashboardLayout> with WidgetsBindingOb
   }
 
   Future<void> logout() async {
+    _stopPing();
     await ApiService.logout();
 
     if (!mounted) return;

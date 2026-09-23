@@ -127,6 +127,10 @@
     font-weight:700;
 }
 
+.ad-kpi-note strong{
+    color:var(--green);
+}
+
 .ad-card{
     width:100%;
     overflow:hidden;
@@ -290,7 +294,7 @@
 
 .ad-table th:nth-child(1),
 .ad-table td:nth-child(1){
-    width:30%;
+    width:26%;
 }
 
 .ad-table th:nth-child(2),
@@ -320,7 +324,7 @@
 
 .ad-table th:nth-child(7),
 .ad-table td:nth-child(7){
-    width:10%;
+    width:14%;
 }
 
 .ad-user{
@@ -328,6 +332,11 @@
     align-items:center;
     gap:12px;
     min-width:0;
+}
+
+.ad-avatar-box{
+    position:relative;
+    flex-shrink:0;
 }
 
 .ad-avatar,
@@ -354,13 +363,35 @@
     font-weight:900;
 }
 
+.ad-avatar-dot{
+    position:absolute;
+    right:0;
+    bottom:0;
+    width:12px;
+    height:12px;
+    border-radius:50%;
+    background:var(--muted2);
+    border:2px solid var(--surface);
+}
+
+.ad-avatar-dot.on{
+    background:var(--green);
+}
+
 .ad-name{
     margin-bottom:4px;
+    display:flex;
+    align-items:center;
+    gap:6px;
     overflow:hidden;
     color:#FFFFFF;
     font-weight:900;
-    text-overflow:ellipsis;
     white-space:nowrap;
+}
+
+.ad-name-text{
+    overflow:hidden;
+    text-overflow:ellipsis;
 }
 
 .ad-email{
@@ -464,6 +495,16 @@
     margin-top:4px;
     color:var(--muted);
     font-size:11px;
+}
+
+.ad-seen{
+    margin-top:5px;
+    color:var(--muted);
+    font-size:10px;
+}
+
+.ad-dash{
+    color:var(--muted2);
 }
 
 .ad-actions{
@@ -766,7 +807,7 @@
                 </div>
 
                 <div class="ad-kpi-note">
-                    Live users
+                    Across clients &amp; merchants
                 </div>
             </div>
         </section>
@@ -909,21 +950,25 @@
                         <tr>
                             <td data-label="User">
                                 <div class="ad-user">
-                                    @if($user->photo)
-                                        <img
-                                            src="{{ asset('storage/'.$user->photo) }}"
-                                            class="ad-avatar"
-                                            alt="{{ $user->name }}"
-                                        >
-                                    @else
-                                        <div class="ad-avatar-empty">
-                                            {{ strtoupper(substr($user->name ?? 'U', 0, 1)) }}
-                                        </div>
-                                    @endif
+                                    <div class="ad-avatar-box">
+                                        @if($user->photo)
+                                            <img
+                                                src="{{ asset('storage/'.$user->photo) }}"
+                                                class="ad-avatar"
+                                                alt="{{ $user->name }}"
+                                            >
+                                        @else
+                                            <div class="ad-avatar-empty">
+                                                {{ strtoupper(substr($user->name ?? 'U', 0, 1)) }}
+                                            </div>
+                                        @endif
+
+                                        <span class="ad-avatar-dot {{ $user->is_online ? 'on' : '' }}"></span>
+                                    </div>
 
                                     <div style="min-width:0;width:100%;">
                                         <div class="ad-name">
-                                            {{ $user->name }}
+                                            <span class="ad-name-text">{{ $user->name }}</span>
                                         </div>
 
                                         <div class="ad-email">
@@ -1071,7 +1116,7 @@
                                 @endif
 
                                 @if($user->last_seen_at)
-                                    <div style="font-size:10px;color:var(--muted);margin-top:5px;">
+                                    <div class="ad-seen">
                                         {{ $user->last_seen_at->format('d M, h:i A') }}
                                     </div>
                                 @endif
@@ -1098,6 +1143,23 @@
                                     >
                                         <i class="ti ti-edit"></i>
                                     </a>
+
+                                    <form
+                                        method="POST"
+                                        action="{{ route('admin.users.toggle-online', $user) }}"
+                                    >
+                                        @csrf
+
+                                        <button
+                                            type="submit"
+                                            class="ad-icon {{ $user->is_online ? 'ad-bad' : 'ad-good' }}"
+                                            title="{{ $user->is_online ? 'Set offline' : 'Set online' }}"
+                                            aria-label="{{ $user->is_online ? 'Set offline' : 'Set online' }}"
+                                            onclick="return confirm('{{ $user->is_online ? 'Set this user offline?' : 'Set this user online?' }}')"
+                                        >
+                                            <i class="ti {{ $user->is_online ? 'ti-wifi-off' : 'ti-wifi' }}"></i>
+                                        </button>
+                                    </form>
 
                                     <form
                                         method="POST"

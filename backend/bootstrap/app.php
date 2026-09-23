@@ -12,11 +12,21 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-   ->withMiddleware(function (Middleware $middleware) {
-    $middleware->api(prepend: [
-        \Illuminate\Http\Middleware\HandleCors::class,
-    ]);
-})
+    ->withMiddleware(function (Middleware $middleware) {
+        $middleware->api(prepend: [
+            HandleCors::class,
+        ]);
+
+        // Keeps logged-in web users (admin, client, merchant) online
+        // while they use the web panel.
+        $middleware->web(append: [
+            \App\Http\Middleware\UpdateUserOnlineStatus::class,
+        ]);
+
+        $middleware->alias([
+            'online.status' => \App\Http\Middleware\UpdateUserOnlineStatus::class,
+        ]);
+    })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })

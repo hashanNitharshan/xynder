@@ -39,6 +39,7 @@ class _TransactionDetailScreenState
 
   late Map<String, dynamic> item;
   bool _closingRequest = false;
+  bool _bankExpanded = false;
 
   @override
   void initState() {
@@ -80,6 +81,11 @@ class _TransactionDetailScreenState
 
   bool get isTransfer {
     return widget.sourceType.toLowerCase() == 'transfer';
+  }
+
+  String get currentRole {
+    return widget.user['role']?.toString().toLowerCase().trim() ??
+        'client';
   }
 
   String get requestStatus {
@@ -433,10 +439,6 @@ class _TransactionDetailScreenState
       };
     }
 
-    final String currentRole =
-        widget.user['role']?.toString().toLowerCase() ??
-            'client';
-
     if (currentRole == 'merchant') {
       return {
         'id': item['client_id'] ??
@@ -503,12 +505,7 @@ class _TransactionDetailScreenState
       return name;
     }
 
-    return widget.user['role']
-                ?.toString()
-                .toLowerCase() ==
-            'merchant'
-        ? 'Client'
-        : 'Merchant';
+    return currentRole == 'merchant' ? 'Client' : 'Merchant';
   }
 
   String get otherPartyRole {
@@ -525,6 +522,95 @@ class _TransactionDetailScreenState
   // The button displays only the connected username, no icon.
   String get chatButtonText {
     return 'Contact $connectedUserName';
+  }
+
+  // ---------------------------------------------------------------------------
+  // PAYMENT ACCOUNT (who receives the INR)
+  // ---------------------------------------------------------------------------
+  //
+  // Buy USD  (deposit):    client sends INR  -> merchant's bank / UPI
+  // Sell USD (withdrawal): merchant sends INR -> client's bank / UPI
+
+  bool get payeeIsMe {
+    if (isWithdrawal) {
+      return currentRole == 'client';
+    }
+
+    return currentRole == 'merchant';
+  }
+
+  Map<String, dynamic> get payee {
+    dynamic source;
+
+    if (payeeIsMe) {
+      source = widget.user;
+    } else if (isWithdrawal) {
+      source = item['user'] ?? item['client'];
+    } else {
+      source = item['merchant'];
+    }
+
+    if (source is Map) {
+      return Map<String, dynamic>.from(source);
+    }
+
+    return <String, dynamic>{};
+  }
+
+  Map<String, dynamic> get payeeBank {
+    final dynamic bank = payee['default_bank'];
+
+    if (bank is Map) {
+      return Map<String, dynamic>.from(bank);
+    }
+
+    // Fallback to the old bank fields on the user.
+    return {
+      'bank_name': payee['bank_name'],
+      'branch': payee['branch'],
+      'account_number': payee['account_number'],
+      'account_type': payee['account_type'],
+      'ifsc': payee['ifsc'],
+    };
+  }
+
+  bool get hasBank {
+    return value(payeeBank['account_number']) != '—' ||
+        value(payeeBank['bank_name']) != '—';
+  }
+
+  bool get hasUpi {
+    return value(payee['upi_id']) != '—';
+  }
+
+  String get upiQrUrl {
+    return ApiService.fixUrl(payee['upi_qr_url']);
+  }
+
+  String get payeeTitle {
+    if (payeeIsMe) {
+      return isWithdrawal
+          ? 'You receive INR in'
+          : 'Client sends INR to you';
+    }
+
+    return isWithdrawal
+        ? 'Send INR to client'
+        : 'Send INR to merchant';
+  }
+
+  String maskedAccount(String account) {
+    if (account == '—') {
+      return '';
+    }
+
+    final String clean = account.replaceAll(' ', '');
+
+    if (clean.length <= 4) {
+      return clean;
+    }
+
+    return '••••${clean.substring(clean.length - 4)}';
   }
 
   // ---------------------------------------------------------------------------
@@ -593,6 +679,78 @@ class _TransactionDetailScreenState
       );
   }
 
+  void showUpiQr() {
+    if (upiQrUrl.isEmpty) {
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          backgroundColor: surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: border),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  value(payee['upi_name']) != '—'
+                      ? value(payee['upi_name'])
+                      : 'UPI QR',
+                  style: const TextStyle(
+                    color: textPrimary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    color: Colors.white,
+                    padding: const EdgeInsets.all(8),
+                    child: Image.network(
+                      upiQrUrl,
+                      width: 220,
+                      height: 220,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const SizedBox(
+                        width: 220,
+                        height: 220,
+                        child: Center(
+                          child: Text(
+                            'QR image not available',
+                            style: TextStyle(color: Colors.black54),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text(
+                    'Close',
+                    style: TextStyle(
+                      color: amber,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   // ---------------------------------------------------------------------------
   // CLOSE TRANSACTION (CLIENT ONLY)
   // ---------------------------------------------------------------------------
@@ -606,10 +764,7 @@ class _TransactionDetailScreenState
       return false;
     }
 
-    final String role =
-        widget.user['role']?.toString().toLowerCase().trim() ?? '';
-
-    return role == 'client';
+    return currentRole == 'client';
   }
 
   Future<void> confirmCloseRequest() async {
@@ -738,7 +893,6 @@ class _TransactionDetailScreenState
           'The transaction is now closed.',
     );
   }
-
 
   Widget inlineCloseRequestButton() {
     return Align(
@@ -1024,42 +1178,254 @@ class _TransactionDetailScreenState
     );
   }
 
+  // Small row used inside the bank card.
+  Widget bankLine(
+    String label,
+    String data, {
+    bool copyable = false,
+  }) {
+    if (data == '—') {
+      return const SizedBox.shrink();
+    }
+
+    return InkWell(
+      onTap: copyable ? () => copyText(data) : null,
+      borderRadius: BorderRadius.circular(6),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 5),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 82,
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: textSecondary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            Expanded(
+              child: Text(
+                data,
+                textAlign: TextAlign.right,
+                style: const TextStyle(
+                  color: textPrimary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  fontFeatures: [
+                    FontFeature.tabularFigures(),
+                  ],
+                ),
+              ),
+            ),
+            if (copyable) ...[
+              const SizedBox(width: 6),
+              const Icon(
+                Icons.copy_rounded,
+                color: Colors.white54,
+                size: 13,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Compact bank / UPI card. Collapsed = one small row. Tap to see details.
+  Widget payeeBankCard() {
+    final Map<String, dynamic> bank = payeeBank;
+
+    final String bankName = value(bank['bank_name']);
+    final String account = value(bank['account_number']);
+    final String upiId = value(payee['upi_id']);
+
+    String summary;
+
+    if (hasBank) {
+      final String masked = maskedAccount(account);
+      summary = bankName != '—'
+          ? (masked.isNotEmpty ? '$bankName  $masked' : bankName)
+          : masked;
+    } else if (hasUpi) {
+      summary = 'UPI: $upiId';
+    } else {
+      summary = payeeIsMe
+          ? 'No bank or UPI added. Add one in Payment Methods.'
+          : 'No bank or UPI added yet. Please ask in chat.';
+    }
+
+    final bool hasDetails = hasBank || hasUpi;
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: border),
+      ),
+      child: Column(
+        children: [
+          InkWell(
+            onTap: hasDetails
+                ? () => setState(() => _bankExpanded = !_bankExpanded)
+                : null,
+            borderRadius: BorderRadius.circular(10),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
+              child: Row(
+                children: [
+                  Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      color: amber.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.account_balance_rounded,
+                      color: amber,
+                      size: 16,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          payeeTitle,
+                          style: const TextStyle(
+                            color: textSecondary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          summary,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: hasDetails ? textPrimary : textSecondary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (hasDetails)
+                    AnimatedRotation(
+                      turns: _bankExpanded ? 0.5 : 0,
+                      duration: const Duration(milliseconds: 180),
+                      child: const Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: textSecondary,
+                        size: 20,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          AnimatedCrossFade(
+            duration: const Duration(milliseconds: 180),
+            crossFadeState: _bankExpanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            firstChild: const SizedBox(width: double.infinity),
+            secondChild: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(12, 2, 12, 10),
+              decoration: const BoxDecoration(
+                border: Border(top: BorderSide(color: border)),
+              ),
+              child: Column(
+                children: [
+                  const SizedBox(height: 6),
+                  bankLine('Name', value(payee['name'])),
+                  bankLine('Bank', bankName),
+                  bankLine('Account', account, copyable: true),
+                  bankLine('IFSC', value(bank['ifsc']), copyable: true),
+                  bankLine('Branch', value(bank['branch'])),
+                  bankLine('Type', value(bank['account_type'])),
+                  bankLine('UPI ID', upiId, copyable: true),
+                  if (upiQrUrl.isNotEmpty)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        onPressed: showUpiQr,
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                          ),
+                          minimumSize: const Size(0, 30),
+                          tapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        icon: const Icon(
+                          Icons.qr_code_2_rounded,
+                          color: amber,
+                          size: 16,
+                        ),
+                        label: const Text(
+                          'View UPI QR',
+                          style: TextStyle(
+                            color: amber,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget paymentMethodSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Payment Method',
-          style: TextStyle(
-            color: textSecondary,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 14),
         Row(
           children: [
+            const Text(
+              'Payment Method',
+              style: TextStyle(
+                color: textSecondary,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const Spacer(),
             Container(
               width: 3,
-              height: 19,
+              height: 14,
               decoration: BoxDecoration(
                 color: red,
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
-            const SizedBox(width: 9),
-            Expanded(
-              child: Text(
-                paymentMethod,
-                style: const TextStyle(
-                  color: textPrimary,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                ),
+            const SizedBox(width: 7),
+            Text(
+              paymentMethod,
+              style: const TextStyle(
+                color: textPrimary,
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
               ),
             ),
           ],
         ),
+        const SizedBox(height: 10),
+        payeeBankCard(),
       ],
     );
   }

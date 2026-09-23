@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Support\Presence;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -40,22 +41,15 @@ class LoginController extends Controller
                 ->onlyInput('email');
         }
 
-        $user->forceFill([
-            'is_online' => true,
-            'last_seen_at' => now(),
-        ])->save();
+        // Respects the admin "Go Offline" option.
+        Presence::touch($user, true);
 
         return redirect()->intended(route('dashboard'));
     }
 
     public function logout(Request $request)
-    {
-        if ($request->user()) {
-            $request->user()->forceFill([
-                'is_online' => false,
-                'last_seen_at' => now(),
-            ])->save();
-        }
+    { 
+        Presence::offline($request->user());
 
         Auth::logout();
 

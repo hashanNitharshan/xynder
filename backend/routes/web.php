@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HistoryController;
+use App\Http\Controllers\PresenceController;
 use App\Http\Controllers\WalletTransferController as WebWalletTransferController;
 use App\Http\Controllers\WebChatController;
 use App\Http\Controllers\WebProfileController;
@@ -44,6 +45,10 @@ Route::post('/logout', [LoginController::class, 'logout'])
 Route::middleware('auth')->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'redirectByRole'])->name('dashboard');
+
+    // Online / offline
+    Route::post('/presence/heartbeat', [PresenceController::class, 'heartbeat'])->name('presence.heartbeat');
+    Route::post('/presence/toggle', [PresenceController::class, 'toggle'])->name('presence.toggle');
 
     Route::prefix('client')->name('client.')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'client'])->name('dashboard');
@@ -140,6 +145,7 @@ Route::middleware('auth')->group(function () {
 
         Route::post('users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
         Route::post('users/{user}/toggle-verification', [UserController::class, 'toggleVerification'])->name('users.toggle-verification');
+        Route::post('users/{user}/toggle-online', [UserController::class, 'toggleOnline'])->name('users.toggle-online');
 
         Route::get('wallet-requests', [WalletRequestController::class, 'index'])->name('wallet-requests.index');
         Route::post('wallet-requests/{walletRequest}/approve', [WalletRequestController::class, 'approve'])->name('wallet-requests.approve');
