@@ -8,7 +8,7 @@ X/
 │   │   │   │   │   ├── ConfigController.php
 │   │   │   │   │   ├── SettingController.php
 │   │   │   │   │   ├── SupportTicketController.php
-│   │   │   │   │   ├── UserController.php
+│   │   │   │   │   ├── UserController.php                ← UPDATED
 │   │   │   │   │   ├── WalletRequestController.php
 │   │   │   │   │   └── WalletTransferController.php
 │   │   │   │   ├── Api/
@@ -18,7 +18,7 @@ X/
 │   │   │   │   │   ├── StorageController.php
 │   │   │   │   │   └── SupportTicketController.php
 │   │   │   │   ├── Auth/
-│   │   │   │   │   ├── LoginController.php
+│   │   │   │   │   ├── LoginController.php               ← UPDATED
 │   │   │   │   │   └── RegisterController.php
 │   │   │   │   ├── Client/
 │   │   │   │   │   └── RequestController.php
@@ -27,29 +27,32 @@ X/
 │   │   │   │   ├── Controller.php
 │   │   │   │   ├── DashboardController.php
 │   │   │   │   ├── HistoryController.php
+│   │   │   │   ├── PresenceController.php                ← NEW
 │   │   │   │   ├── WalletTransferController.php
 │   │   │   │   ├── WebChatController.php
 │   │   │   │   ├── WebPaymentDetailsController.php
 │   │   │   │   ├── WebProfileController.php
 │   │   │   │   └── WebSettingsController.php
 │   │   │   └── Middleware/
-│   │   │       ├── AdminOnly.php
 │   │   │       ├── ClientOnly.php
 │   │   │       ├── MerchantOnly.php
-│   │   │       └── HandleCors.php
+│   │   │       ├── HandleCors.php
+│   │   │       └── UpdateUserOnlineStatus.php            ← UPDATED
 │   │   ├── Models/
 │   │   │   ├── ChatMessage.php
 │   │   │   ├── Conversation.php
 │   │   │   ├── SupportTicket.php
 │   │   │   ├── SystemConfig.php
-│   │   │   ├── User.php
+│   │   │   ├── User.php                                  ← UPDATED
 │   │   │   ├── UserBankAccount.php
 │   │   │   ├── WalletRequest.php
 │   │   │   └── WalletTransfer.php
-│   │   └── Providers/
-│   │       └── AppServiceProvider.php
+│   │   ├── Providers/
+│   │   │   └── AppServiceProvider.php
+│   │   └── Support/                                      ← NEW FOLDER
+│   │       └── Presence.php                              ← NEW
 │   ├── bootstrap/
-│   │   ├── app.php
+│   │   ├── app.php                                       ← UPDATED
 │   │   └── providers.php
 │   ├── config/
 │   │   ├── app.php
@@ -96,7 +99,8 @@ X/
 │   │   │   ├── 2026_06_23_073254_add_attachment_and_lock_columns_to_chat_tables.php
 │   │   │   ├── 2026_07_01_141804_add_closed_status_to_wallet_requests_table.php
 │   │   │   ├── 2026_07_06_140201_create_user_bank_accounts_table.php
-│   │   │   └── 2026_07_07_095846_add_profile_payment_locks_to_users_table.php
+│   │   │   ├── 2026_07_07_095846_add_profile_payment_locks_to_users_table.php
+│   │   │   └── 2026_09_23_000001_add_appear_offline_to_users_table.php   ← NEW
 │   │   ├── seeders/
 │   │   │   └── DatabaseSeeder.php
 │   │   └── database.sqlite
@@ -127,7 +131,7 @@ X/
 │   │       │   │   └── index.blade.php
 │   │       │   ├── users/
 │   │       │   │   ├── form.blade.php
-│   │       │   │   └── index.blade.php
+│   │       │   │   └── index.blade.php                   ← UPDATED
 │   │       │   ├── wallet_requests/
 │   │       │   │   └── index.blade.php
 │   │       │   └── wallet_transfers/
@@ -170,15 +174,15 @@ X/
 │   │       │   ├── client.blade.php
 │   │       │   └── merchant.blade.php
 │   │       ├── layouts/
-│   │       │   ├── admin.blade.php
+│   │       │   ├── admin.blade.php                       ← UPDATED
 │   │       │   ├── app.blade.php
 │   │       │   ├── client.blade.php
 │   │       │   └── merchant.blade.php
 │   │       └── welcome.blade.php
 │   ├── routes/
-│   │   ├── api.php
+│   │   ├── api.php                                       ← UPDATED
 │   │   ├── console.php
-│   │   └── web.php
+│   │   └── web.php                                       ← UPDATED
 │   ├── storage/
 │   │   ├── app/
 │   │   │   └── public/
@@ -286,9 +290,9 @@ X/
     │   │   ├── payment_methods_screen.dart
     │   │   ├── profile_screen.dart
     │   │   ├── register_screen.dart
-    │   │   ├── request_screen.dart
+    │   │   ├── request_screen.dart                       ← UPDATED
     │   │   ├── settings_screen.dart
-    │   │   ├── transaction_detail_screen.dart
+    │   │   ├── transaction_detail_screen.dart            ← UPDATED
     │   │   ├── update_screen.dart
     │   │   └── wallet_transfer_screen.dart
     │   ├── services/
@@ -302,7 +306,7 @@ X/
     │       ├── animated_page.dart
     │       ├── app_drawer.dart
     │       ├── bottom_nav.dart
-    │       ├── dashboard_layout.dart
+    │       ├── dashboard_layout.dart                     ← UPDATED
     │       ├── pinwheel_loader.dart
     │       ├── top_bar.dart
     │       ├── trading_widgets.dart
@@ -335,6 +339,3 @@ X/
     ├── pubspec.yaml
     ├── README.md
     └── wallet_mobile_android.iml
-
-flutter run -d chrome
-

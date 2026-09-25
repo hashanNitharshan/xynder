@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\StorageController;
 use App\Http\Controllers\Api\ConfigController;
 use App\Http\Controllers\Api\SupportTicketController;
 use App\Http\Controllers\Api\ChatController;
+use App\Http\Controllers\Api\RequestPaymentController;
 use App\Http\Controllers\PresenceController;
 
 Route::options('/{any}', function () {
@@ -15,7 +16,7 @@ Route::options('/{any}', function () {
 Route::get('/version', function () {
     return response()->json([
         'success'      => true,
-        'version'      => '1.1.10',
+        'version'      => '1.1.11',
         'apk_url'      => 'https://wallet.bitxnow.com/apk/wallet-mobile.apk',
         'force_update' => false,
     ]);
@@ -44,6 +45,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/requests', [AuthController::class, 'myRequests']);
     Route::post('/requests', [AuthController::class, 'createRequest']);
+
+    // Bank / UPI details of the person who receives INR for this request.
+    // Used by the Flutter transaction detail screen.
+    Route::get(
+        '/requests/{walletRequest}/payment-details',
+        [RequestPaymentController::class, 'show']
+    );
 
     Route::match(
         ['post', 'put', 'patch'],

@@ -12,10 +12,6 @@
 .uf-hero{background:var(--surface);padding:65px 85px 120px;position:relative;overflow:hidden}
 .uf-hero::after{content:"";position:absolute;inset:0;opacity:.07;background-image:linear-gradient(120deg,transparent 20%,rgba(240,185,11,.18) 21%,transparent 22%);background-size:260px 260px}
 .uf-hero-inner{position:relative;z-index:2;max-width:680px}
-.uf-eyebrow{color:var(--yellow);font-size:12px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;margin-bottom:14px}
-.uf-title{font-size:32px;line-height:1.12;font-weight:900;margin:0 0 18px}
-.uf-title span{color:var(--yellow);display:block}
-.uf-subtitle{color:#b8bdc2;font-size:13px;line-height:1.7;font-weight:700;max-width:560px}
 .uf-wrap{position:relative;z-index:5;max-width:1180px;margin:-82px auto 0;padding:0 24px}
 .uf-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 18px 40px rgba(0,0,0,.28)}
 .uf-head{background:var(--surface-alt);border-bottom:1px solid var(--border);padding:18px 22px;display:flex;justify-content:space-between;align-items:center;gap:15px}
@@ -23,6 +19,9 @@
 .uf-head-title i{color:var(--yellow)}
 .uf-body{padding:32px}
 .uf-error{background:rgba(240,185,11,.12);border:1px solid rgba(240,185,11,.35);color:#FFD45A;padding:14px 16px;border-radius:9px;margin-bottom:22px;font-weight:800}
+.uf-success{background:rgba(14,203,129,.12);border:1px solid rgba(14,203,129,.35);color:var(--green);padding:14px 16px;border-radius:9px;margin-bottom:22px;font-weight:800;display:flex;align-items:center;gap:8px}
+.uf-note{background:var(--surface-alt);border:1px solid var(--border);color:var(--muted);padding:12px 14px;border-radius:9px;margin:12px 0 16px;font-size:12px;font-weight:700;line-height:1.6;display:flex;gap:8px;align-items:flex-start}
+.uf-note i{color:var(--yellow);font-size:16px;margin-top:1px}
 .uf-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
 .uf-section{grid-column:1/-1;margin-top:12px;padding:14px 0 10px;border-bottom:1px solid var(--border);color:var(--yellow);font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;display:flex;align-items:center;gap:8px}
 .uf-group{display:flex;flex-direction:column;gap:8px}
@@ -33,17 +32,22 @@
 .uf-file{height:auto;padding:11px 14px}
 .uf-preview{margin-top:10px;width:140px;height:95px;border-radius:8px;object-fit:cover;border:1px solid var(--border);background:var(--surface-alt)}
 .uf-preview.round{width:96px;height:96px;border-radius:50%}
-.uf-bank-box{border:1px solid var(--border);background:var(--surface-alt);border-radius:12px;padding:16px;margin-bottom:14px}
+.uf-bank-box{border:1px solid var(--border);background:var(--surface-alt);border-radius:12px;padding:16px;margin-top:14px}
+.uf-bank-box.default{border-color:rgba(240,185,11,.55)}
+.uf-bank-box .uf-input{background:var(--surface)}
 .uf-badge{background:#3b2a09;color:var(--gold);padding:7px 12px;border-radius:20px;font-size:11px;font-weight:900;display:inline-flex}
 .uf-badge.normal{background:var(--surface);color:var(--muted)}
-.modal-foot-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.uf-bank-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.uf-bank-actions form{margin:0}
+.uf-empty{color:var(--muted);font-weight:800;margin:14px 0}
 .uf-actions{margin-top:28px;padding-top:22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:12px;flex-wrap:wrap}
 .uf-btn{border:0;border-radius:9px;padding:12px 18px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-size:13px}
 .uf-btn-red{background:var(--yellow);color:#0B0E11}
 .uf-btn-red:hover{background:var(--gold);color:#0B0E11}
 .uf-btn-dark{background:var(--surface-alt);color:#fff;border:1px solid var(--border)}
 .uf-btn-dark:hover{border-color:var(--yellow);color:#fff}
-@media(max-width:768px){.uf-page{margin:-16px}.uf-hero{padding:45px 24px 110px}.uf-title{font-size:34px}.uf-wrap{margin:-76px auto 0;padding:0 18px}.uf-body{padding:24px 18px}.uf-grid{grid-template-columns:1fr}.uf-head{align-items:flex-start;flex-direction:column}}
+.uf-btn-danger{color:#ff9b9b}
+@media(max-width:768px){.uf-page{margin:-16px}.uf-hero{padding:45px 24px 110px}.uf-wrap{margin:-76px auto 0;padding:0 18px}.uf-body{padding:24px 18px}.uf-grid{grid-template-columns:1fr}.uf-head{align-items:flex-start;flex-direction:column}}
 </style>
 @endpush
 
@@ -51,11 +55,7 @@
 <div class="uf-page">
 
 <section class="uf-hero">
-    <div class="uf-hero-inner">
-        
-       
-       
-    </div>
+    <div class="uf-hero-inner"></div>
 </section>
 
 <main class="uf-wrap">
@@ -66,12 +66,18 @@
         {{ $user->exists ? 'Edit Client / Merchant' : 'Add Client / Merchant' }}
     </h2>
 
-    <a class="uf-btn uf-btn-dark" href="{{ route('admin.users.index') }}">
+    <a class="uf-btn uf-btn-dark" href="{{ route('admin.users.index', ['type' => $user->role ?: 'client']) }}">
         <i class="ti ti-arrow-left"></i> Back
     </a>
 </div>
 
 <div class="uf-body">
+
+@if(session('success'))
+    <div class="uf-success">
+        <i class="ti ti-circle-check"></i> {{ session('success') }}
+    </div>
+@endif
 
 @if($errors->any())
     <div class="uf-error">
@@ -188,7 +194,7 @@
     </div>
 
     @unless($user->exists)
-        <div class="uf-section"><i class="ti ti-building-bank"></i> Bank Details</div>
+        <div class="uf-section"><i class="ti ti-building-bank"></i> Bank Details (Default Account)</div>
 
         <div class="uf-group">
             <label class="uf-label">Bank Name</label>
@@ -239,7 +245,7 @@
 </div>
 
 <div class="uf-actions">
-    <a class="uf-btn uf-btn-dark" href="{{ route('admin.users.index') }}">
+    <a class="uf-btn uf-btn-dark" href="{{ route('admin.users.index', ['type' => $user->role ?: 'client']) }}">
         <i class="ti ti-x"></i> Cancel
     </a>
 
@@ -254,36 +260,47 @@
 @if($user->exists)
     <div class="uf-section" style="margin-top:32px;"><i class="ti ti-building-bank"></i> All Bank Details</div>
 
+    <div class="uf-note">
+        <i class="ti ti-info-circle"></i>
+        <div>
+            @if($user->role === 'merchant')
+                The default bank account is shown to clients on the app transaction detail screen when they buy USDT from this merchant. Other accounts are shown below it.
+            @else
+                The default bank account is shown to the merchant on the app transaction detail screen when this client sells USDT.
+            @endif
+        </div>
+    </div>
+
     @forelse($user->bankAccounts as $bank)
-        <div class="uf-bank-box">
-            <form method="POST" action="{{ route('admin.users.bank.update', [$user, $bank]) }}">
+        <div class="uf-bank-box {{ $bank->is_default ? 'default' : '' }}">
+            <form id="bankUpdate{{ $bank->id }}" method="POST" action="{{ route('admin.users.bank.update', [$user, $bank]) }}">
                 @csrf
                 @method('PUT')
 
                 <div class="uf-grid">
                     <div class="uf-group">
-                        <label class="uf-label">Bank Name</label>
-                        <input class="uf-input" type="text" name="bank_name" value="{{ old('bank_name', $bank->bank_name) }}" required>
+                        <label class="uf-label">Bank Name *</label>
+                        <input class="uf-input" type="text" name="bank_name" value="{{ $bank->bank_name }}" required>
                     </div>
 
                     <div class="uf-group">
                         <label class="uf-label">Branch</label>
-                        <input class="uf-input" type="text" name="branch" value="{{ old('branch', $bank->branch) }}">
+                        <input class="uf-input" type="text" name="branch" value="{{ $bank->branch }}">
                     </div>
 
                     <div class="uf-group">
-                        <label class="uf-label">Account Number</label>
-                        <input class="uf-input" type="text" name="account_number" value="{{ old('account_number', $bank->account_number) }}" required>
+                        <label class="uf-label">Account Number *</label>
+                        <input class="uf-input" type="text" name="account_number" value="{{ $bank->account_number }}" required>
                     </div>
 
                     <div class="uf-group">
                         <label class="uf-label">Account Type</label>
-                        <input class="uf-input" type="text" name="account_type" value="{{ old('account_type', $bank->account_type) }}">
+                        <input class="uf-input" type="text" name="account_type" value="{{ $bank->account_type }}">
                     </div>
 
                     <div class="uf-group">
                         <label class="uf-label">IFSC</label>
-                        <input class="uf-input" type="text" name="ifsc" value="{{ old('ifsc', $bank->ifsc) }}">
+                        <input class="uf-input" type="text" name="ifsc" value="{{ $bank->ifsc }}">
                     </div>
 
                     <div class="uf-group">
@@ -297,43 +314,54 @@
                         </div>
                     </div>
                 </div>
-
-                <div class="modal-foot-actions" style="margin-top:14px;">
-                    <button class="uf-btn uf-btn-red" type="submit">
-                        <i class="ti ti-device-floppy"></i> Update Bank
-                    </button>
             </form>
 
-            @unless($bank->is_default)
-                <form method="POST" action="{{ route('admin.users.bank.default', [$user, $bank]) }}">
+            <div class="uf-bank-actions">
+                <button class="uf-btn uf-btn-red" type="submit" form="bankUpdate{{ $bank->id }}">
+                    <i class="ti ti-device-floppy"></i> Update Bank
+                </button>
+
+                @unless($bank->is_default)
+                    <form method="POST" action="{{ route('admin.users.bank.default', [$user, $bank]) }}">
+                        @csrf
+                        <button class="uf-btn uf-btn-dark" type="submit">
+                            <i class="ti ti-star"></i> Make Default
+                        </button>
+                    </form>
+                @endunless
+
+                <form method="POST" action="{{ route('admin.users.bank.destroy', [$user, $bank]) }}" onsubmit="return confirm('Delete this bank account?')">
                     @csrf
-                    <button class="uf-btn uf-btn-dark" type="submit">
-                        <i class="ti ti-star"></i> Make Default
+                    @method('DELETE')
+                    <button class="uf-btn uf-btn-dark uf-btn-danger" type="submit">
+                        <i class="ti ti-trash"></i> Delete
                     </button>
                 </form>
-            @endunless
-
-            <form method="POST" action="{{ route('admin.users.bank.destroy', [$user, $bank]) }}" onsubmit="return confirm('Delete this bank account?')">
-                @csrf
-                @method('DELETE')
-                <button class="uf-btn uf-btn-dark" type="submit" style="color:#ff9b9b;">
-                    <i class="ti ti-trash"></i> Delete
-                </button>
-            </form>
-                </div>
+            </div>
         </div>
     @empty
-        <div style="color:var(--muted);font-weight:800;margin-bottom:14px;">No bank accounts added yet.</div>
+        @if($user->bank_name || $user->account_number)
+            <div class="uf-note">
+                <i class="ti ti-alert-circle"></i>
+                <div>
+                    Old bank details found: {{ $user->bank_name ?? '—' }}
+                    @if($user->account_number) (Acc: {{ $user->account_number }}) @endif.
+                    These are still shown in the app. Add a new bank account below to replace them.
+                </div>
+            </div>
+        @else
+            <div class="uf-empty">No bank accounts added yet.</div>
+        @endif
     @endforelse
 
-    <div class="uf-section"><i class="ti ti-plus"></i> Add New Bank Account</div>
+    <div class="uf-section" style="margin-top:24px;"><i class="ti ti-plus"></i> Add New Bank Account</div>
 
-    <form method="POST" action="{{ route('admin.users.bank.store', $user) }}">
+    <form method="POST" action="{{ route('admin.users.bank.store', $user) }}" style="margin-top:16px;">
         @csrf
 
         <div class="uf-grid">
             <div class="uf-group">
-                <label class="uf-label">Bank Name</label>
+                <label class="uf-label">Bank Name *</label>
                 <input class="uf-input" type="text" name="bank_name" required>
             </div>
 
@@ -343,13 +371,13 @@
             </div>
 
             <div class="uf-group">
-                <label class="uf-label">Account Number</label>
+                <label class="uf-label">Account Number *</label>
                 <input class="uf-input" type="text" name="account_number" required>
             </div>
 
             <div class="uf-group">
                 <label class="uf-label">Account Type</label>
-                <input class="uf-input" type="text" name="account_type">
+                <input class="uf-input" type="text" name="account_type" placeholder="Savings / Current">
             </div>
 
             <div class="uf-group">
@@ -360,7 +388,7 @@
             <div class="uf-group">
                 <label class="uf-label">Default</label>
                 <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-weight:800;color:var(--muted);">
-                    <input type="checkbox" name="is_default" value="1"> Set as default
+                    <input type="checkbox" name="is_default" value="1" @checked($user->bankAccounts->isEmpty())> Set as default
                 </label>
             </div>
         </div>

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../services/api_service.dart';
+import '../services/payment_details_service.dart';
 import 'chat_screen.dart';
 
 class TransactionDetailScreen extends StatefulWidget {
@@ -41,10 +42,58 @@ class _TransactionDetailScreenState
   bool _closingRequest = false;
   bool _bankExpanded = false;
 
+  // Fresh bank / UPI details loaded from the server.
+  bool _loadingPayment = false;
+  Map<String, dynamic>? _paymentData;
+
   @override
   void initState() {
     super.initState();
     item = Map<String, dynamic>.from(widget.item);
+
+    if (!isTransfer) {
+      _loadingPayment = true;
+      loadPaymentDetails(showLoader: false);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // LOAD PAYMENT DETAILS
+  // ---------------------------------------------------------------------------
+
+  Future<void> loadPaymentDetails({bool showLoader = true}) async {
+    final String requestId =
+        item['id']?.toString().trim() ?? '';
+
+    if (requestId.isEmpty || requestId.toLowerCase() == 'null') {
+      if (mounted) {
+        setState(() {
+          _loadingPayment = false;
+        });
+      }
+      return;
+    }
+
+    if (showLoader && mounted) {
+      setState(() {
+        _loadingPayment = true;
+      });
+    }
+
+    final Map<String, dynamic> response =
+        await PaymentDetailsService.forRequest(requestId);
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _loadingPayment = false;
+
+      if (response['success'] == true) {
+        _paymentData = Map<String, dynamic>.from(response);
+      }
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -530,8 +579,17 @@ class _TransactionDetailScreenState
   //
   // Buy USD  (deposit):    client sends INR  -> merchant's bank / UPI
   // Sell USD (withdrawal): merchant sends INR -> client's bank / UPI
+  //
+  // Fresh data comes from /api/requests/{id}/payment-details.
+  // If that call fails, the old data inside the request is used.
 
   bool get payeeIsMe {
+    final dynamic fresh = _paymentData?['payee_is_me'];
+
+    if (fresh is bool) {
+      return fresh;
+    }
+
     if (isWithdrawal) {
       return currentRole == 'client';
     }
@@ -540,6 +598,12 @@ class _TransactionDetailScreenState
   }
 
   Map<String, dynamic> get payee {
+    final dynamic fresh = _paymentData?['payee'];
+
+    if (fresh is Map) {
+      return Map<String, dynamic>.from(fresh);
+    }
+
     dynamic source;
 
     if (payeeIsMe) {
@@ -557,7 +621,28 @@ class _TransactionDetailScreenState
     return <String, dynamic>{};
   }
 
+  String get payeeName {
+    final String legal = value(payee['original_name']);
+
+    if (legal != '—') {
+      return legal;
+    }
+
+    return value(payee['name']);
+  }
+
   Map<String, dynamic> get payeeBank {
+    if (_paymentData != null) {
+      final dynamic freshBank = _paymentData!['default_bank'];
+
+      if (freshBank is Map) {
+        return Map<String, dynamic>.from(freshBank);
+      }
+
+      // Server says this person has no bank account.
+      return <String, dynamic>{};
+    }
+
     final dynamic bank = payee['default_bank'];
 
     if (bank is Map) {
@@ -572,6 +657,31 @@ class _TransactionDetailScreenState
       'account_type': payee['account_type'],
       'ifsc': payee['ifsc'],
     };
+  }
+
+  // Extra bank accounts (not the default one).
+  List<Map<String, dynamic>> get otherBanks {
+    final dynamic list = _paymentData?['bank_accounts'];
+
+    if (list is! List) {
+      return <Map<String, dynamic>>[];
+    }
+
+    final String defaultAccount =
+        value(payeeBank['account_number']);
+    final String defaultBankName =
+        value(payeeBank['bank_name']);
+
+    return list
+        .whereType<Map>()
+        .map((bank) => Map<String, dynamic>.from(bank))
+        .where((bank) {
+      final bool sameAsDefault =
+          value(bank['account_number']) == defaultAccount &&
+              value(bank['bank_name']) == defaultBankName;
+
+      return !sameAsDefault && bank['is_default'] != true;
+    }).toList();
   }
 
   bool get hasBank {
@@ -1234,17 +1344,62 @@ class _TransactionDetailScreenState
     );
   }
 
+  // Bank rows for one account.
+  Widget bankDetailsBlock(Map<String, dynamic> bank) {
+    return Column(
+      children: [
+        bankLine('Bank', value(bank['bank_name'])),
+        bankLine(
+          'Account',
+          value(bank['account_number']),
+          copyable: true,
+        ),
+        bankLine(
+          'IFSC',
+          value(bank['ifsc']),
+          copyable: true,
+        ),
+        bankLine('Branch', value(bank['branch'])),
+        bankLine('Type', value(bank['account_type'])),
+      ],
+    );
+  }
+
+  Widget smallLabel(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 10, bottom: 4),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          text,
+          style: const TextStyle(
+            color: amber,
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.3,
+          ),
+        ),
+      ),
+    );
+  }
+
   // Compact bank / UPI card. Collapsed = one small row. Tap to see details.
   Widget payeeBankCard() {
     final Map<String, dynamic> bank = payeeBank;
+    final List<Map<String, dynamic>> extraBanks = otherBanks;
 
     final String bankName = value(bank['bank_name']);
     final String account = value(bank['account_number']);
     final String upiId = value(payee['upi_id']);
 
+    final bool waitingFirstLoad =
+        _loadingPayment && _paymentData == null;
+
     String summary;
 
-    if (hasBank) {
+    if (waitingFirstLoad) {
+      summary = 'Loading payment details...';
+    } else if (hasBank) {
       final String masked = maskedAccount(account);
       summary = bankName != '—'
           ? (masked.isNotEmpty ? '$bankName  $masked' : bankName)
@@ -1257,7 +1412,8 @@ class _TransactionDetailScreenState
           : 'No bank or UPI added yet. Please ask in chat.';
     }
 
-    final bool hasDetails = hasBank || hasUpi;
+    final bool hasDetails = !waitingFirstLoad &&
+        (hasBank || hasUpi || extraBanks.isNotEmpty);
 
     return Container(
       width: double.infinity,
@@ -1317,7 +1473,16 @@ class _TransactionDetailScreenState
                       ],
                     ),
                   ),
-                  if (hasDetails)
+                  if (waitingFirstLoad)
+                    const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: amber,
+                      ),
+                    )
+                  else if (hasDetails)
                     AnimatedRotation(
                       turns: _bankExpanded ? 0.5 : 0,
                       duration: const Duration(milliseconds: 180),
@@ -1333,7 +1498,7 @@ class _TransactionDetailScreenState
           ),
           AnimatedCrossFade(
             duration: const Duration(milliseconds: 180),
-            crossFadeState: _bankExpanded
+            crossFadeState: _bankExpanded && hasDetails
                 ? CrossFadeState.showSecond
                 : CrossFadeState.showFirst,
             firstChild: const SizedBox(width: double.infinity),
@@ -1346,13 +1511,33 @@ class _TransactionDetailScreenState
               child: Column(
                 children: [
                   const SizedBox(height: 6),
-                  bankLine('Name', value(payee['name'])),
-                  bankLine('Bank', bankName),
-                  bankLine('Account', account, copyable: true),
-                  bankLine('IFSC', value(bank['ifsc']), copyable: true),
-                  bankLine('Branch', value(bank['branch'])),
-                  bankLine('Type', value(bank['account_type'])),
-                  bankLine('UPI ID', upiId, copyable: true),
+                  bankLine('Name', payeeName),
+                  if (hasBank) ...[
+                    if (extraBanks.isNotEmpty)
+                      smallLabel('DEFAULT ACCOUNT'),
+                    bankDetailsBlock(bank),
+                  ],
+                  if (extraBanks.isNotEmpty) ...[
+                    smallLabel('OTHER ACCOUNTS'),
+                    for (final Map<String, dynamic> extra in extraBanks)
+                      Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(top: 4),
+                        padding: const EdgeInsets.only(top: 4),
+                        decoration: const BoxDecoration(
+                          border: Border(
+                            top: BorderSide(color: border),
+                          ),
+                        ),
+                        child: bankDetailsBlock(extra),
+                      ),
+                  ],
+                  if (hasUpi) ...[
+                    if (hasBank || extraBanks.isNotEmpty)
+                      smallLabel('UPI'),
+                    bankLine('UPI Name', value(payee['upi_name'])),
+                    bankLine('UPI ID', upiId, copyable: true),
+                  ],
                   if (upiQrUrl.isNotEmpty)
                     Align(
                       alignment: Alignment.centerRight,
@@ -1575,41 +1760,50 @@ class _TransactionDetailScreenState
       ),
       body: SafeArea(
         top: false,
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(
-            20,
-            5,
-            20,
-            30,
-          ),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: 430,
-              ),
-              child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                children: [
-                  statusHeader(),
-                  const SizedBox(height: 24),
-                  orderHeader(),
-                  const SizedBox(height: 18),
-                  if (isTransfer)
-                    ...transferRows()
-                  else
-                    ...requestRows(),
-                  divider(),
-                  isTransfer
-                      ? statusSection()
-                      : paymentMethodSection(),
-                  if (canClientCloseRequest) ...[
+        child: RefreshIndicator(
+          color: amber,
+          backgroundColor: surface,
+          onRefresh: isTransfer
+              ? () async {}
+              : () => loadPaymentDetails(),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
+            padding: const EdgeInsets.fromLTRB(
+              20,
+              5,
+              20,
+              30,
+            ),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: 430,
+                ),
+                child: Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                  children: [
+                    statusHeader(),
+                    const SizedBox(height: 24),
+                    orderHeader(),
                     const SizedBox(height: 18),
-                    inlineCloseRequestButton(),
+                    if (isTransfer)
+                      ...transferRows()
+                    else
+                      ...requestRows(),
+                    divider(),
+                    isTransfer
+                        ? statusSection()
+                        : paymentMethodSection(),
+                    if (canClientCloseRequest) ...[
+                      const SizedBox(height: 18),
+                      inlineCloseRequestButton(),
+                    ],
+                    const SizedBox(height: 30),
                   ],
-                  const SizedBox(height: 30),
-                ],
+                ),
               ),
             ),
           ),

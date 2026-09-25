@@ -225,24 +225,6 @@
             background:transparent;
         }
 
-        .p-avatar-wrap{
-            position:relative;
-            flex-shrink:0;
-        }
-
-        .p-avatar-dot{
-            position:absolute;
-            right:-1px;
-            bottom:-1px;
-            width:11px;
-            height:11px;
-            border-radius:50%;
-            background:var(--muted);
-            border:2px solid var(--surface);
-        }
-
-        .p-avatar-dot.is-online{background:var(--green)}
-
         .main{
             min-width:0;
             display:flex;
@@ -371,57 +353,6 @@
             height:32px;
             background:var(--border);
             margin:0 7px;
-        }
-
-        /* ── Admin online / offline switch ── */
-        .presence-form{margin:0}
-
-        .presence-btn{
-            height:40px;
-            display:inline-flex;
-            align-items:center;
-            gap:8px;
-            padding:0 13px;
-            border-radius:20px;
-            border:1px solid var(--border);
-            background:var(--surface);
-            color:var(--text-secondary);
-            font-size:12px;
-            font-weight:900;
-            cursor:pointer;
-            white-space:nowrap;
-            transition:.15s;
-        }
-
-        .presence-btn:hover{border-color:rgba(240,185,11,.5)}
-
-        .presence-btn:focus-visible{
-            outline:2px solid var(--orange);
-            outline-offset:2px;
-        }
-
-        .presence-dot{
-            width:9px;
-            height:9px;
-            border-radius:50%;
-            background:var(--muted);
-            flex-shrink:0;
-        }
-
-        .presence-btn.is-online{
-            color:var(--green);
-            border-color:rgba(14,203,129,.45);
-            background:rgba(14,203,129,.08);
-        }
-
-        .presence-btn.is-online .presence-dot{
-            background:var(--green);
-            box-shadow:0 0 0 3px rgba(14,203,129,.18);
-        }
-
-        .presence-hint{
-            color:var(--muted);
-            font-weight:700;
         }
 
         .profile-wrap{position:relative}
@@ -674,8 +605,6 @@
             .profile-btn{padding:0 8px}
             .footer{left:0}
 
-            .presence-hint{display:none}
-
             .content{
                 padding:18px;
                 padding-bottom:62px;
@@ -689,9 +618,6 @@
             }
 
             .search-box,.tb-divider{display:none}
-
-            .presence-btn{padding:0 11px}
-            .presence-label{display:none}
 
             .content{
                 padding:16px;
@@ -725,8 +651,6 @@
     $bitxnowLogo = asset('images/bitxnow_logo.jpeg');
     $userPhoto = $authUser?->photo ? url('/api/storage/'.$authUser->photo) : null;
     $photo = $role === 'admin' ? $bitxnowLogo : ($userPhoto ?: $bitxnowLogo);
-
-    $isOnlineNow = (bool) ($authUser?->is_online) && ! (bool) ($authUser?->appear_offline);
 
     if ($role === 'merchant') {
         $dashboardRoute = route('merchant.dashboard');
@@ -886,28 +810,6 @@
             </div>
 
             <div class="topbar-right">
-                @if($role === 'admin')
-                    <form method="POST"
-                          action="{{ route('presence.toggle') }}"
-                          class="presence-form"
-                          id="presenceForm">
-                        @csrf
-                        <button type="submit"
-                                id="presenceBtn"
-                                class="presence-btn {{ $isOnlineNow ? 'is-online' : '' }}"
-                                title="{{ $isOnlineNow ? 'Click to go offline' : 'Click to go online' }}"
-                                aria-label="{{ $isOnlineNow ? 'You are online. Click to go offline.' : 'You are offline. Click to go online.' }}">
-                            <span class="presence-dot"></span>
-                            <span class="presence-label" id="presenceLabel">
-                                {{ $isOnlineNow ? 'Online' : 'Offline' }}
-                            </span>
-                            <span class="presence-hint" id="presenceHint">
-                                {{ $isOnlineNow ? 'Go offline' : 'Go online' }}
-                            </span>
-                        </button>
-                    </form>
-                @endif
-
                 <div class="tb-icon hide-mobile" title="Language">
                     <i class="ti ti-world"></i>
                 </div>
@@ -932,11 +834,8 @@
                             aria-haspopup="true"
                             aria-expanded="false"
                             id="profileToggle">
-                        <div class="p-avatar-wrap">
-                            <div class="p-avatar">
-                                <img src="{{ $photo }}" alt="BITXNOW">
-                            </div>
-                            <span class="p-avatar-dot {{ $isOnlineNow ? 'is-online' : '' }}" id="presenceAvatarDot"></span>
+                        <div class="p-avatar">
+                            <img src="{{ $photo }}" alt="BITXNOW">
                         </div>
 
                         <div>
@@ -960,18 +859,6 @@
                         </div>
 
                         <div class="pm-items">
-                            @if($role === 'admin')
-                                <form method="POST" action="{{ route('presence.toggle') }}">
-                                    @csrf
-                                    <button class="pm-link" type="submit" role="menuitem">
-                                        <i class="ti {{ $isOnlineNow ? 'ti-eye-off' : 'ti-eye' }}"></i>
-                                        {{ $isOnlineNow ? 'Go offline' : 'Go online' }}
-                                    </button>
-                                </form>
-                            @endif
-
-                            <div class="pm-sep"></div>
-
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
                                 <button class="pm-logout" type="submit" role="menuitem">
@@ -1057,70 +944,6 @@
             if (sidebar) sidebar.classList.remove('open');
         }
     });
-
-    /*
-     * Online heartbeat.
-     * Keeps this user online while the panel is open.
-     * If the panel is closed, the user becomes offline after about 2 minutes.
-     */
-    (function () {
-        const heartbeatUrl = @json(route('presence.heartbeat'));
-        const tokenMeta = document.querySelector('meta[name="csrf-token"]');
-        const csrfToken = tokenMeta ? tokenMeta.getAttribute('content') : '';
-
-        function paintPresence(isOnline) {
-            const btn = document.getElementById('presenceBtn');
-            const label = document.getElementById('presenceLabel');
-            const hint = document.getElementById('presenceHint');
-            const dot = document.getElementById('presenceAvatarDot');
-
-            if (dot) dot.classList.toggle('is-online', isOnline);
-
-            if (!btn) return;
-
-            btn.classList.toggle('is-online', isOnline);
-            btn.title = isOnline ? 'Click to go offline' : 'Click to go online';
-            btn.setAttribute(
-                'aria-label',
-                isOnline ? 'You are online. Click to go offline.' : 'You are offline. Click to go online.'
-            );
-
-            if (label) label.textContent = isOnline ? 'Online' : 'Offline';
-            if (hint) hint.textContent = isOnline ? 'Go offline' : 'Go online';
-        }
-
-        function beat() {
-            fetch(heartbeatUrl, {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers: {
-                    'X-CSRF-TOKEN': csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                }
-            })
-                .then(function (response) {
-                    if (response.status === 401 || response.status === 419) {
-                        window.location.reload();
-                        return null;
-                    }
-
-                    return response.ok ? response.json() : null;
-                })
-                .then(function (data) {
-                    if (data && data.success) {
-                        paintPresence(!!data.is_online && !data.appear_offline);
-                    }
-                })
-                .catch(function () {});
-        }
-
-        setInterval(beat, 45000);
-
-        document.addEventListener('visibilitychange', function () {
-            if (!document.hidden) beat();
-        });
-    })();
 </script>
 
 @stack('scripts')

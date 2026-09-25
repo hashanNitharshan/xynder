@@ -13,6 +13,14 @@ use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
+    private const BANK_FIELDS = [
+        'bank_name',
+        'branch',
+        'account_number',
+        'account_type',
+        'ifsc',
+    ];
+
     private function adminOnly(): void
     {
         if (! Auth::user() || Auth::user()->role !== 'admin') {
@@ -95,7 +103,7 @@ class UserController extends Controller
 
         $user->delete();
 
-        return back()->with('success');
+        return back()->with('success', 'User deleted.');
     }
 
     public function toggleStatus(User $user)
@@ -205,11 +213,36 @@ class UserController extends Controller
         ]);
     }
 
+    /**
+     * Take the bank fields out of the user data.
+     *
+     * Bank details are saved in the user_bank_accounts table, not on the
+     * users table. Returns the bank data only when a bank name or account
+     * number was entered.
+     */
+    private function pullBankData(array &$data): ?array
+    {
+        $bank = [];
+
+        foreach (self::BANK_FIELDS as $field) {
+            $bank[$field] = isset($data[$field]) ? trim((string) $data[$field]) : null;
+            unset($data[$field]);
+        }
+
+        if (empty($bank['bank_name']) && empty($bank['account_number'])) {
+            return null;
+        }
+
+        return $bank;
+    }
+
     public function store(Request $request)
     {
         $this->adminOnly();
 
         $data = $this->validateUser($request);
+
+        $bankData = $this->pullBankData($data);
 
         $imageFolders = [
             'photo'         => 'users/photos',
@@ -227,11 +260,19 @@ class UserController extends Controller
         $data['status'] = $request->input('status', 'active');
         $data['is_active'] = $data['status'] === 'active';
 
-        User::create($data);
+        $user = User::create($data);
+
+        // First bank account entered on the create form becomes the default.
+        if ($bankData) {
+            UserBankAccount::create($bankData + [
+                'user_id'    => $user->id,
+                'is_default' => true,
+            ]);
+        }
 
         return redirect()
             ->route('admin.users.index', ['type' => $data['role']])
-            ->with('success');
+            ->with('success', ucfirst($data['role']) . ' created successfully.');
     }
 
     public function edit(User $user)
@@ -264,6 +305,9 @@ class UserController extends Controller
 
         $data = $this->validateUser($request, $user->id);
 
+        // Bank accounts are managed in the "All Bank Details" section.
+        $this->pullBankData($data);
+
         $imageFolders = [
             'photo'         => 'users/photos',
             'aadhaar_photo' => 'users/aadhaar',
@@ -291,20 +335,33 @@ class UserController extends Controller
 
         return redirect()
             ->route('admin.users.index', ['type' => $data['role']])
-            ->with('success');
+            ->with('success', 'User updated successfully.');
+    }
+
+    // -------------------------------------------------------------------------
+    // BANK ACCOUNTS (admin adds / edits bank details for clients and merchants)
+    // -------------------------------------------------------------------------
+
+    private function bankOwnerAllowed(User $user): bool
+    {
+        return in_array($user->role, ['client', 'merchant'], true);
     }
 
     public function storeBank(Request $request, User $user)
     {
         $this->adminOnly();
 
+        if (! $this->bankOwnerAllowed($user)) {
+            return back()->withErrors('Bank details can only be added for clients and merchants.');
+        }
+
         $data = $request->validate([
-            'bank_name' => 'required|string|max:255',
-            'branch' => 'nullable|string|max:255',
+            'bank_name'      => 'required|string|max:255',
+            'branch'         => 'nullable|string|max:255',
             'account_number' => 'required|string|max:255',
-            'account_type' => 'nullable|string|max:255',
-            'ifsc' => 'nullable|string|max:255',
-            'is_default' => 'nullable|boolean',
+            'account_type'   => 'nullable|string|max:255',
+            'ifsc'           => 'nullable|string|max:255',
+            'is_default'     => 'nullable|boolean',
         ]);
 
         $data['user_id'] = $user->id;
@@ -318,7 +375,7 @@ class UserController extends Controller
 
         UserBankAccount::create($data);
 
-        return back()->with('success');
+        return back()->with('success', 'Bank account added.');
     }
 
     public function updateBank(Request $request, User $user, UserBankAccount $bankAccount)
@@ -328,16 +385,16 @@ class UserController extends Controller
         abort_unless((int) $bankAccount->user_id === (int) $user->id, 403);
 
         $data = $request->validate([
-            'bank_name' => 'required|string|max:255',
-            'branch' => 'nullable|string|max:255',
+            'bank_name'      => 'required|string|max:255',
+            'branch'         => 'nullable|string|max:255',
             'account_number' => 'required|string|max:255',
-            'account_type' => 'nullable|string|max:255',
-            'ifsc' => 'nullable|string|max:255',
+            'account_type'   => 'nullable|string|max:255',
+            'ifsc'           => 'nullable|string|max:255',
         ]);
 
         $bankAccount->update($data);
 
-        return back()->with('success');
+        return back()->with('success', 'Bank account updated.');
     }
 
     public function deleteBank(User $user, UserBankAccount $bankAccount)
@@ -358,7 +415,7 @@ class UserController extends Controller
             }
         }
 
-        return back()->with('success');
+        return back()->with('success', 'Bank account deleted.');
     }
 
     public function setDefaultBank(User $user, UserBankAccount $bankAccount)
@@ -373,6 +430,6 @@ class UserController extends Controller
             'is_default' => true,
         ]);
 
-        return back()->with('success');
+        return back()->with('success', 'Default bank account updated.');
     }
 }
