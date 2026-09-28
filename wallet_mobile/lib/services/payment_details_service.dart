@@ -5,37 +5,20 @@ import 'package:http/http.dart' as http;
 import 'api_service.dart';
 
 class PaymentDetailsService {
-  /// Bank / UPI details of the person who receives INR for this request.
+  /// Loads the bank / UPI details of the person who receives INR
+  /// for one Buy / Sell request.
   ///
-  /// Buy USDT  (deposit):    merchant bank details
-  /// Sell USDT (withdrawal): client bank details
-  static Future<Map<String, dynamic>> forRequest(
-    String requestId,
-  ) async {
+  /// GET /api/requests/{id}/payment-details
+  static Future<Map<String, dynamic>> forRequest(String requestId) async {
     try {
-      final requestHeaders = await ApiService.headers();
-
-      requestHeaders.addAll({
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-        "Pragma": "no-cache",
-      });
-
-      final uri = Uri.parse(
-        "${ApiService.baseUrl}/requests/$requestId/payment-details",
-      ).replace(
-        queryParameters: {
-          "_ts": DateTime.now().millisecondsSinceEpoch.toString(),
-        },
-      );
-
       final response = await http
           .get(
-            uri,
-            headers: requestHeaders,
+            Uri.parse(
+              '${ApiService.baseUrl}/requests/$requestId/payment-details',
+            ),
+            headers: await ApiService.headers(),
           )
-          .timeout(
-            const Duration(seconds: 25),
-          );
+          .timeout(const Duration(seconds: 25));
 
       final data = ApiService.decode(response);
 
@@ -46,13 +29,13 @@ class PaymentDetailsService {
       return data;
     } on TimeoutException {
       return {
-        "success": false,
-        "message": "Payment details request timeout.",
+        'success': false,
+        'message': 'Payment details timeout.',
       };
     } catch (error) {
       return {
-        "success": false,
-        "message": error.toString(),
+        'success': false,
+        'message': error.toString(),
       };
     }
   }

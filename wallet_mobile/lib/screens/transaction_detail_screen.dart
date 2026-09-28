@@ -597,6 +597,27 @@ class _TransactionDetailScreenState
     return currentRole == 'merchant';
   }
 
+  // FIX: the final INR row now shows the correct side.
+  // The person who receives the INR sees "You Receive".
+  // The person who sends the INR sees "You Pay".
+  // Buy USD:  client pays,    merchant receives.
+  // Sell USD: merchant pays,  client receives.
+  String get totalLabel {
+    if (currentRole == 'admin') {
+      return 'Total INR';
+    }
+
+    return payeeIsMe ? 'You Receive' : 'You Pay';
+  }
+
+  Color get totalColor {
+    if (currentRole == 'admin') {
+      return amber;
+    }
+
+    return payeeIsMe ? green : amber;
+  }
+
   Map<String, dynamic> get payee {
     final dynamic fresh = _paymentData?['payee'];
 
@@ -1676,10 +1697,11 @@ class _TransactionDetailScreenState
             ? amber
             : textPrimary,
       ),
+      // FIX: label and color now depend on who really pays or receives.
       detailRow(
-        isWithdrawal ? 'You Receive' : 'You Pay',
+        totalLabel,
         money(finalTotal, '₹'),
-        dataColor: isWithdrawal ? green : amber,
+        dataColor: totalColor,
         bold: true,
       ),
       detailRow(
