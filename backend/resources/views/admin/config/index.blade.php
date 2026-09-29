@@ -68,7 +68,7 @@
 
 .cfg-stats{
     display:grid;
-    grid-template-columns:repeat(4,minmax(0,1fr));
+    grid-template-columns:repeat(5,minmax(0,1fr));
     gap:18px;
     margin-bottom:28px;
 }
@@ -174,7 +174,7 @@
 
 .cfg-grid{
     display:grid;
-    grid-template-columns:repeat(5,minmax(0,1fr));
+    grid-template-columns:repeat(3,minmax(0,1fr));
     gap:14px;
     margin-bottom:18px;
 }
@@ -236,7 +236,7 @@
 
 .cfg-table{
     width:100%;
-    min-width:760px;
+    min-width:900px;
     border-collapse:collapse;
     table-layout:fixed;
     font-size:13px;
@@ -282,6 +282,27 @@
 
 .cfg-green{
     color:var(--green);
+}
+
+.cfg-red{
+    color:var(--red);
+}
+
+.cfg-hint{
+    margin-top:6px;
+    color:var(--muted-dark);
+    font-size:10.5px;
+    font-weight:700;
+}
+
+.cfg-stat-icon.buy{
+    color:var(--green);
+    background:rgba(14,203,129,.12);
+}
+
+.cfg-stat-icon.sell{
+    color:var(--red);
+    background:rgba(239,68,68,.12);
 }
 
 .cfg-empty{
@@ -378,7 +399,7 @@
         margin:-82px 24px 0;
     }
 
-    .cfg-grid{
+    .cfg-stats{
         grid-template-columns:repeat(3,minmax(0,1fr));
     }
 }
@@ -484,16 +505,30 @@
             </div>
 
             <div class="cfg-stat">
-                <div class="cfg-stat-icon">
-                    <i class="ti ti-currency-rupee"></i>
+                <div class="cfg-stat-icon buy">
+                    <i class="ti ti-trending-up"></i>
                 </div>
 
                 <div class="cfg-stat-label">
-                    INR Rate
+                    Buy USD Rate (INR)
                 </div>
 
                 <div class="cfg-stat-value">
-                    {{ number_format((float)($config->inr_rate ?? 0), 4) }}
+                    ₹{{ number_format($config->buyRate(), 4) }}
+                </div>
+            </div>
+
+            <div class="cfg-stat">
+                <div class="cfg-stat-icon sell">
+                    <i class="ti ti-trending-down"></i>
+                </div>
+
+                <div class="cfg-stat-label">
+                    Sell USD Rate (INR)
+                </div>
+
+                <div class="cfg-stat-value">
+                    ₹{{ number_format($config->sellRate(), 4) }}
                 </div>
             </div>
 
@@ -535,7 +570,7 @@
                     </h2>
 
                     <div class="cfg-subtitle">
-                        Set new exchange rates and fees.
+                        Set separate Buy and Sell INR rates for 1 USD, and the fees.
                     </div>
                 </div>
             </div>
@@ -565,19 +600,53 @@
                     </div>
 
                     <div class="cfg-group">
-                        <label for="inr_rate">
-                            INR Rate
+                        <label for="buy_inr_rate">
+                            Buy USD Rate (INR per 1 USD)
                         </label>
 
                         <input
-                            id="inr_rate"
+                            id="buy_inr_rate"
                             class="cfg-control"
                             type="number"
                             step="0.0001"
-                            name="inr_rate"
-                            value="{{ old('inr_rate', $config->inr_rate) }}"
+                            min="0.0001"
+                            name="buy_inr_rate"
+                            value="{{ old('buy_inr_rate', $config->buyRate()) }}"
                             required
                         >
+
+                        <div class="cfg-hint">
+                            Used when a client buys USD.
+                        </div>
+
+                        @error('buy_inr_rate')
+                            <div class="cfg-hint cfg-red">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="cfg-group">
+                        <label for="sell_inr_rate">
+                            Sell USD Rate (INR per 1 USD)
+                        </label>
+
+                        <input
+                            id="sell_inr_rate"
+                            class="cfg-control"
+                            type="number"
+                            step="0.0001"
+                            min="0.0001"
+                            name="sell_inr_rate"
+                            value="{{ old('sell_inr_rate', $config->sellRate()) }}"
+                            required
+                        >
+
+                        <div class="cfg-hint">
+                            Used when a client sells USD.
+                        </div>
+
+                        @error('sell_inr_rate')
+                            <div class="cfg-hint cfg-red">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <div class="cfg-group">
@@ -658,7 +727,8 @@
                         <tr>
                             <th>Date</th>
                             <th>USD Rate</th>
-                            <th>INR Rate</th>
+                            <th>Buy INR Rate</th>
+                            <th>Sell INR Rate</th>
                             <th>Xynder Fee</th>
                             <th>Network Fee</th>
                         </tr>
@@ -679,14 +749,20 @@
                                 </span>
                             </td>
 
-                            <td data-label="INR Rate">
-                                <span class="cfg-value cfg-gold">
-                                    {{ number_format((float)$row->inr_rate, 4) }}
+                            <td data-label="Buy INR Rate">
+                                <span class="cfg-value cfg-green">
+                                    ₹{{ number_format($row->buyRate(), 4) }}
+                                </span>
+                            </td>
+
+                            <td data-label="Sell INR Rate">
+                                <span class="cfg-value cfg-red">
+                                    ₹{{ number_format($row->sellRate(), 4) }}
                                 </span>
                             </td>
 
                             <td data-label="Xynder Fee">
-                                <span class="cfg-value cfg-green">
+                                <span class="cfg-value cfg-gold">
                                     {{ number_format((float)$row->xynder_fee, 2) }}
                                 </span>
                             </td>
@@ -699,7 +775,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5">
+                            <td colspan="6">
                                 <div class="cfg-empty">
                                     No config history found.
                                 </div>

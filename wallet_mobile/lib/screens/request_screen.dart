@@ -121,12 +121,28 @@ class _RequestScreenState extends State<RequestScreen>
   double get _balance => _toD(_user?["balance"]);
   double get _amount => double.tryParse(_amountCtrl.text.trim()) ?? 0;
 
-  double get _usdRate => _toD(_config?["usd_rate"]);
-  double get _inrRate => _toD(_config?["inr_rate"]);
+  /// Old single rate. Used only when the server has no buy/sell rate.
+  double get _oldInrRate => _toD(_config?["inr_rate"]);
+
+  /// INR per 1 USD when the client buys USD (deposit).
+  double get _buyRate {
+    final r = _toD(_config?["buy_inr_rate"]);
+    return r > 0 ? r : _oldInrRate;
+  }
+
+  /// INR per 1 USD when the client sells USD (withdrawal).
+  double get _sellRate {
+    final r = _toD(_config?["sell_inr_rate"]);
+    return r > 0 ? r : _oldInrRate;
+  }
+
   double get _fee => _toD(_config?["xynder_fee"]);
   double get _netFee => _toD(_config?["network_fee"]);
 
   bool get _isSell => type == "withdrawal";
+
+  /// The rate for the selected tab (Sell USD or Buy USD).
+  double get _inrRate => _isSell ? _sellRate : _buyRate;
 
   double get _totalFee => _fee + _netFee;
   double get _converted => _amount * _inrRate;
@@ -731,8 +747,9 @@ class _RequestScreenState extends State<RequestScreen>
           "\$${_amount.toStringAsFixed(2)}",
         ),
         _summaryRow(
-          "USD Rate",
-          "\$${_usdRate.toStringAsFixed(2)}",
+          "Conversion Rate",
+          "1 USD = ₹${_inrRate.toStringAsFixed(2)}",
+          color: _isSell ? _C.red : _C.green,
         ),
         _summaryRow(
           "Converted INR",

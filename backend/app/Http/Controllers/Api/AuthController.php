@@ -184,7 +184,10 @@ public function createRequest(Request $request)
 
     $config = SystemConfig::current();
 
-    $convertedAmount = round($amount * (float) $config->inr_rate, 2);
+    // Buy USD (deposit) and Sell USD (withdrawal) use different INR rates.
+    $appliedRate = $config->rateFor($data['type']);
+
+    $convertedAmount = round($amount * $appliedRate, 2);
     $xynderFee = round((float) $config->xynder_fee, 2);
     $networkFee = round((float) $config->network_fee, 2);
     $fee = round($xynderFee + $networkFee, 2);
@@ -206,6 +209,7 @@ public function createRequest(Request $request)
         $data,
         $amount,
         $config,
+        $appliedRate,
         $xynderFee,
         $networkFee,
         $convertedAmount,
@@ -218,7 +222,7 @@ public function createRequest(Request $request)
             'type'             => $data['type'],
             'amount'           => $amount,
             'usd_rate'         => $config->usd_rate,
-            'inr_rate'         => $config->inr_rate,
+            'inr_rate'         => $appliedRate,
             'xynder_fee'       => $xynderFee,
             'network_fee'      => $networkFee,
             'converted_amount' => $convertedAmount,

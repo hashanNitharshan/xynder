@@ -31,15 +31,23 @@ class ConfigController extends Controller
         $this->adminOnly();
 
         $data = $request->validate([
-            'usd_rate' => 'required|numeric|min:0',
-            'inr_rate' => 'required|numeric|min:0',
-            'xynder_fee' => 'required|numeric|min:0',
-            'network_fee' => 'required|numeric|min:0',
+            'usd_rate'       => 'required|numeric|min:0',
+            'buy_inr_rate'   => 'required|numeric|gt:0',
+            'sell_inr_rate'  => 'required|numeric|gt:0',
+            'xynder_fee'     => 'required|numeric|min:0',
+            'network_fee'    => 'required|numeric|min:0',
             'effective_date' => 'required|date',
         ]);
 
+        /*
+         * The old inr_rate column is still filled so older app
+         * versions and old screens keep working. The sell rate is
+         * used because the Flutter app opens on Sell USD first.
+         */
+        $data['inr_rate'] = $data['sell_inr_rate'];
+
         SystemConfig::create($data);
 
-        return back()->with('success');
+        return back()->with('success', 'Config saved successfully.');
     }
 }

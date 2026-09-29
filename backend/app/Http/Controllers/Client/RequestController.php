@@ -120,8 +120,11 @@ class RequestController extends Controller
 
         $config = SystemConfig::current();
 
+        // Buy USD (deposit) and Sell USD (withdrawal) use different INR rates.
+        $appliedRate = $config->rateFor($data['type']);
+
         $convertedAmount = round(
-            $amount * (float) $config->inr_rate,
+            $amount * $appliedRate,
             2
         );
 
@@ -161,7 +164,7 @@ class RequestController extends Controller
             'type' => $data['type'],
             'amount' => $amount,
             'usd_rate' => $config->usd_rate,
-            'inr_rate' => $config->inr_rate,
+            'inr_rate' => $appliedRate,
             'xynder_fee' => $xynderFee,
             'network_fee' => $networkFee,
             'converted_amount' => $convertedAmount,
