@@ -746,11 +746,7 @@ class _RequestScreenState extends State<RequestScreen>
           "USD Amount",
           "\$${_amount.toStringAsFixed(2)}",
         ),
-        _summaryRow(
-          "Conversion Rate",
-          "1 USD = ₹${_inrRate.toStringAsFixed(2)}",
-          color: _isSell ? _C.red : _C.green,
-        ),
+        // "Conversion Rate" row removed - only amounts are shown now.
         _summaryRow(
           "Converted INR",
           "₹${_converted.toStringAsFixed(2)}",
