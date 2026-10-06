@@ -47,6 +47,13 @@
 .uf-btn-dark{background:var(--surface-alt);color:#fff;border:1px solid var(--border)}
 .uf-btn-dark:hover{border-color:var(--yellow);color:#fff}
 .uf-btn-danger{color:#ff9b9b}
+.uf-wallet-row{display:flex;gap:8px;align-items:stretch}
+.uf-wallet-row .uf-input{flex:1;font-family:monospace;font-size:14px;letter-spacing:.02em}
+.uf-wallet-btn{height:46px;padding:0 14px;border-radius:9px;border:1px solid var(--border);background:var(--surface-alt);color:var(--yellow);font-weight:900;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.uf-wallet-btn:hover{border-color:var(--yellow)}
+.uf-wallet-btn.done{color:var(--green);border-color:var(--green)}
+.uf-help{color:var(--muted);font-size:11.5px;font-weight:700;line-height:1.5}
+.uf-help.warn{color:var(--gold)}
 @media(max-width:768px){.uf-page{margin:-16px}.uf-hero{padding:45px 24px 110px}.uf-wrap{margin:-76px auto 0;padding:0 18px}.uf-body{padding:24px 18px}.uf-grid{grid-template-columns:1fr}.uf-head{align-items:flex-start;flex-direction:column}}
 </style>
 @endpush
@@ -118,6 +125,52 @@
             <option value="client" @selected(old('role', $user->role) === 'client')>Client</option>
             <option value="merchant" @selected(old('role', $user->role) === 'merchant')>Merchant</option>
         </select>
+    </div>
+
+    <div class="uf-group full">
+        <label class="uf-label" for="ufWalletId">
+            Wallet ID {{ $user->exists ? '*' : '(leave empty to auto-generate)' }}
+        </label>
+
+        <div class="uf-wallet-row">
+            <input
+                id="ufWalletId"
+                class="uf-input"
+                type="text"
+                name="wallet_id"
+                value="{{ old('wallet_id', $user->wallet_id) }}"
+                data-original="{{ $user->wallet_id }}"
+                minlength="6"
+                maxlength="50"
+                pattern="[A-Za-z0-9]+"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="{{ $user->exists ? '' : 'Auto-generated when empty' }}"
+                {{ $user->exists ? 'required' : '' }}
+            >
+
+            <button type="button" class="uf-wallet-btn" id="ufWalletGenerate" title="Generate a new wallet ID">
+                <i class="ti ti-refresh"></i> Generate
+            </button>
+
+            @if($user->exists && $user->wallet_id)
+                <button type="button" class="uf-wallet-btn" id="ufWalletCopy" title="Copy wallet ID">
+                    <i class="ti ti-copy"></i>
+                </button>
+            @endif
+        </div>
+
+        <div class="uf-help" id="ufWalletHelp">
+            Letters and numbers only, 6 to 50 characters. Must be unique.
+        </div>
+
+        @if($user->exists)
+            <div class="uf-help warn" id="ufWalletWarn" style="display:none;">
+                <i class="ti ti-alert-triangle"></i>
+                The user's wallet ID will change. Other users must use the new ID to send transfers.
+                Old transfer history keeps the old ID.
+            </div>
+        @endif
     </div>
 
     <div class="uf-group">
@@ -403,4 +456,109 @@
 </div>
 </main>
 </div>
+
+<script>
+(function () {
+    const input = document.getElementById('ufWalletId');
+    const generateBtn = document.getElementById('ufWalletGenerate');
+    const copyBtn = document.getElementById('ufWalletCopy');
+    const warn = document.getElementById('ufWalletWarn');
+
+    if (!input) return;
+
+    const original = input.dataset.original || '';
+
+    // Same format as User::generateWalletId(): "XyW" + 22 characters,
+    // with at least one uppercase letter, one lowercase letter and one number.
+    function generateWalletId() {
+        const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const lower = 'abcdefghijklmnopqrstuvwxyz';
+        const nums = '0123456789';
+        const all = upper + lower + nums;
+
+        function pick(set) {
+            const arr = new Uint32Array(1);
+            window.crypto.getRandomValues(arr);
+            return set[arr[0] % set.length];
+        }
+
+        const chars = [pick(upper), pick(lower), pick(nums)];
+
+        for (let i = 0; i < 19; i++) {
+            chars.push(pick(all));
+        }
+
+        for (let i = chars.length - 1; i > 0; i--) {
+            const arr = new Uint32Array(1);
+            window.crypto.getRandomValues(arr);
+            const j = arr[0] % (i + 1);
+            [chars[i], chars[j]] = [chars[j], chars[i]];
+        }
+
+        return 'XyW' + chars.join('');
+    }
+
+    function updateWarning() {
+        if (!warn) return;
+        const value = input.value.trim();
+        warn.style.display = (original && value !== '' && value !== original) ? 'block' : 'none';
+    }
+
+    // Allow letters and numbers only while typing or pasting.
+    input.addEventListener('input', function () {
+        const clean = input.value.replace(/[^A-Za-z0-9]/g, '');
+        if (clean !== input.value) {
+            input.value = clean;
+        }
+        updateWarning();
+    });
+
+    if (generateBtn) {
+        generateBtn.addEventListener('click', function () {
+            input.value = generateWalletId();
+            updateWarning();
+            input.focus();
+        });
+    }
+
+    if (copyBtn) {
+        copyBtn.addEventListener('click', function () {
+            if (!navigator.clipboard) return;
+
+            navigator.clipboard.writeText(input.value.trim()).then(function () {
+                const icon = copyBtn.querySelector('i');
+                copyBtn.classList.add('done');
+                icon.className = 'ti ti-check';
+
+                setTimeout(function () {
+                    copyBtn.classList.remove('done');
+                    icon.className = 'ti ti-copy';
+                }, 1200);
+            });
+        });
+    }
+
+    // Ask the admin to confirm before saving a changed wallet ID.
+    const form = input.closest('form');
+
+    if (form && original) {
+        form.addEventListener('submit', function (event) {
+            const value = input.value.trim();
+
+            if (value !== '' && value !== original) {
+                const ok = confirm(
+                    'Change wallet ID?\n\nOld: ' + original + '\nNew: ' + value +
+                    '\n\nOther users must use the new ID to send transfers.'
+                );
+
+                if (!ok) {
+                    event.preventDefault();
+                }
+            }
+        });
+    }
+
+    updateWarning();
+})();
+</script>
 @endsection

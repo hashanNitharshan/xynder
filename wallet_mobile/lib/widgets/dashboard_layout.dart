@@ -89,10 +89,13 @@ class _DashboardLayoutState extends State<DashboardLayout> with WidgetsBindingOb
     }
   }
 
+  /// Every heartbeat also reloads the profile, so a wallet ID or balance
+  /// changed by the admin shows in the app within about 45 seconds.
+  /// refreshProfile() also sends the ping.
   void _startPing() {
     _pingTimer?.cancel();
     _pingTimer = Timer.periodic(_pingInterval, (_) {
-      ApiService.ping();
+      refreshProfile();
     });
   }
 
@@ -126,7 +129,54 @@ class _DashboardLayoutState extends State<DashboardLayout> with WidgetsBindingOb
         user['is_verified']?.toString() == '1';
   }
 
+  bool _refreshing = false;
+
+  void _showWalletIdChanged(String newWalletId) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          backgroundColor: _AppColors.surface,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+          duration: const Duration(seconds: 5),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: const BorderSide(color: _AppColors.orange, width: 0.8),
+          ),
+          content: Row(
+            children: [
+              const Icon(
+                Icons.account_balance_wallet_outlined,
+                color: _AppColors.orange,
+                size: 19,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Your wallet ID was updated.\n$newWalletId',
+                  style: const TextStyle(
+                    color: _AppColors.primaryText,
+                    fontSize: 12.5,
+                    height: 1.35,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+  }
+
   Future<void> refreshProfile() async {
+    // Avoid two profile requests running at the same time
+    // (timer, tab switch and pull-to-refresh can overlap).
+    if (_refreshing) return;
+    _refreshing = true;
+
     try {
       final response = await ApiService.profile();
 
@@ -137,10 +187,19 @@ class _DashboardLayoutState extends State<DashboardLayout> with WidgetsBindingOb
           response['user'] as Map,
         );
 
+        final oldWalletId = user['wallet_id']?.toString() ?? '';
+        final newWalletId = freshUser['wallet_id']?.toString() ?? '';
+
         setState(() {
           user = freshUser;
           loading = false;
         });
+
+        if (oldWalletId.isNotEmpty &&
+            newWalletId.isNotEmpty &&
+            oldWalletId != newWalletId) {
+          _showWalletIdChanged(newWalletId);
+        }
       } else {
         setState(() {
           loading = false;
@@ -156,6 +215,8 @@ class _DashboardLayoutState extends State<DashboardLayout> with WidgetsBindingOb
           loading = false;
         });
       }
+    } finally {
+      _refreshing = false;
     }
   }
 
@@ -855,6 +916,7 @@ class _DashboardLayoutState extends State<DashboardLayout> with WidgetsBindingOb
         return WalletTransferScreen(
           user: user,
           onSuccess: refreshProfile,
+          onRefresh: refreshProfile,
           onHistoryTap: _openTransferHistory,
         );
 

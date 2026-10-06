@@ -217,6 +217,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
       final transferStatus =
           data['status']?.toString().toLowerCase().trim() ?? '';
 
+      // Admin reversed this transfer and refunded the sender.
+      if (transferStatus == 'reversed' ||
+          transferStatus == 'refunded') {
+        return 'reversed';
+      }
+
       if (transferStatus == 'rejected') {
         return 'rejected';
       }
@@ -279,6 +285,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
       case 'canceled':
         return 'Canceled';
 
+      case 'reversed':
+        return 'Reversed';
+
       default:
         return 'Pending';
     }
@@ -291,6 +300,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
       case 'rejected':
       case 'canceled':
+      case 'reversed':
         return AppColors.red;
 
       case 'closed':

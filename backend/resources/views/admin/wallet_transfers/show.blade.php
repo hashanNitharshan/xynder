@@ -156,6 +156,118 @@
     gap:7px;
 }
 
+.td-icon.reversed{
+    background:rgba(239,68,68,.12);
+    color:#FF9B9B;
+    border-color:rgba(239,68,68,.35);
+}
+
+.td-status.reversed{
+    color:#FF9B9B;
+}
+
+.td-amount.reversed{
+    color:var(--muted);
+    text-decoration:line-through;
+}
+
+.td-red{
+    color:#FF9B9B;
+}
+
+.td-alert{
+    margin-bottom:18px;
+    padding:13px 16px;
+    border-radius:10px;
+    display:flex;
+    align-items:center;
+    gap:9px;
+    font-size:13px;
+    font-weight:800;
+}
+
+.td-alert-ok{
+    color:var(--green);
+    background:rgba(14,203,129,.10);
+    border:1px solid rgba(14,203,129,.35);
+}
+
+.td-alert-err{
+    color:#FF9B9B;
+    background:rgba(239,68,68,.10);
+    border:1px solid rgba(239,68,68,.35);
+}
+
+.td-reverse-card{
+    margin-top:20px;
+    background:var(--surface);
+    border:1px solid rgba(239,68,68,.35);
+    border-radius:14px;
+    overflow:hidden;
+}
+
+.td-reverse-card .td-head{
+    color:#FF9B9B;
+}
+
+.td-reverse-text{
+    margin:0 0 14px;
+    color:var(--muted);
+    font-size:13px;
+    font-weight:700;
+    line-height:1.6;
+}
+
+.td-label-sm{
+    display:block;
+    margin-bottom:7px;
+    color:#C3C6CA;
+    font-size:11px;
+    font-weight:900;
+    text-transform:uppercase;
+}
+
+.td-textarea{
+    width:100%;
+    min-height:80px;
+    padding:10px 12px;
+    resize:vertical;
+    outline:0;
+    color:#fff;
+    background:var(--bg);
+    border:1px solid var(--border);
+    border-radius:8px;
+    font-family:inherit;
+    font-size:13px;
+    font-weight:600;
+}
+
+.td-textarea:focus{
+    border-color:var(--yellow);
+}
+
+.td-reverse-btn{
+    margin-top:14px;
+    width:100%;
+    height:46px;
+    border:0;
+    border-radius:8px;
+    background:#EF4444;
+    color:#fff;
+    font-size:14px;
+    font-weight:900;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+}
+
+.td-reverse-btn:disabled{
+    opacity:.6;
+    cursor:not-allowed;
+}
+
 .td-toast{
     position:fixed;
     left:50%;
@@ -222,6 +334,21 @@
     $createdAt = $transfer->created_at
         ? $transfer->created_at->format('Y-m-d H:i:s')
         : '—';
+
+    $isReversed = $transfer->isReversed();
+
+    $reversedAt = $transfer->reversed_at
+        ? $transfer->reversed_at->format('Y-m-d H:i:s')
+        : '—';
+
+    $reversedByName = $transfer->reversedBy->name ?? 'Admin';
+
+    $receiverBalance = (! $isExternal && $transfer->receiver)
+        ? (float) $transfer->receiver->balance
+        : null;
+
+    $receiverCanPay = $isExternal
+        || ($receiverBalance !== null && $receiverBalance >= (float) $transfer->amount);
 @endphp
 
 <div class="td-page">
@@ -240,17 +367,35 @@
             </div>
         </div>
 
+        @if(session('success'))
+            <div class="td-alert td-alert-ok">
+                <i class="ti ti-circle-check"></i>
+                {{ session('success') }}
+            </div>
+        @endif
+
+        @if($errors->any())
+            <div class="td-alert td-alert-err">
+                <i class="ti ti-alert-triangle"></i>
+                <div>
+                    @foreach($errors->all() as $error)
+                        <div>{{ $error }}</div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
         <div class="td-summary">
-            <div class="td-icon">
-                <i class="ti ti-circle-check-filled"></i>
+            <div class="td-icon {{ $isReversed ? 'reversed' : '' }}">
+                <i class="ti {{ $isReversed ? 'ti-arrow-back-up' : 'ti-circle-check-filled' }}"></i>
             </div>
 
-            <div class="td-amount">
+            <div class="td-amount {{ $isReversed ? 'reversed' : '' }}">
                 ${{ number_format((float)$transfer->amount, 2) }}
             </div>
 
-            <div class="td-status">
-                Transfer Completed
+            <div class="td-status {{ $isReversed ? 'reversed' : '' }}">
+                {{ $isReversed ? 'Transfer Reversed (Refunded)' : 'Transfer Completed' }}
             </div>
         </div>
 
@@ -349,14 +494,134 @@
                     </div>
                 </div>
 
+                <div class="td-row">
+                    <div class="td-label">Status</div>
+                    <div class="td-value {{ $isReversed ? 'td-red' : 'td-green' }}">
+                        {{ $isReversed ? 'REVERSED' : 'COMPLETED' }}
+                    </div>
+                </div>
+
+                @if($isReversed)
+                    <div class="td-row">
+                        <div class="td-label">Reversed Time</div>
+                        <div class="td-value">
+                            {{ $reversedAt }}
+                        </div>
+                    </div>
+
+                    <div class="td-row">
+                        <div class="td-label">Reversed By</div>
+                        <div class="td-value">
+                            {{ $reversedByName }}
+                        </div>
+                    </div>
+
+                    <div class="td-row">
+                        <div class="td-label">Reverse Reason</div>
+                        <div class="td-value">
+                            {{ $transfer->reverse_reason ?: '—' }}
+                        </div>
+                    </div>
+                @endif
+
             </div>
         </div>
+
+        @unless($isReversed)
+            <div class="td-reverse-card">
+                <div class="td-head">
+                    <i class="ti ti-arrow-back-up"></i>
+                    Reverse This Transfer
+                </div>
+
+                <div class="td-body">
+                    <p class="td-reverse-text">
+                        @if($isExternal)
+                            ${{ number_format((float)$transfer->amount, 2) }} will be added back to
+                            <strong style="color:#fff">{{ $senderName }}</strong>'s wallet.
+                        @else
+                            ${{ number_format((float)$transfer->amount, 2) }} will be taken from
+                            <strong style="color:#fff">{{ $receiverName }}</strong>
+                            (balance: ${{ number_format((float)($receiverBalance ?? 0), 2) }})
+                            and refunded to
+                            <strong style="color:#fff">{{ $senderName }}</strong>'s wallet.
+                        @endif
+                        This cannot be undone.
+                    </p>
+
+                    @unless($receiverCanPay)
+                        <div class="td-alert td-alert-err" style="margin-bottom:14px;">
+                            <i class="ti ti-alert-triangle"></i>
+                            The receiver does not have enough balance. Reverse is not possible now.
+                        </div>
+                    @endunless
+
+                    <form
+                        method="POST"
+                        action="{{ route('admin.wallet-transfers.reverse', ['walletTransfer' => $transfer->id]) }}"
+                        id="tdReverseForm"
+                    >
+                        @csrf
+
+                        <label class="td-label-sm" for="tdReverseReason">Reason (optional)</label>
+                        <textarea
+                            class="td-textarea"
+                            name="reverse_reason"
+                            id="tdReverseReason"
+                            maxlength="500"
+                            placeholder="Why is this transfer reversed?"
+                        >{{ old('reverse_reason') }}</textarea>
+
+                        <button
+                            type="submit"
+                            class="td-reverse-btn"
+                            id="tdReverseBtn"
+                            {{ $receiverCanPay ? '' : 'disabled' }}
+                        >
+                            <i class="ti ti-arrow-back-up"></i>
+                            Reverse and Refund ${{ number_format((float)$transfer->amount, 2) }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        @endunless
     </div>
 
     <div class="td-toast" id="tdToast">
         Copied
     </div>
 </div>
+
+@unless($isReversed)
+<script>
+(function () {
+    const form = document.getElementById('tdReverseForm');
+    const button = document.getElementById('tdReverseBtn');
+
+    if (!form || !button) return;
+
+    form.addEventListener('submit', function (event) {
+        const transferNo = @json($transactionNo);
+        const amount = @json(number_format((float) $transfer->amount, 2));
+        const sender = @json($senderName);
+
+        const ok = confirm(
+            'Reverse transfer ' + transferNo + '?\n\n'
+            + '$' + amount + ' will be refunded to ' + sender + '.\n'
+            + 'This cannot be undone.'
+        );
+
+        if (!ok) {
+            event.preventDefault();
+            return;
+        }
+
+        button.disabled = true;
+        button.innerHTML = '<i class="ti ti-loader-2"></i> Reversing...';
+    });
+})();
+</script>
+@endunless
 
 <script>
 document.querySelectorAll('.td-copy').forEach(function(element) {

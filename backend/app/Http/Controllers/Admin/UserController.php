@@ -179,7 +179,26 @@ class UserController extends Controller
 
     private function validateUser(Request $request, ?int $userId = null): array
     {
+        // Clean the wallet ID before validation (remove spaces).
+        if ($request->has('wallet_id')) {
+            $request->merge([
+                'wallet_id' => preg_replace('/\s+/', '', (string) $request->input('wallet_id')),
+            ]);
+        }
+
         return $request->validate([
+            // Wallet ID:
+            // Create form: optional. Leave empty and it is auto-generated.
+            // Edit form: required. Admin can change it to any unique value.
+            'wallet_id'      => [
+                $userId ? 'required' : 'nullable',
+                'string',
+                'min:6',
+                'max:50',
+                'regex:/^[A-Za-z0-9]+$/',
+                Rule::unique('users', 'wallet_id')->ignore($userId),
+            ],
+
             'name'           => 'required|string|max:255',
             'original_name'  => 'nullable|string|max:255',
             'email'          => ['required', 'email', Rule::unique('users', 'email')->ignore($userId)],
@@ -210,6 +229,12 @@ class UserController extends Controller
             'balance'  => 'required|numeric|min:0',
             'password' => $userId ? 'nullable|min:6' : 'required|min:6',
             'status'   => 'nullable|in:active,blocked',
+        ], [
+            'wallet_id.required' => 'Wallet ID is required.',
+            'wallet_id.min'      => 'Wallet ID must be at least 6 characters.',
+            'wallet_id.max'      => 'Wallet ID must not be more than 50 characters.',
+            'wallet_id.regex'    => 'Wallet ID may contain letters and numbers only.',
+            'wallet_id.unique'   => 'This Wallet ID is already used by another user.',
         ]);
     }
 
@@ -254,6 +279,11 @@ class UserController extends Controller
             $data[$field] = $request->hasFile($field)
                 ? $request->file($field)->store($folder, 'public')
                 : null;
+        }
+
+        // Empty wallet ID: the User model generates a new one automatically.
+        if (empty($data['wallet_id'])) {
+            unset($data['wallet_id']);
         }
 
         $data['password'] = Hash::make($data['password']);
@@ -331,11 +361,22 @@ class UserController extends Controller
         $data['status'] = $request->input('status', $user->status ?? 'active');
         $data['is_active'] = $data['status'] === 'active';
 
+        $oldWalletId = $user->wallet_id;
+
         $user->update($data);
+
+        $message = 'User updated successfully.';
+
+        // Old transfer history keeps the old wallet ID (audit record).
+        // Internal transfers are still linked by receiver_id / sender_id.
+        if ($oldWalletId !== $user->wallet_id) {
+            $message .= ' Wallet ID changed from ' . ($oldWalletId ?: 'N/A')
+                . ' to ' . $user->wallet_id . '.';
+        }
 
         return redirect()
             ->route('admin.users.index', ['type' => $data['role']])
-            ->with('success', 'User updated successfully.');
+            ->with('success', $message);
     }
 
     // -------------------------------------------------------------------------

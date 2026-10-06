@@ -164,6 +164,14 @@ Route::middleware('auth')->group(function () {
             ->whereNumber('walletTransfer')
             ->name('wallet-transfers.show');
 
+        // Reverse (refund) a wallet transfer to the sender.
+        Route::post(
+            'wallet-transfers/{walletTransfer}/reverse',
+            [WalletTransferController::class, 'reverse']
+        )
+            ->whereNumber('walletTransfer')
+            ->name('wallet-transfers.reverse');
+
         Route::get('config', [ConfigController::class, 'index'])->name('config.index');
         Route::post('config', [ConfigController::class, 'store'])->name('config.store');
 

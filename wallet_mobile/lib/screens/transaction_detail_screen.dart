@@ -139,7 +139,13 @@ class _TransactionDetailScreenState
 
   String get requestStatus {
     if (isTransfer) {
-      return 'completed';
+      final String transferStatus =
+          item['status']?.toString().toLowerCase().trim() ?? '';
+
+      return transferStatus == 'reversed' ||
+              transferStatus == 'refunded'
+          ? 'reversed'
+          : 'completed';
     }
 
     return item['status']
@@ -147,6 +153,18 @@ class _TransactionDetailScreenState
             .toLowerCase()
             .trim() ??
         'pending';
+  }
+
+  // Admin reversed this wallet transfer and refunded the sender.
+  bool get isReversed {
+    return isTransfer && requestStatus == 'reversed';
+  }
+
+  bool get iAmTransferSender {
+    final String myId = widget.user['id']?.toString() ?? '';
+    final String senderId = item['sender_id']?.toString() ?? '';
+
+    return myId.isNotEmpty && senderId == myId;
   }
 
   bool get isPending {
@@ -332,7 +350,7 @@ class _TransactionDetailScreenState
 
   String get statusTitle {
     if (isTransfer) {
-      return 'Completed';
+      return isReversed ? 'Reversed' : 'Completed';
     }
 
     switch (requestStatus) {
@@ -355,6 +373,14 @@ class _TransactionDetailScreenState
 
   String get statusDescription {
     if (isTransfer) {
+      if (isReversed) {
+        final String amount = usdAmount.toStringAsFixed(2);
+
+        return iAmTransferSender
+            ? 'This transfer was reversed by admin. \$$amount was refunded to your wallet.'
+            : 'This transfer was reversed by admin. \$$amount was taken back from your wallet.';
+      }
+
       return 'The wallet transfer was completed successfully.';
     }
 
@@ -378,7 +404,7 @@ class _TransactionDetailScreenState
 
   Color get statusColor {
     if (isTransfer) {
-      return green;
+      return isReversed ? red : green;
     }
 
     switch (requestStatus) {
@@ -1076,8 +1102,8 @@ class _TransactionDetailScreenState
   // ---------------------------------------------------------------------------
 
   Widget progressLine() {
-    final bool completed = isTransfer || isApproved;
-    final bool failed = isRejected || isClosed;
+    final bool completed = (isTransfer && !isReversed) || isApproved;
+    final bool failed = isRejected || isClosed || isReversed;
 
     final Color activeColor = failed
         ? red
@@ -1129,7 +1155,9 @@ class _TransactionDetailScreenState
         const SizedBox(height: 7),
         Text(
           isTransfer
-              ? 'Transferred ${quantityText(usdAmount)}'
+              ? (isReversed
+                  ? 'Refunded ${quantityText(usdAmount)}'
+                  : 'Transferred ${quantityText(usdAmount)}')
               : '${isWithdrawal ? 'Sold' : 'Bought'} '
                   '${quantityText(usdAmount)}',
           style: const TextStyle(
@@ -1736,6 +1764,18 @@ class _TransactionDetailScreenState
         walletAddress,
         copyable: true,
       ),
+      if (isReversed) ...[
+        detailRow(
+          'Reversed Time',
+          formatDate(item['reversed_at']),
+          dataColor: red,
+        ),
+        if (value(item['reverse_reason']) != '—')
+          detailRow(
+            'Reverse Reason',
+            value(item['reverse_reason']),
+          ),
+      ],
     ];
   }
 

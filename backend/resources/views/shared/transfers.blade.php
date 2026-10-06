@@ -4,8 +4,9 @@
     $isVerified = (bool) $user->is_verified;
     $balance = (float) $user->balance;
     $walletId = $user->wallet_id ?? '—';
-    $totalSent = $transfers->filter(fn ($transfer) => (int) $transfer->sender_id === (int) $user->id)->sum('amount');
-    $totalReceived = $transfers->filter(fn ($transfer) => (int) $transfer->receiver_id === (int) $user->id)->sum('amount');
+    // Reversed transfers were refunded, so they are not counted in the totals.
+    $totalSent = $transfers->filter(fn ($transfer) => (int) $transfer->sender_id === (int) $user->id && ! $transfer->isReversed())->sum('amount');
+    $totalReceived = $transfers->filter(fn ($transfer) => (int) $transfer->receiver_id === (int) $user->id && ! $transfer->isReversed())->sum('amount');
     $isMerchant = $user->role === 'merchant';
     $lookupRoute = $isMerchant ? route('merchant.transfers.lookup') : route('client.transfers.lookup');
     $storeRoute = $isMerchant ? route('merchant.transfers.store') : route('client.transfers.store');
@@ -36,6 +37,7 @@
 .tr-history{margin-top:20px;background:var(--box);border:1px solid var(--line);border-radius:14px;overflow:hidden}.tr-history-head{padding:16px 20px;background:var(--panel);display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.tr-filter-form{display:flex;gap:8px}.tr-filter-form input,.tr-filter-form select{height:38px;background:var(--bg);border:1px solid var(--line);color:#fff;border-radius:8px;padding:8px 10px}
 .tr-table-wrap{overflow:auto}.tr-table{width:100%;min-width:1000px;border-collapse:collapse}.tr-table th,.tr-table td{padding:13px 15px;border-top:1px solid var(--line);text-align:left;font-size:12px}.tr-table th{color:var(--muted);background:var(--panel);text-transform:uppercase}.tr-ref,.tr-wallet-id{font-family:monospace}.tr-type.sent{color:var(--yellow)}.tr-type.received{color:var(--green)}.tr-type.external{color:#60a5fa}.tr-amt.sent{color:var(--yellow)}.tr-amt.received{color:var(--green)}.tr-note{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tr-empty{text-align:center;color:var(--muted);padding:35px}
 .tr-pagination{padding:15px 20px;border-top:1px solid var(--line)}.tr-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:9999;display:none;align-items:center;justify-content:center;padding:18px}.tr-modal-backdrop.show{display:flex}.tr-modal{max-width:420px;width:100%;background:var(--box);border:1px solid var(--line);border-radius:14px;padding:22px;text-align:center}.tr-modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}.tr-modal-btn{height:44px;border:1px solid var(--line);background:var(--panel);color:#fff;border-radius:8px;text-decoration:none;display:flex;align-items:center;justify-content:center;font-weight:900}.tr-modal-btn.primary{background:var(--green);color:#07130d}
+.tr-status{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:20px;font-size:10px;font-weight:900;text-transform:uppercase}.tr-status.completed{color:var(--green);background:#0d2b1e}.tr-status.reversed{color:#ff9b9b;background:rgba(239,68,68,.12)}.tr-amt.reversed{color:var(--muted);text-decoration:line-through}
 .hidden{display:none!important}@media(max-width:1000px){.tr-transfer-box{grid-template-columns:1fr}.tr-cards{grid-template-columns:1fr 1fr}}@media(max-width:760px){.tr-page{margin:-16px;padding:16px}.tr-form-row,.tr-mode-tabs,.tr-cards{grid-template-columns:1fr}.tr-filter-form{width:100%;display:grid}.tr-modal-actions{grid-template-columns:1fr}}
 </style>
 @endpush
@@ -162,12 +164,13 @@
 
         <div class="tr-table-wrap">
             <table class="tr-table">
-                <thead><tr><th>Date</th><th>Ref No</th><th>Type</th><th>Sender</th><th>Receiver</th><th>Wallet ID</th><th>Amount</th><th>Note</th></tr></thead>
+                <thead><tr><th>Date</th><th>Ref No</th><th>Type</th><th>Sender</th><th>Receiver</th><th>Wallet ID</th><th>Amount</th><th>Status</th><th>Note</th></tr></thead>
                 <tbody>
                 @forelse($transfers as $transfer)
                     @php
                         $isSent = (int) $transfer->sender_id === (int) $user->id;
                         $isExternal = $transfer->transfer_type === WalletTransfer::TYPE_EXTERNAL;
+                        $isReversed = $transfer->isReversed();
                     @endphp
                     <tr>
                         <td>{{ $transfer->created_at?->format('d M Y, H:i') }}</td>
@@ -184,11 +187,18 @@
                         <td>{{ $transfer->sender->name ?? 'Deleted User' }}</td>
                         <td>{{ $isExternal ? 'External Wallet' : ($transfer->receiver->name ?? 'Deleted User') }}</td>
                         <td><span class="tr-wallet-id">{{ $transfer->receiver_wallet_id }}</span></td>
-                        <td><span class="tr-amt {{ $isSent ? 'sent' : 'received' }}">{{ $isSent ? '−' : '+' }}${{ number_format((float) $transfer->amount, 2) }}</span></td>
+                        <td><span class="tr-amt {{ $isReversed ? 'reversed' : ($isSent ? 'sent' : 'received') }}">{{ $isSent ? '−' : '+' }}${{ number_format((float) $transfer->amount, 2) }}</span></td>
+                        <td>
+                            @if($isReversed)
+                                <span class="tr-status reversed" title="{{ $transfer->reverse_reason ? 'Reason: '.$transfer->reverse_reason : 'Refunded by admin' }}"><i class="ti ti-arrow-back-up"></i> Reversed</span>
+                            @else
+                                <span class="tr-status completed"><i class="ti ti-circle-check"></i> Completed</span>
+                            @endif
+                        </td>
                         <td><div class="tr-note">{{ $transfer->note ?: '—' }}</div></td>
                     </tr>
                 @empty
-                    <tr><td colspan="8"><div class="tr-empty">No transfers found.</div></td></tr>
+                    <tr><td colspan="9"><div class="tr-empty">No transfers found.</div></td></tr>
                 @endforelse
                 </tbody>
             </table>

@@ -221,8 +221,10 @@
     $closedCount = $latestRequests->where('status', 'closed')->count();
     $totalCount = $latestRequests->count();
 
-    $totalSent = $latestTransfers->where('sender_id', $user->id)->sum('amount');
-    $totalReceived = $latestTransfers->where('receiver_id', $user->id)->sum('amount');
+    // Reversed transfers were refunded, so they are not counted.
+    $activeTransfers = $latestTransfers->where('status', '!=', 'reversed');
+    $totalSent = $activeTransfers->where('sender_id', $user->id)->sum('amount');
+    $totalReceived = $activeTransfers->where('receiver_id', $user->id)->sum('amount');
 
     $monthlyIncome = [];
     $monthlyExpense = [];

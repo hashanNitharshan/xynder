@@ -21,12 +21,14 @@ class _C {
 class WalletTransferScreen extends StatefulWidget {
   final Map user;
   final Future<void> Function()? onSuccess;
+  final Future<void> Function()? onRefresh;
   final VoidCallback? onHistoryTap;
 
   const WalletTransferScreen({
     super.key,
     required this.user,
     this.onSuccess,
+    this.onRefresh,
     this.onHistoryTap,
   });
 
@@ -309,7 +311,12 @@ class _WalletTransferScreenState extends State<WalletTransferScreen> {
     return Scaffold(
       backgroundColor: _C.bg,
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: RefreshIndicator(
+          // Pull down to reload the latest wallet ID and balance.
+          onRefresh: widget.onRefresh ?? widget.onSuccess ?? () async {},
+          color: _C.gold,
+          backgroundColor: _C.panel,
+          child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 30),
           physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
@@ -392,6 +399,7 @@ class _WalletTransferScreenState extends State<WalletTransferScreen> {
               const SizedBox(height: 26),
               _transferButton(),
             ],
+          ),
           ),
         ),
       ),
@@ -523,9 +531,69 @@ class _WalletTransferScreenState extends State<WalletTransferScreen> {
     );
   }
 
+  Future<void> _copyWalletId(String walletId) async {
+    await Clipboard.setData(ClipboardData(text: walletId));
+    showSnack('Wallet ID copied.');
+  }
+
+  Widget _walletIdRow(String walletId, bool hasWalletId) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        const SizedBox(
+          width: 92,
+          child: Text(
+            'Wallet ID',
+            style: TextStyle(
+              color: _C.textSecondary,
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: SelectableText(
+            walletId,
+            textAlign: TextAlign.right,
+            maxLines: 2,
+            style: const TextStyle(
+              color: _C.textPrimary,
+              fontSize: 13,
+              fontFamily: 'monospace',
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        if (hasWalletId) ...[
+          const SizedBox(width: 8),
+          InkWell(
+            onTap: () => _copyWalletId(walletId),
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              width: 30,
+              height: 30,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: _C.gold.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.copy_rounded,
+                color: _C.gold,
+                size: 15,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
   Widget _myWalletSummary() {
-    final walletId =
-        widget.user['wallet_id']?.toString() ?? 'Not available';
+    final rawWalletId = widget.user['wallet_id']?.toString().trim() ?? '';
+    final hasWalletId = rawWalletId.isNotEmpty && rawWalletId != 'null';
+    final walletId = hasWalletId ? rawWalletId : 'Not available';
     final balance = toDouble(widget.user['balance']);
 
     return Column(
@@ -533,10 +601,7 @@ class _WalletTransferScreenState extends State<WalletTransferScreen> {
       children: [
         _sectionTitle('My Wallet'),
         const SizedBox(height: 10),
-        _detailRow(
-          label: 'Wallet ID',
-          value: walletId,
-        ),
+        _walletIdRow(walletId, hasWalletId),
         const SizedBox(height: 9),
         _detailRow(
           label: 'Balance',

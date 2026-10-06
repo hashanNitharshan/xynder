@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../services/api_service.dart';
@@ -50,6 +51,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     user = widget.user;
     _setControllers();
+    _loadLatestUser();
+  }
+
+  /// Load the latest user from the server when the screen opens, so the
+  /// wallet ID set by the admin is always current. Text fields are not
+  /// changed, so nothing the user is typing gets lost.
+  Future<void> _loadLatestUser() async {
+    final data = await ApiService.profile();
+
+    if (!mounted) return;
+
+    if (data["success"] == true && data["user"] is Map) {
+      setState(() {
+        user = Map<String, dynamic>.from(data["user"] as Map);
+      });
+    }
+  }
+
+  String get walletId {
+    final value = user["wallet_id"]?.toString().trim() ?? "";
+    return value == "null" ? "" : value;
+  }
+
+  Future<void> _copyWalletId() async {
+    if (walletId.isEmpty) return;
+
+    await Clipboard.setData(ClipboardData(text: walletId));
+    _showSnack("Wallet ID copied");
   }
 
   void _setControllers() {
@@ -528,6 +557,68 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  /// Wallet ID is read-only for the user. Only the admin can change it.
+  Widget _walletIdRow() {
+    final hasWalletId = walletId.isNotEmpty;
+
+    return InkWell(
+      onTap: hasWalletId ? _copyWalletId : null,
+      splashColor: Colors.white.withOpacity(0.03),
+      highlightColor: Colors.white.withOpacity(0.015),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: const BoxDecoration(
+          border: Border(
+            bottom: BorderSide(color: _C.divider, width: 0.7),
+          ),
+        ),
+        child: Row(
+          children: [
+            const SizedBox(
+              width: 28,
+              child: Icon(
+                Icons.account_balance_wallet_outlined,
+                color: _C.textPrimary,
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 7),
+            const SizedBox(
+              width: 105,
+              child: Text(
+                "Wallet ID",
+                style: TextStyle(
+                  color: _C.textPrimary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            Expanded(
+              child: Text(
+                hasWalletId ? walletId : "Not available",
+                maxLines: 2,
+                textAlign: TextAlign.right,
+                style: TextStyle(
+                  color: hasWalletId ? _C.orange : _C.textMuted,
+                  fontSize: 12,
+                  fontFamily: "monospace",
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Icon(
+              Icons.copy_rounded,
+              color: hasWalletId ? _C.textSecondary : _C.textMuted,
+              size: 16,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _profileDetails() {
     final aadhaarUrl = ApiService.fixUrl(
       user["aadhaar_photo_url"],
@@ -539,6 +630,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       child: Column(
         children: [
+          _walletIdRow(),
           _editableRow(
             label: "Full Name",
             icon: Icons.person_outline_rounded,

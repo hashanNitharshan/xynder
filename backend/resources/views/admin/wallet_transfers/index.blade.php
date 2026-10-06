@@ -192,7 +192,7 @@
 
 .ad-filters{
     display:grid;
-    grid-template-columns:minmax(220px,2fr) minmax(150px,1fr) minmax(120px,1fr) auto;
+    grid-template-columns:minmax(220px,2fr) minmax(150px,1fr) minmax(140px,1fr) minmax(120px,1fr) auto;
     gap:10px;
     padding:16px 22px;
     background:var(--box);
@@ -272,7 +272,7 @@
 
 .ad-table{
     width:100%;
-    min-width:1080px;
+    min-width:1180px;
     border-collapse:collapse;
     table-layout:fixed;
     font-size:13px;
@@ -300,48 +300,249 @@
 
 .ad-table th:nth-child(1),
 .ad-table td:nth-child(1){
-    width:12%;
+    width:11%;
 }
 
 .ad-table th:nth-child(2),
 .ad-table td:nth-child(2){
-    width:9%;
+    width:8%;
 }
 
 .ad-table th:nth-child(3),
 .ad-table td:nth-child(3){
-    width:9%;
+    width:8%;
 }
 
 .ad-table th:nth-child(4),
 .ad-table td:nth-child(4){
-    width:15%;
+    width:14%;
 }
 
 .ad-table th:nth-child(5),
 .ad-table td:nth-child(5){
-    width:15%;
+    width:14%;
 }
 
 .ad-table th:nth-child(6),
 .ad-table td:nth-child(6){
-    width:15%;
+    width:13%;
 }
 
 .ad-table th:nth-child(7),
 .ad-table td:nth-child(7){
-    width:9%;
+    width:8%;
 }
 
 .ad-table th:nth-child(8),
 .ad-table td:nth-child(8){
-    width:11%;
+    width:9%;
 }
 
 .ad-table th:nth-child(9),
 .ad-table td:nth-child(9){
-    width:5%;
+    width:9%;
+}
+
+.ad-table th:nth-child(10),
+.ad-table td:nth-child(10){
+    width:6%;
     text-align:center;
+}
+
+/* Status and reverse */
+.ad-badge-completed{
+    color:var(--green);
+    background:#0D2B1E;
+}
+
+.ad-badge-reversed{
+    color:#FF9B9B;
+    background:rgba(239,68,68,.12);
+}
+
+.ad-amount.reversed{
+    color:var(--muted);
+    text-decoration:line-through;
+}
+
+.ad-actions{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    flex-wrap:wrap;
+}
+
+.ad-icon-btn.ad-reverse{
+    color:#FF9B9B;
+}
+
+.ad-icon-btn.ad-reverse:hover{
+    color:#FF9B9B;
+    border-color:var(--red);
+}
+
+.ad-alert{
+    margin-bottom:18px;
+    padding:13px 16px;
+    border-radius:6px;
+    display:flex;
+    align-items:center;
+    gap:9px;
+    font-size:13px;
+    font-weight:800;
+}
+
+.ad-alert-ok{
+    color:var(--green);
+    background:rgba(14,203,129,.10);
+    border:1px solid rgba(14,203,129,.35);
+}
+
+.ad-alert-err{
+    color:#FF9B9B;
+    background:rgba(239,68,68,.10);
+    border:1px solid rgba(239,68,68,.35);
+}
+
+.rv-backdrop{
+    position:fixed;
+    inset:0;
+    z-index:9999;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:18px;
+    background:rgba(0,0,0,.72);
+}
+
+.rv-backdrop.show{
+    display:flex;
+}
+
+.rv-modal{
+    width:100%;
+    max-width:460px;
+    padding:24px;
+    background:var(--box);
+    border:1px solid var(--line);
+    border-radius:12px;
+    box-shadow:0 24px 60px rgba(0,0,0,.45);
+}
+
+.rv-icon{
+    width:52px;
+    height:52px;
+    margin:0 auto 14px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:50%;
+    color:#FF9B9B;
+    background:rgba(239,68,68,.12);
+    font-size:26px;
+}
+
+.rv-title{
+    margin:0 0 6px;
+    text-align:center;
+    color:#FFFFFF;
+    font-size:18px;
+    font-weight:900;
+}
+
+.rv-sub{
+    margin:0 0 16px;
+    text-align:center;
+    color:var(--muted);
+    font-size:12.5px;
+    font-weight:700;
+    line-height:1.6;
+}
+
+.rv-info{
+    margin-bottom:14px;
+    padding:12px 14px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:8px;
+}
+
+.rv-row{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    padding:6px 0;
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--muted);
+}
+
+.rv-row strong{
+    color:#FFFFFF;
+    text-align:right;
+    word-break:break-all;
+}
+
+.rv-label{
+    display:block;
+    margin-bottom:7px;
+    color:#C3C6CA;
+    font-size:11px;
+    font-weight:900;
+    text-transform:uppercase;
+}
+
+.rv-textarea{
+    width:100%;
+    min-height:76px;
+    padding:10px 12px;
+    resize:vertical;
+    outline:0;
+    color:#FFFFFF;
+    background:var(--input);
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-family:inherit;
+    font-size:13px;
+    font-weight:600;
+}
+
+.rv-textarea:focus{
+    border-color:var(--yellow);
+}
+
+.rv-actions{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-top:16px;
+}
+
+.rv-btn{
+    height:44px;
+    border-radius:6px;
+    border:1px solid var(--line);
+    background:var(--panel);
+    color:#FFFFFF;
+    font-size:13px;
+    font-weight:900;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:7px;
+}
+
+.rv-btn-danger{
+    color:#FFFFFF;
+    background:var(--red);
+    border-color:var(--red);
+}
+
+.rv-btn-danger:disabled{
+    opacity:.6;
+    cursor:not-allowed;
 }
 
 .ad-row{
@@ -642,6 +843,9 @@
 @section('content')
 @php
     $selectedType = request('transfer_type', 'all');
+    $selectedStatus = request('status', 'all');
+    $reversedCount = $stats['reversed_count'] ?? 0;
+    $reversedVolume = $stats['reversed_volume'] ?? 0;
 
     $internalCount = $stats['internal_count']
         ?? $stats['total_internal_count']
@@ -664,6 +868,24 @@
     <section class="ad-hero"></section>
 
     <main class="ad-wrap">
+        @if(session('success'))
+            <div class="ad-alert ad-alert-ok">
+                <i class="ti ti-circle-check"></i>
+                {{ session('success') }}
+            </div>
+        @endif
+
+        @if($errors->any())
+            <div class="ad-alert ad-alert-err">
+                <i class="ti ti-alert-triangle"></i>
+                <div>
+                    @foreach($errors->all() as $error)
+                        <div>{{ $error }}</div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
         <section class="ad-kpis">
             <div class="ad-kpi">
                 <div class="ad-kpi-icon">
@@ -679,7 +901,8 @@
                 </div>
 
                 <div class="ad-kpi-sub">
-                    All wallet transfers
+                    Reversed: {{ $reversedCount }}
+                    (${{ number_format((float)$reversedVolume, 2) }})
                 </div>
             </div>
 
@@ -697,7 +920,7 @@
                 </div>
 
                 <div class="ad-kpi-sub">
-                    Internal and external
+                    Completed transfers only
                 </div>
             </div>
 
@@ -793,6 +1016,23 @@
                 </select>
 
                 <select
+                    name="status"
+                    class="ad-select ad-auto-filter"
+                >
+                    <option value="all" {{ $selectedStatus === 'all' ? 'selected' : '' }}>
+                        All Status
+                    </option>
+
+                    <option value="completed" {{ $selectedStatus === 'completed' ? 'selected' : '' }}>
+                        Completed
+                    </option>
+
+                    <option value="reversed" {{ $selectedStatus === 'reversed' ? 'selected' : '' }}>
+                        Reversed
+                    </option>
+                </select>
+
+                <select
                     name="per_page"
                     class="ad-select ad-auto-filter"
                 >
@@ -826,6 +1066,7 @@
                             <th>Receiver</th>
                             <th>Receiver Wallet</th>
                             <th>Amount</th>
+                            <th>Status</th>
                             <th>Note</th>
                             <th>Action</th>
                         </tr>
@@ -842,6 +1083,11 @@
                                 'admin.wallet-transfers.show',
                                 ['walletTransfer' => $transfer->id]
                             );
+
+                            $isReversed = $transfer->isReversed();
+
+                            $rowTransferNo = $transfer->transaction_no
+                                ?? 'TRA'.str_pad($transfer->id, 9, '0', STR_PAD_LEFT);
                         @endphp
 
                         <tr
@@ -928,9 +1174,27 @@
                             </td>
 
                             <td data-label="Amount">
-                                <span class="ad-amount">
+                                <span class="ad-amount {{ $isReversed ? 'reversed' : '' }}">
                                     ${{ number_format((float)$transfer->amount, 2) }}
                                 </span>
+                            </td>
+
+                            <td data-label="Status">
+                                @if($isReversed)
+                                    <span class="ad-badge ad-badge-reversed">
+                                        <i class="ti ti-arrow-back-up"></i>
+                                        Reversed
+                                    </span>
+
+                                    <div class="ad-small">
+                                        {{ $transfer->reversed_at?->format('Y-m-d h:i A') }}
+                                    </div>
+                                @else
+                                    <span class="ad-badge ad-badge-completed">
+                                        <i class="ti ti-circle-check"></i>
+                                        Completed
+                                    </span>
+                                @endif
                             </td>
 
                             <td data-label="Note">
@@ -940,19 +1204,38 @@
                             </td>
 
                             <td data-label="Action" onclick="event.stopPropagation();">
-                                <a
-                                    href="{{ $detailsUrl }}"
-                                    class="ad-icon-btn"
-                                    title="View transaction details"
-                                    aria-label="View transaction details"
-                                >
-                                    <i class="ti ti-eye"></i>
-                                </a>
+                                <div class="ad-actions">
+                                    <a
+                                        href="{{ $detailsUrl }}"
+                                        class="ad-icon-btn"
+                                        title="View transaction details"
+                                        aria-label="View transaction details"
+                                    >
+                                        <i class="ti ti-eye"></i>
+                                    </a>
+
+                                    @unless($isReversed)
+                                        <button
+                                            type="button"
+                                            class="ad-icon-btn ad-reverse js-open-reverse"
+                                            title="Reverse transfer"
+                                            aria-label="Reverse transfer"
+                                            data-action="{{ route('admin.wallet-transfers.reverse', ['walletTransfer' => $transfer->id]) }}"
+                                            data-no="{{ $rowTransferNo }}"
+                                            data-amount="{{ number_format((float)$transfer->amount, 2) }}"
+                                            data-type="{{ $isExternal ? 'external' : 'internal' }}"
+                                            data-sender="{{ $transfer->sender->name ?? 'Deleted User' }}"
+                                            data-receiver="{{ $isExternal ? 'External Wallet' : ($transfer->receiver->name ?? 'Deleted User') }}"
+                                        >
+                                            <i class="ti ti-arrow-back-up"></i>
+                                        </button>
+                                    @endunless
+                                </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9">
+                            <td colspan="10">
                                 <div class="ad-empty">
                                     No wallet transfers found.
                                 </div>
@@ -978,6 +1261,119 @@
         </section>
     </main>
 </div>
+
+<div class="rv-backdrop" id="rvModal" aria-hidden="true">
+    <div class="rv-modal" role="dialog" aria-modal="true" aria-labelledby="rvTitle">
+        <div class="rv-icon">
+            <i class="ti ti-arrow-back-up"></i>
+        </div>
+
+        <h3 class="rv-title" id="rvTitle">Reverse Transfer?</h3>
+
+        <p class="rv-sub" id="rvSub">
+            The amount will be refunded to the sender wallet. This cannot be undone.
+        </p>
+
+        <div class="rv-info">
+            <div class="rv-row"><span>Transaction No</span><strong id="rvNo">-</strong></div>
+            <div class="rv-row"><span>Amount</span><strong id="rvAmount">-</strong></div>
+            <div class="rv-row"><span>Refund to (sender)</span><strong id="rvSender">-</strong></div>
+            <div class="rv-row"><span>Take back from</span><strong id="rvReceiver">-</strong></div>
+        </div>
+
+        <form method="POST" id="rvForm" action="">
+            @csrf
+
+            <label class="rv-label" for="rvReason">Reason (optional)</label>
+            <textarea
+                class="rv-textarea"
+                name="reverse_reason"
+                id="rvReason"
+                maxlength="500"
+                placeholder="Why is this transfer reversed?"
+            ></textarea>
+
+            <div class="rv-actions">
+                <button type="button" class="rv-btn" id="rvCancel">Cancel</button>
+
+                <button type="submit" class="rv-btn rv-btn-danger" id="rvSubmit">
+                    <i class="ti ti-arrow-back-up"></i>
+                    Reverse Now
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+(function () {
+    const modal = document.getElementById('rvModal');
+    const form = document.getElementById('rvForm');
+    const submit = document.getElementById('rvSubmit');
+    const cancel = document.getElementById('rvCancel');
+    const reason = document.getElementById('rvReason');
+
+    if (!modal || !form) return;
+
+    function setText(id, value) {
+        const element = document.getElementById(id);
+        if (element) element.textContent = value;
+    }
+
+    function openModal(button) {
+        const isExternal = button.dataset.type === 'external';
+
+        form.action = button.dataset.action;
+        setText('rvNo', button.dataset.no || '-');
+        setText('rvAmount', '$' + (button.dataset.amount || '0.00'));
+        setText('rvSender', button.dataset.sender || '-');
+        setText(
+            'rvReceiver',
+            isExternal ? 'Not needed (external wallet)' : (button.dataset.receiver || '-')
+        );
+        setText(
+            'rvSub',
+            isExternal
+                ? 'The amount will be added back to the sender wallet. This cannot be undone.'
+                : 'The amount will be taken from the receiver and refunded to the sender wallet. This cannot be undone.'
+        );
+
+        reason.value = '';
+        submit.disabled = false;
+        modal.classList.add('show');
+        modal.setAttribute('aria-hidden', 'false');
+        reason.focus();
+    }
+
+    function closeModal() {
+        modal.classList.remove('show');
+        modal.setAttribute('aria-hidden', 'true');
+    }
+
+    document.querySelectorAll('.js-open-reverse').forEach(function (button) {
+        button.addEventListener('click', function (event) {
+            event.stopPropagation();
+            openModal(button);
+        });
+    });
+
+    cancel.addEventListener('click', closeModal);
+
+    modal.addEventListener('click', function (event) {
+        if (event.target === modal) closeModal();
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && modal.classList.contains('show')) closeModal();
+    });
+
+    // Stop double submit.
+    form.addEventListener('submit', function () {
+        submit.disabled = true;
+        submit.innerHTML = '<i class="ti ti-loader-2"></i> Reversing...';
+    });
+})();
+</script>
 
 <script>
 document.querySelectorAll('.ad-auto-filter').forEach(function(element) {
