@@ -4,14 +4,18 @@ import 'package:flutter/material.dart';
 
 import '../screens/history_screen.dart';
 import '../screens/login_screen.dart';
+import '../screens/market_screen.dart';
 import '../screens/merchant_requests_screen.dart';
 import '../screens/profile_screen.dart';
 import '../screens/request_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/wallet_transfer_screen.dart';
 import '../services/api_service.dart';
+import '../services/market_controller.dart';
 import '../utils/page_transitions.dart';
 import '../widgets/bottom_nav.dart';
+import '../widgets/live_chart.dart';
+import '../widgets/market_widgets.dart';
 
 class _AppColors {
   static const background = Color(0xFF000000);
@@ -28,6 +32,9 @@ class _AppColors {
   static const red = Color(0xFFF6465D);
 }
 
+/// Tab order (matches BottomNav):
+/// 0 = Home, 1 = P2P, 2 = Transfer, 3 = Trade, 4 = Settings
+/// History is no longer a tab. It opens as its own page.
 class DashboardLayout extends StatefulWidget {
   final String title;
   final String role;
@@ -47,16 +54,26 @@ class DashboardLayout extends StatefulWidget {
 }
 
 class _DashboardLayoutState extends State<DashboardLayout> with WidgetsBindingObserver {
+  static const int _tabHome = 0;
+  static const int _tabP2P = 1;
+  static const int _tabTransfer = 2;
+  static const int _tabTrade = 3;
+  static const int _tabSettings = 4;
+
   /// Online heartbeat. The server marks a user offline after about
   /// 2 minutes with no heartbeat, so 45 seconds keeps the user online.
   static const Duration _pingInterval = Duration(seconds: 45);
 
+  /// Markets shown in the chart, the coin picker, the market list and the
+  /// Trade tab (all live from Binance). Same list as the website.
+  static const List<String> _chartSymbols = kMarketSymbols;
+
   late Map user;
 
-  int currentIndex = 0;
-  String historyInitialType = 'all';
+  int currentIndex = _tabHome;
   bool balanceHidden = false;
   bool loading = true;
+  String chartSymbol = 'BTCUSDT';
 
   Timer? _pingTimer;
 
@@ -233,38 +250,59 @@ class _DashboardLayoutState extends State<DashboardLayout> with WidgetsBindingOb
     );
   }
 
-  void _openP2PRequestHistory() {
-    setState(() {
-      historyInitialType = 'request';
-      currentIndex = 3;
-    });
+  /* ================================================================
+     History (separate page, no longer a tab)
+     ================================================================ */
 
-    refreshProfile();
+  void _openHistory([String type = 'all']) {
+    Navigator.push(
+      context,
+      XRoute.slideRight(
+        _HistoryPage(
+          user: user,
+          initialType: type,
+        ),
+      ),
+    ).then((_) => refreshProfile());
   }
 
-  void _openTransferHistory() {
-    setState(() {
-      historyInitialType = 'transfer';
-      currentIndex = 3;
-    });
+  void _openP2PRequestHistory() => _openHistory('request');
 
-    refreshProfile();
-  }
+  void _openTransferHistory() => _openHistory('transfer');
 
   void _switchTab(int index) {
+    if (index == currentIndex) return;
+
     setState(() {
       currentIndex = index;
-
-      if (index == 3) {
-        historyInitialType = 'all';
-      }
     });
 
     // Refresh the authenticated user whenever a page that displays wallet
     // information is opened. This keeps wallet_id and balance synchronized.
-    if (index == 0 || index == 2 || index == 3 || index == 4) {
+    if (index == _tabHome || index == _tabTransfer || index == _tabSettings) {
       refreshProfile();
     }
+  }
+
+  /// Search bar: pick a coin and open it in the Trade tab.
+  Future<void> _openCoinPicker() async {
+    final picked = await showPairPicker(
+      context,
+      current: chartSymbol,
+      symbols: _chartSymbols,
+      accent: _AppColors.orange,
+    );
+
+    if (picked == null || !mounted) return;
+    _openMarket(picked);
+  }
+
+  /// Opens the Trade tab for one coin.
+  void _openMarket(String symbol) {
+    setState(() {
+      chartSymbol = symbol;
+      currentIndex = _tabTrade;
+    });
   }
 
   Widget _topBar() {
@@ -301,6 +339,10 @@ class _DashboardLayoutState extends State<DashboardLayout> with WidgetsBindingOb
                     ProfileScreen(user: user),
                   ),
                 ).then((_) => refreshProfile());
+              }
+
+              if (value == 'history') {
+                _openHistory();
               }
 
               if (value == 'logout') {
@@ -455,6 +497,36 @@ class _DashboardLayoutState extends State<DashboardLayout> with WidgetsBindingOb
               ),
               const PopupMenuDivider(height: 1),
               const PopupMenuItem<String>(
+                value: 'history',
+                height: 48,
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.history_rounded,
+                      color: _AppColors.primaryText,
+                      size: 19,
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'History',
+                        style: TextStyle(
+                          color: _AppColors.primaryText,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: _AppColors.secondaryText,
+                      size: 18,
+                    ),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(height: 1),
+              const PopupMenuItem<String>(
                 value: 'logout',
                 height: 48,
                 child: Row(
@@ -545,6 +617,19 @@ class _DashboardLayoutState extends State<DashboardLayout> with WidgetsBindingOb
             ),
           ),
           const Spacer(),
+          // History shortcut (History is no longer in the bottom bar).
+          GestureDetector(
+            onTap: () => _openHistory(),
+            behavior: HitTestBehavior.opaque,
+            child: const Padding(
+              padding: EdgeInsets.fromLTRB(6, 4, 14, 4),
+              child: Icon(
+                Icons.history_rounded,
+                color: Colors.white,
+                size: 21,
+              ),
+            ),
+          ),
           Stack(
             clipBehavior: Clip.none,
             children: [
@@ -582,31 +667,39 @@ class _DashboardLayoutState extends State<DashboardLayout> with WidgetsBindingOb
     );
   }
 
+  /// Tapping the search bar opens the coin picker and the Trade tab.
   Widget _searchBar() {
-    return Container(
-      height: 34,
-      margin: const EdgeInsets.fromLTRB(14, 3, 14, 0),
-      padding: const EdgeInsets.symmetric(horizontal: 11),
-      decoration: BoxDecoration(
-        color: _AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: const Row(
-        children: [
-          Icon(
-            Icons.search_rounded,
-            color: _AppColors.mutedText,
-            size: 16,
-          ),
-          SizedBox(width: 5),
-          Text(
-            'K/USDT',
-            style: TextStyle(
+    final base = chartSymbol.endsWith('USDT')
+        ? chartSymbol.substring(0, chartSymbol.length - 4)
+        : chartSymbol;
+
+    return GestureDetector(
+      onTap: _openCoinPicker,
+      child: Container(
+        height: 34,
+        margin: const EdgeInsets.fromLTRB(14, 3, 14, 0),
+        padding: const EdgeInsets.symmetric(horizontal: 11),
+        decoration: BoxDecoration(
+          color: _AppColors.surface,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.search_rounded,
               color: _AppColors.mutedText,
-              fontSize: 12,
+              size: 16,
             ),
-          ),
-        ],
+            const SizedBox(width: 5),
+            Text(
+              '$base/USDT',
+              style: const TextStyle(
+                color: _AppColors.mutedText,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -696,7 +789,7 @@ class _DashboardLayoutState extends State<DashboardLayout> with WidgetsBindingOb
             child: SizedBox(
               height: 34,
               child: ElevatedButton(
-                onPressed: () => _switchTab(1),
+                onPressed: () => _switchTab(_tabP2P),
                 style: ElevatedButton.styleFrom(
                   elevation: 0,
                   backgroundColor: _AppColors.orange,
@@ -721,7 +814,7 @@ class _DashboardLayoutState extends State<DashboardLayout> with WidgetsBindingOb
             child: SizedBox(
               height: 34,
               child: ElevatedButton(
-                onPressed: () => _switchTab(2),
+                onPressed: () => _switchTab(_tabTransfer),
                 style: ElevatedButton.styleFrom(
                   elevation: 0,
                   backgroundColor: _AppColors.surface,
@@ -746,128 +839,75 @@ class _DashboardLayoutState extends State<DashboardLayout> with WidgetsBindingOb
     );
   }
 
-  Widget _emptyLightBox() {
-    return Container(
-      height: 92,
-      margin: const EdgeInsets.fromLTRB(14, 12, 14, 0),
-      decoration: BoxDecoration(
-        color: _AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.025),
-        ),
-      ),
-    );
-  }
-
-  Widget _btcSection() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 17, 14, 0),
-      child: Column(
-        children: [
-          const Row(
-            children: [
-              Text(
-                'Favorites',
-                style: TextStyle(
-                  color: _AppColors.secondaryText,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              SizedBox(width: 10),
-              _SmallTab(title: 'Hot', selected: true),
-              SizedBox(width: 11),
-              _SmallTab(title: 'New'),
-              SizedBox(width: 11),
-              _SmallTab(title: 'Gainers'),
-              SizedBox(width: 11),
-              _SmallTab(title: 'Losers'),
-            ],
-          ),
-          const SizedBox(height: 15),
-          _coinRow(
-            rank: '1',
-            symbol: 'BTC',
-            name: 'Bitcoin',
-            price: '\$113,612.00',
-            change: '-0.26%',
-            positive: false,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _coinRow({
-    required String rank,
-    required String symbol,
-    required String name,
-    required String price,
-    required String change,
-    required bool positive,
-  }) {
-    return SizedBox(
-      height: 43,
-      child: Row(
-        children: [
-          SizedBox(
-            width: 16,
-            child: Text(
-              rank,
-              style: const TextStyle(
-                color: _AppColors.orange,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
+  Widget _sectionTitle(String title, {VoidCallback? onMore}) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            style: const TextStyle(
+              color: _AppColors.primaryText,
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
             ),
           ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
+        ),
+        if (onMore != null)
+          GestureDetector(
+            onTap: onMore,
+            child: const Row(
               children: [
                 Text(
-                  symbol,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
+                  'More',
+                  style: TextStyle(
+                    color: _AppColors.secondaryText,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  name,
-                  style: const TextStyle(
-                    color: _AppColors.secondaryText,
-                    fontSize: 10,
-                  ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: _AppColors.secondaryText,
+                  size: 16,
                 ),
               ],
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                price,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                change,
-                style: TextStyle(
-                  color: positive ? _AppColors.green : _AppColors.red,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+      ],
+    );
+  }
+
+  /// Live Binance chart card and live market list.
+  Widget _marketSection() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 18, 14, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _sectionTitle(
+            'Live Chart',
+            onMore: () => _openMarket(chartSymbol),
+          ),
+          const SizedBox(height: 10),
+          LiveChart(
+            symbol: chartSymbol,
+            symbols: _chartSymbols,
+            onSymbolChange: (s) {
+              setState(() {
+                chartSymbol = s;
+              });
+            },
+            onOpenFull: () => _openMarket(chartSymbol),
+            onTrade: () => _openMarket(chartSymbol),
+            accent: _AppColors.orange,
+          ),
+          const SizedBox(height: 22),
+          _sectionTitle('Markets'),
+          const SizedBox(height: 10),
+          MarketList(
+            symbols: _chartSymbols,
+            accent: _AppColors.orange,
+            onSelect: _openMarket,
           ),
         ],
       ),
@@ -875,24 +915,47 @@ class _DashboardLayoutState extends State<DashboardLayout> with WidgetsBindingOb
   }
 
   Widget _homePage() {
+    // SingleChildScrollView keeps the chart alive while the user scrolls,
+    // so the live connection is not closed and opened again.
     return RefreshIndicator(
       onRefresh: refreshProfile,
       color: _AppColors.orange,
       backgroundColor: _AppColors.surface,
-      child: ListView(
+      child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(
           parent: BouncingScrollPhysics(),
         ),
-        children: [
-          _topBar(),
-          _searchBar(),
-          _balanceSection(),
-          _actionButtons(),
-          _emptyLightBox(),
-          _btcSection(),
-          const SizedBox(height: 30),
-        ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _topBar(),
+            _searchBar(),
+            _balanceSection(),
+            _actionButtons(),
+            _marketSection(),
+            const SizedBox(height: 30),
+          ],
+        ),
       ),
+    );
+  }
+
+  /// Full live trade page: candlestick chart with indicators, order book,
+  /// market trades and coin info. Buy and Sell go to the P2P tab.
+  Widget _tradePage() {
+    return MarketScreen(
+      embedded: true,
+      symbol: chartSymbol,
+      symbols: _chartSymbols,
+      accent: _AppColors.orange,
+      onBuy: () => _switchTab(_tabP2P),
+      onSell: () => _switchTab(_tabP2P),
+      onSymbolChange: (s) {
+        if (!mounted || s == chartSymbol) return;
+        setState(() {
+          chartSymbol = s;
+        });
+      },
     );
   }
 
@@ -900,10 +963,10 @@ class _DashboardLayoutState extends State<DashboardLayout> with WidgetsBindingOb
     final role = user['role']?.toString().toLowerCase() ?? '';
 
     switch (currentIndex) {
-      case 0:
+      case _tabHome:
         return _homePage();
 
-      case 1:
+      case _tabP2P:
         return role == 'merchant'
             ? MerchantRequestsScreen(
                 onHistoryTap: _openP2PRequestHistory,
@@ -912,7 +975,7 @@ class _DashboardLayoutState extends State<DashboardLayout> with WidgetsBindingOb
                 onHistoryTap: _openP2PRequestHistory,
               );
 
-      case 2:
+      case _tabTransfer:
         return WalletTransferScreen(
           user: user,
           onSuccess: refreshProfile,
@@ -920,11 +983,8 @@ class _DashboardLayoutState extends State<DashboardLayout> with WidgetsBindingOb
           onHistoryTap: _openTransferHistory,
         );
 
-      case 3:
-        return HistoryScreen(
-          user: user,
-          initialType: historyInitialType,
-        );
+      case _tabTrade:
+        return _tradePage();
 
       default:
         return SettingsScreen(
@@ -968,38 +1028,42 @@ class _DashboardLayoutState extends State<DashboardLayout> with WidgetsBindingOb
   }
 }
 
-class _SmallTab extends StatelessWidget {
-  final String title;
-  final bool selected;
+/// History opened as its own page with a back button.
+class _HistoryPage extends StatelessWidget {
+  final Map user;
+  final String initialType;
 
-  const _SmallTab({
-    required this.title,
-    this.selected = false,
+  const _HistoryPage({
+    required this.user,
+    required this.initialType,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: selected ? 9 : 0,
-        vertical: selected ? 5 : 0,
+    return Scaffold(
+      backgroundColor: _AppColors.background,
+      appBar: AppBar(
+        backgroundColor: _AppColors.background,
+        surfaceTintColor: _AppColors.background,
+        elevation: 0,
+        leading: IconButton(
+          onPressed: () => Navigator.maybePop(context),
+          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+        ),
+        title: const Text(
+          'History',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
       ),
-      decoration: selected
-          ? BoxDecoration(
-              color: _AppColors.surface,
-              borderRadius: BorderRadius.circular(12),
-            )
-          : null,
-      child: Text(
-        title,
-        style: TextStyle(
-          color: selected
-              ? _AppColors.primaryText
-              : _AppColors.secondaryText,
-          fontSize: 10,
-          fontWeight: selected
-              ? FontWeight.w700
-              : FontWeight.w500,
+      body: SafeArea(
+        top: false,
+        child: HistoryScreen(
+          user: user,
+          initialType: initialType,
         ),
       ),
     );

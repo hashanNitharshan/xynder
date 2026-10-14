@@ -3,9 +3,23 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 class Conversation extends Model
 {
+    /**
+     * How long a chat stays open after it starts (both request and
+     * transfer chats). 24 hours = 1440 minutes.
+     */
+    public const CHAT_LIFETIME_MINUTES = 1440;
+
+    /**
+     * A wallet request that stays "pending" this long is closed
+     * automatically. This is a request rule, not a chat rule: the
+     * chat itself still stays open for 24 hours.
+     */
+    public const PENDING_REQUEST_TIMEOUT_MINUTES = 10;
+
     protected $fillable = [
         'user_one_id',
         'user_two_id',
@@ -34,22 +48,37 @@ class Conversation extends Model
     }
 
     /**
-     * Single source of truth for auto-locking. Call this on every
-     * fetch/send from ANY controller (API or Web) — the logic lives
-     * here once, not duplicated per controller.
+     * When the 24 hour chat window started. Uses chat_started_at, and
+     * falls back to created_at for older conversations without it.
+     */
+    public function chatStart(): ?Carbon
+    {
+        return $this->chat_started_at ?? $this->created_at;
+    }
+
+    /**
+     * When the chat locks (start + 24 hours).
+     */
+    public function chatDeadline(): ?Carbon
+    {
+        $start = $this->chatStart();
+
+        return $start
+            ? $start->copy()->addMinutes(self::CHAT_LIFETIME_MINUTES)
+            : null;
+    }
+
+    /**
+     * Single source of truth for auto-locking. Called on every
+     * fetch/send from ANY controller (API or Web).
      *
-     * - Request-linked conversations:
-     *   1. If the linked WalletRequest has sat "pending" for 10+ minutes,
-     *      it's force-closed here.
-     *   2. Once the request is approved / rejected / closed (by anyone,
-     *      anywhere), the chat locks on the next check.
-     *   NOTE: we always re-query the WalletRequest directly instead of
-     *   using the cached Eloquent relation, so a status change made in
-     *   one request is seen immediately even if this Conversation was
-     *   eager-loaded earlier in the same request lifecycle.
-     *
-     * - Transfer-linked conversations: independent 15-minute timer
-     *   starting from chat_started_at.
+     * - Every chat (request or transfer) locks 24 hours after it starts.
+     * - The status of the wallet request no longer locks the chat, so
+     *   both sides can keep talking after approve / reject / close.
+     * - A wallet request that stays "pending" for 10+ minutes is still
+     *   closed here (request rule only, the chat stays open).
+     *   We always re-query the WalletRequest so a status change made
+     *   elsewhere is seen at once.
      */
     public function lockIfExpired(): void
     {
@@ -65,57 +94,41 @@ class Conversation extends Model
 
                 if ($status === 'pending'
                     && $walletRequest->created_at
-                    && now()->diffInMinutes($walletRequest->created_at) >= 10) {
+                    && $walletRequest->created_at->copy()
+                        ->addMinutes(self::PENDING_REQUEST_TIMEOUT_MINUTES)
+                        ->isPast()) {
                     $walletRequest->update(['status' => 'closed']);
-                    $status = 'closed';
-                }
-
-                if (in_array($status, ['approved', 'rejected', 'closed'], true)) {
-                    $this->forceFill([
-                        'locked_at' => now(),
-                        'lock_reason' => 'request_' . $status,
-                    ])->save();
                 }
 
                 $this->setRelation('walletRequest', $walletRequest);
             }
-
-            return;
         }
 
-        if ($this->wallet_transfer_id && $this->chat_started_at
-            && $this->chat_started_at->copy()->addMinutes(15)->isPast()) {
+        $deadline = $this->chatDeadline();
+
+        if ($deadline && $deadline->isPast()) {
             $this->forceFill([
                 'locked_at' => now(),
-                'lock_reason' => 'timeout_15_minutes',
+                'lock_reason' => 'timeout_24_hours',
             ])->save();
         }
     }
 
+    /**
+     * Seconds left before the chat locks. 0 when locked.
+     */
     public function remainingSeconds(): int
     {
         if ($this->isLocked()) {
             return 0;
         }
 
-        // Request-linked: countdown is 10 minutes from the request's creation time.
-        if ($this->wallet_request_id) {
-            $walletRequest = $this->walletRequest()->first();
+        $deadline = $this->chatDeadline();
 
-            if (! $walletRequest || ! $walletRequest->created_at) {
-                return 0;
-            }
-
-            $deadline = $walletRequest->created_at->copy()->addMinutes(10);
-            return max(0, (int) now()->diffInSeconds($deadline, false));
-        }
-
-        // Transfer-linked: countdown is 15 minutes from chat start.
-        if (! $this->chat_started_at) {
+        if (! $deadline) {
             return 0;
         }
 
-        $deadline = $this->chat_started_at->copy()->addMinutes(15);
         return max(0, (int) now()->diffInSeconds($deadline, false));
     }
 }

@@ -308,6 +308,17 @@
     }
 
     $lastDateLabel = null;
+
+    // 24 hour countdown label: HH:MM:SS when an hour or more is left.
+    $fmtLeft = function (int $sec) {
+        $h = intdiv($sec, 3600);
+        $m = intdiv($sec % 3600, 60);
+        $s = $sec % 60;
+
+        return $h > 0
+            ? sprintf('%02d:%02d:%02d', $h, $m, $s)
+            : sprintf('%02d:%02d', $m, $s);
+    };
 @endphp
 
 <div class="chat-page" id="chatPage">
@@ -342,7 +353,7 @@
                             {{ $statusText }}
                             @if(! $locked && $remaining > 0)
                                 · <span id="timer" data-sec="{{ $remaining }}">
-                                    {{ floor($remaining / 60) }}:{{ str_pad($remaining % 60, 2, '0', STR_PAD_LEFT) }} left
+                                    {{ $fmtLeft($remaining) }} left
                                 </span>
                             @endif
                         </div>
@@ -456,7 +467,7 @@
 
         @if($locked)
             <div class="chat-locked">
-                <i class="ti ti-lock"></i> This chat is closed / locked.
+                <i class="ti ti-lock"></i> This chat is locked (24 hours completed).
             </div>
         @else
             <form method="POST" action="{{ $sendRoute }}" enctype="multipart/form-data" class="chat-form" autocomplete="off">
@@ -519,17 +530,26 @@
     if (timerEl) {
         var sec = parseInt(timerEl.dataset.sec || 0, 10);
 
+        function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+        function label(t) {
+            var h = Math.floor(t / 3600);
+            var m = Math.floor((t % 3600) / 60);
+            var s = t % 60;
+            return (h > 0 ? pad(h) + ':' : '') + pad(m) + ':' + pad(s) + ' left';
+        }
+
         var tick = setInterval(function () {
             if (sec <= 0) {
                 timerEl.innerText = 'Locking...';
                 clearInterval(tick);
+                // Reload so the server shows the locked state.
+                setTimeout(function () { window.location.reload(); }, 1500);
                 return;
             }
 
             sec--;
-            var m = Math.floor(sec / 60);
-            var s = sec % 60;
-            timerEl.innerText = m + ':' + (s < 10 ? '0' : '') + s + ' left';
+            timerEl.innerText = label(sec);
         }, 1000);
     }
 

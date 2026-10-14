@@ -1,7 +1,7 @@
 name: wallet_mobile
 description: "Xynder wallet mobile app."
 publish_to: 'none'
-version: 1.1.15+15
+version: 1.1.16+16
 
 environment:
   sdk: ^3.11.5
@@ -25,6 +25,7 @@ dependencies:
   open_file: ^3.3.2
   permission_handler: ^11.3.0
   path_provider: ^2.1.0
+  web_socket_channel: ^3.0.3
 
 dev_dependencies:
   flutter_lints: ^6.0.0

@@ -45,9 +45,9 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  // How long a chat stays open after it is first created, if the
-  // backend does not tell us otherwise.
-  static const int _chatLifetimeSeconds = 15 * 60; // 15 minutes
+  /// How long a chat stays open, if the backend does not send
+  /// remaining_seconds. Must match the lock time on the server.
+  static const int _chatLifetimeSeconds = 24 * 60 * 60; // 24 hours
 
   final TextEditingController _messageCtrl = TextEditingController();
   final ScrollController _scrollCtrl = ScrollController();
@@ -61,13 +61,11 @@ class _ChatScreenState extends State<ChatScreen> {
 
   List _messages = [];
 
-  // Polls the server for new messages / lock state.
+  // Polls the server for new messages and lock state.
   Timer? _pollTimer;
 
-  // Ticks the on-screen countdown down every second, and auto-locks
-  // the chat locally the moment it reaches zero (in addition to
-  // whatever the server says), so a chat can never be used past its
-  // 15 minute window even if a poll is delayed.
+  // Counts the timer down every second and locks the chat on the
+  // phone the moment it reaches zero, even if a poll is late.
   Timer? _countdownTimer;
 
   String? _myUserId;
@@ -108,6 +106,17 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  /// When the chat started. Uses the first message time if there is one,
+  /// otherwise the time this screen was opened.
+  DateTime? _chatStartTime(List messages) {
+    if (messages.isNotEmpty) {
+      final raw = messages.first["created_at"]?.toString() ?? "";
+      final parsed = DateTime.tryParse(raw);
+      if (parsed != null) return parsed.toLocal();
+    }
+    return _chatOpenedAt;
+  }
+
   Future<void> _loadMessages({bool showLoading = true}) async {
     if (showLoading && mounted) {
       setState(() => _loading = true);
@@ -128,21 +137,22 @@ class _ChatScreenState extends State<ChatScreen> {
     final newMessages = List.from(res["messages"] ?? []);
     final grew = newMessages.length > _messages.length;
 
-    // Prefer the server's remaining_seconds when it sends one.
-    // Otherwise fall back to our own 15-minute-from-open calculation
-    // so the chat still auto-locks even if the backend doesn't
-    // return a countdown value.
-    int? serverRemaining =
+    // Use the server's remaining_seconds when it sends one. Otherwise
+    // count 24 hours from the start of the chat.
+    final int? serverRemaining =
         int.tryParse(res["remaining_seconds"]?.toString() ?? "");
 
     int computedRemaining;
     if (serverRemaining != null) {
       computedRemaining = serverRemaining;
-    } else if (_chatOpenedAt != null) {
-      final elapsed = DateTime.now().difference(_chatOpenedAt!).inSeconds;
-      computedRemaining = _chatLifetimeSeconds - elapsed;
     } else {
-      computedRemaining = _remainingSeconds;
+      final start = _chatStartTime(newMessages);
+      if (start != null) {
+        final elapsed = DateTime.now().difference(start).inSeconds;
+        computedRemaining = _chatLifetimeSeconds - elapsed;
+      } else {
+        computedRemaining = _remainingSeconds;
+      }
     }
 
     final bool timeExpired = computedRemaining <= 0;
@@ -161,10 +171,6 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  // Runs a local, once-per-second countdown so the timer shown to the
-  // user is smooth (not just updated every 3s poll) and so the chat
-  // gets locked immediately once the 15 minutes run out, without
-  // waiting for the next poll.
   void _restartCountdownTimer() {
     _countdownTimer?.cancel();
 
@@ -189,28 +195,16 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
-  Future<void> _sendMessage() async {
-    if (_isLocked || _sending) return;
-
-    final text = _messageCtrl.text.trim();
-    if (text.isEmpty) return;
-
-    setState(() => _sending = true);
-    _messageCtrl.clear();
-
-    final res = await ApiService.sendChatMessageMultipart(
-      chatType: widget.chatType,
-      chatId: widget.chatId,
-      message: text,
-    );
-
-    if (!mounted) return;
-
-    final bool locked = res["is_locked"] == true ||
+  bool _isLockedResponse(Map res) {
+    return res["is_locked"] == true ||
         res["locked"] == true ||
         res["chat_locked"] == true ||
         res["chat_is_locked"] == true ||
         res["status_code"] == 423;
+  }
+
+  Future<void> _afterSend(Map res) async {
+    final locked = _isLockedResponse(res);
 
     setState(() {
       _sending = false;
@@ -231,6 +225,25 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  Future<void> _sendMessage() async {
+    if (_isLocked || _sending) return;
+
+    final text = _messageCtrl.text.trim();
+    if (text.isEmpty) return;
+
+    setState(() => _sending = true);
+    _messageCtrl.clear();
+
+    final res = await ApiService.sendChatMessageMultipart(
+      chatType: widget.chatType,
+      chatId: widget.chatId,
+      message: text,
+    );
+
+    if (!mounted) return;
+    await _afterSend(res);
+  }
+
   Future<void> _sendImage(ImageSource source) async {
     if (_isLocked || _sending) return;
 
@@ -249,30 +262,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (!mounted) return;
 
     _messageCtrl.clear();
-
-    final bool locked = res["is_locked"] == true ||
-        res["locked"] == true ||
-        res["chat_locked"] == true ||
-        res["chat_is_locked"] == true ||
-        res["status_code"] == 423;
-
-    setState(() {
-      _sending = false;
-      if (locked) {
-        _isLocked = true;
-        _remainingSeconds = 0;
-      }
-    });
-
-    if (locked) {
-      _countdownTimer?.cancel();
-      return;
-    }
-
-    if (res["success"] == true) {
-      await _loadMessages(showLoading: false);
-      Future.delayed(const Duration(milliseconds: 80), _scrollToBottom);
-    }
+    await _afterSend(res);
   }
 
   Future<void> _sendFile() async {
@@ -310,30 +300,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (!mounted) return;
 
     _messageCtrl.clear();
-
-    final bool locked = res["is_locked"] == true ||
-        res["locked"] == true ||
-        res["chat_locked"] == true ||
-        res["chat_is_locked"] == true ||
-        res["status_code"] == 423;
-
-    setState(() {
-      _sending = false;
-      if (locked) {
-        _isLocked = true;
-        _remainingSeconds = 0;
-      }
-    });
-
-    if (locked) {
-      _countdownTimer?.cancel();
-      return;
-    }
-
-    if (res["success"] == true) {
-      await _loadMessages(showLoading: false);
-      Future.delayed(const Duration(milliseconds: 80), _scrollToBottom);
-    }
+    await _afterSend(res);
   }
 
   void _openAttachment(String url) async {
@@ -425,20 +392,23 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  /// Shows HH:MM:SS when an hour or more is left, otherwise MM:SS.
   String _remainingLabel() {
     if (_remainingSeconds <= 0) return "";
-    final m = (_remainingSeconds ~/ 60).toString().padLeft(2, '0');
+    final h = _remainingSeconds ~/ 3600;
+    final m = ((_remainingSeconds % 3600) ~/ 60).toString().padLeft(2, '0');
     final s = (_remainingSeconds % 60).toString().padLeft(2, '0');
+    if (h > 0) return "${h.toString().padLeft(2, '0')}:$m:$s";
     return "$m:$s";
   }
 
   String _transactionNo() {
     final raw = widget.chatId.padLeft(9, '0');
-    return "TNS$raw";
+    return widget.chatType == "transfer" ? "TRA$raw" : "TNS$raw";
   }
 
   // ═══════════════════════════════════════════
-  //  TOP BAR - status shown as a dot on the photo, no text
+  //  TOP BAR - status shown as a dot on the photo
   // ═══════════════════════════════════════════
   Widget _topBar() {
     final name = widget.otherUser["name"]?.toString() ?? "User";
@@ -553,15 +523,19 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ),
           ),
-          if (!_isLocked && time.isNotEmpty)
+          if (!_isLocked && time.isNotEmpty) ...[
+            const Icon(Icons.timer_outlined, color: _C.muted, size: 14),
+            const SizedBox(width: 4),
             Text(
               time,
               style: const TextStyle(
                 color: _C.muted,
                 fontSize: 12,
                 fontWeight: FontWeight.w800,
+                fontFeatures: [FontFeature.tabularFigures()],
               ),
             ),
+          ],
           if (_isLocked)
             const Text(
               "Locked",
@@ -610,7 +584,7 @@ class _ChatScreenState extends State<ChatScreen> {
         margin: const EdgeInsets.only(bottom: 4),
         padding: const EdgeInsets.all(11),
         decoration: BoxDecoration(
-          color: isMe ? Colors.black.withOpacity(0.08) : _C.bg,
+          color: isMe ? Colors.black.withValues(alpha: 0.08) : _C.bg,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: isMe ? Colors.black26 : _C.border),
         ),
@@ -641,7 +615,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   // ═══════════════════════════════════════════
-  //  BUBBLE - single line: message, time, and tick together
+  //  BUBBLE - message, time and tick on one line
   // ═══════════════════════════════════════════
   Widget _buildBubble(Map msg) {
     final senderId = msg["sender_id"]?.toString();
@@ -677,7 +651,9 @@ class _ChatScreenState extends State<ChatScreen> {
                 ? Icons.done_all_rounded
                 : Icons.done_rounded,
             size: 13,
-            color: status == "seen" ? _C.blue : Colors.black.withOpacity(0.55),
+            color: status == "seen"
+                ? _C.blue
+                : Colors.black.withValues(alpha: 0.55),
           ),
         ],
       ],
@@ -821,7 +797,7 @@ class _ChatScreenState extends State<ChatScreen> {
               Icon(Icons.lock_rounded, color: _C.red, size: 17),
               SizedBox(width: 8),
               Text(
-                "Chat closed / locked",
+                "Chat locked after 24 hours",
                 style: TextStyle(
                   color: _C.red,
                   fontWeight: FontWeight.w900,

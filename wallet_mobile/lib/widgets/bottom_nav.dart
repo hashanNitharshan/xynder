@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../screens/update_screen.dart';
 
+/// Bottom navigation.
+/// 0 = Home, 1 = P2P, 2 = Transfer, 3 = Trade (live chart), 4 = Settings
 class BottomNav extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
@@ -37,11 +39,11 @@ class BottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final items = [
+    const items = [
       Icons.home_rounded,
       Icons.account_balance_wallet_rounded,
       Icons.swap_horiz_rounded,
-      Icons.history_rounded,
+      Icons.candlestick_chart_rounded,
       Icons.settings_rounded,
     ];
 
@@ -56,7 +58,7 @@ class BottomNav extends StatelessWidget {
           border: Border.all(color: border),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(.45),
+              color: Colors.black.withValues(alpha: .45),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),
@@ -81,7 +83,7 @@ class BottomNav extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: selected
-                        ? yellow.withOpacity(.15)
+                        ? yellow.withValues(alpha: .15)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(16),
                   ),

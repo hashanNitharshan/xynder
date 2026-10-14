@@ -114,7 +114,7 @@ class _ChatUsersScreenState extends State<ChatUsersScreen>
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         content: const Text(
-          "This chat is locked. 15 minutes completed.",
+          "This chat is locked. 24 hours completed.",
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
@@ -164,9 +164,9 @@ class _ChatUsersScreenState extends State<ChatUsersScreen>
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.25),
+                  color: Colors.black.withValues(alpha: 0.25),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.white.withOpacity(0.08)),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
                 ),
                 child: const Icon(
                   Icons.arrow_back_ios_new_rounded,
@@ -407,8 +407,8 @@ class _ChatUsersScreenState extends State<ChatUsersScreen>
               boxShadow: [
                 BoxShadow(
                   color: unreadCount > 0
-                      ? _C.orange.withOpacity(0.10)
-                      : Colors.black.withOpacity(0.22),
+                      ? _C.orange.withValues(alpha: 0.10)
+                      : Colors.black.withValues(alpha: 0.22),
                   blurRadius: 16,
                   offset: const Offset(0, 8),
                 ),
@@ -609,14 +609,14 @@ class _ChatUsersScreenState extends State<ChatUsersScreen>
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 10),
-                      color: _C.red.withOpacity(0.14),
+                      color: _C.red.withValues(alpha: 0.14),
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.lock_rounded, color: _C.red, size: 15),
                           SizedBox(width: 6),
                           Text(
-                            "Locked after 15 minutes",
+                            "Locked after 24 hours",
                             style: TextStyle(
                               color: _C.red,
                               fontSize: 12,
@@ -671,17 +671,17 @@ class _ChatUsersScreenState extends State<ChatUsersScreen>
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: isLocked
-            ? _C.red.withOpacity(0.10)
+            ? _C.red.withValues(alpha: 0.10)
             : isTransfer
-                ? _C.blue.withOpacity(0.10)
-                : _C.orange.withOpacity(0.10),
+                ? _C.blue.withValues(alpha: 0.10)
+                : _C.orange.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: isLocked
-              ? _C.red.withOpacity(0.35)
+              ? _C.red.withValues(alpha: 0.35)
               : isTransfer
-                  ? _C.blue.withOpacity(0.28)
-                  : _C.orange.withOpacity(0.28),
+                  ? _C.blue.withValues(alpha: 0.28)
+                  : _C.orange.withValues(alpha: 0.28),
         ),
       ),
       child: Row(
